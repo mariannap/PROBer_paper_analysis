@@ -1,8 +1,6 @@
-ANNO_PATH = "."
-
-rule all:
-     input: "{}/18S_rRNA.fa".format(ANNO_PATH),
-            "{}/25S_rRNA.fa".format(ANNO_PATH)
+ANNO_PATH = "annotation"
+ANNOTATIONS = expand("{ANNO_PATH}/{file}", ANNO_PATH = ANNO_PATH, 
+              file = ["18S_rRNA.fa", "18S_rRNA.structure", "25S_rRNA.fa", "25S_rRNA.structure", "arabidopsis_filtered.fa", "arabidopsis_filtered.t2g"])
 
 
 rule unzip_TAIR10:
@@ -42,7 +40,7 @@ rule combine_two_fasta:
 rule generate_filtered_reference:
      input: rules.convert.output,
             rules.generate_gtf.output,
-            "remove_list.txt",
+            "{}/remove_list.txt".format(ANNO_PATH),
             rules.combine_two_fasta.output
      params: "{}/arabidopsis_filtered".format(ANNO_PATH)
      output: expand("{ANNO_PATH}/arabidopsis_filtered.{suffix}", ANNO_PATH = ANNO_PATH, suffix = ["fa", "t2g", "dup"])
