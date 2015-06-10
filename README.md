@@ -33,7 +33,7 @@ fastq-dump SRR933556.sra
 fastq-dump SRR933557.sra 
 ```
 
-The meaning of each data is listed in the table below.
+The meaning of each data is listed in the table below:
 
 <table>
         <tr>
