@@ -33,6 +33,8 @@ fastq-dump SRR933556.sra
 fastq-dump SRR933557.sra 
 ```
 
+The meaning of each data is listed in the table below.
+
 <table>
         <tr>
                 <th>accession</th>
@@ -56,8 +58,6 @@ fastq-dump SRR933557.sra
         </tr>
 </table>
 
-The meaning of each data is listed in the above table.
-
 #### Run snakemake
 
 Type
@@ -67,6 +67,4 @@ snakemake
 ```
 
 in the top directory. 
-
-
  
