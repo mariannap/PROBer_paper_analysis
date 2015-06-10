@@ -1,0 +1,7 @@
+REF_PATH = "."
+
+rule compile_mappability:
+     input: "{}/scripts/calcMappability.cpp".format(REF_PATH)
+     output: "{}/scripts/calcMappability".format(REF_PATH)
+     shell: "g++ -O3 {input} -o {output}"
+
