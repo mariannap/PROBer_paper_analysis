@@ -1,4 +1,5 @@
 *~
+*.snakemake/
 
 # Compiled Object files
 *.slo

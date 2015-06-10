@@ -1,0 +1,50 @@
+ANNO_PATH = "."
+
+rule all:
+     input: "{}/18S_rRNA.fa".format(ANNO_PATH),
+            "{}/25S_rRNA.fa".format(ANNO_PATH)
+
+
+rule unzip_TAIR10:
+     input: "{}/TAIR10.zip".format(ANNO_PATH)
+     output: "{}/TAIR10_chr_all.fas".format(ANNO_PATH),
+             "{}/TAIR10_GFF3_genes.gff".format(ANNO_PATH)
+     shell: "unzip {input} -d {ANNO_PATH} ; touch {output}"
+
+rule unzip_ground_truth_bpseq:
+     input: "{}/ground_truth.bpseq.zip".format(ANNO_PATH)
+     output: "{}/18S_rRNA.bpseq".format(ANNO_PATH),
+             "{}/25S_rRNA.bpseq".format(ANNO_PATH)
+     shell: "unzip {input} -d {ANNO_PATH} ; touch {output}"
+
+rule extract_info_from_bpseq:
+     input: "{name}.bpseq"
+     output: "{name}.fa", "{name}.structure"
+     params: "{name}"
+     shell: "{ANNO_PATH}/scripts/extractInfoFromBPSeq {input} {params}"
+
+rule convert:
+     input: rules.unzip_TAIR10.output[0]
+     output: "{}/TAIR10_chr_all.fa".format(ANNO_PATH)
+     shell: "{ANNO_PATH}/scripts/convert {input} {output}"
+
+rule generate_gtf:
+     input: rules.unzip_TAIR10.output[1]
+     output: "{}/TAIR10_GTF_genes.gtf".format(ANNO_PATH)
+     shell: "{ANNO_PATH}/scripts/gff3_to_gtf {input} {output} mRNA,rRNA,ncRNA,snRNA,tRNA,miRNA,snoRNA"
+
+rule combine_two_fasta:
+     input: "{}/18S_rRNA.fa".format(ANNO_PATH),
+            "{}/25S_rRNA.fa".format(ANNO_PATH)
+     output: "{}/rRNAs.fa".format(ANNO_PATH)
+     shell: "cat {input[0]} {input[1]} > {output}"
+
+rule generate_filtered_reference:
+     input: rules.convert.output,
+            rules.generate_gtf.output,
+            "remove_list.txt",
+            rules.combine_two_fasta.output
+     params: "{}/arabidopsis_filtered".format(ANNO_PATH)
+     output: expand("{ANNO_PATH}/arabidopsis_filtered.{suffix}", ANNO_PATH = ANNO_PATH, suffix = ["fa", "t2g", "dup"])
+     shell: "{ANNO_PATH}/scripts/genome_to_transcript_set {input} {params}"
+

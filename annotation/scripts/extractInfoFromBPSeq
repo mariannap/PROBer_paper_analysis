@@ -1,0 +1,27 @@
+#!/usr/bin/env python2
+
+from sys import argv, exit
+
+if len(argv) != 3:
+    print("Usage: extractInfofromBPSeq input.bpseq output_name")
+    exit(-1)
+
+seq = []
+truth = []
+with open(argv[1]) as fin:
+    for i in xrange(4):
+        fin.next()
+    for line in fin:        
+        fields = line[:-1].split()
+        seq.append(fields[1] if fields[1] != "U" else "T")
+        truth.append("1" if int(fields[2]) > 0 else "0")
+
+rna_id = argv[2][argv[2].rfind("/") + 1:]
+
+with open(argv[2] + ".fa", "w") as fout:
+    fout.write(">" + rna_id + "\n")
+    fout.write("".join(seq) + "\n")
+
+with open(argv[2] + ".structure", "w") as fout:
+    fout.write(" ".join(truth) + "\n")
+
