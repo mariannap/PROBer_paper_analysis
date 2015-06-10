@@ -1,7 +1,25 @@
-REF_PATH = "."
+REF_PATH = "references"
+
+REF_FILT = expand("{REF_PATH}/arabidopsis_filt/arabidopsis_filt.{suffix}", REF_PATH = REF_PATH, suffix = ["grp", "idx.fa", "mappability", "n2g.idx.fa", "seq", "ti", "transcripts.fa"])
+REF_FILT.extend(expand("{REF_PATH}/arabidopsis_filt/arabidopsis_filt.{num}.{suffix}", REF_PATH = REF_PATH, num = [1, 2, 3, 4], suffix = ["bt2", "ebwt"]))
+REF_FILT.extend(expand("{REF_PATH}/arabidopsis_filt/arabidopsis_filt.rev.{num}.{suffix}", REF_PATH = REF_PATH, num = [1, 2], suffix = ["bt2", "ebwt"]))
+
 
 rule compile_mappability:
      input: "{}/scripts/calcMappability.cpp".format(REF_PATH)
      output: "{}/scripts/calcMappability".format(REF_PATH)
      shell: "g++ -O3 {input} -o {output}"
 
+rule generate_arabidopsis_filt:
+     input:
+        TOOLS[2], TOOLS[3], TOOLS[5],
+        rules.compile_mappability.output,
+        "annotation/arabidopsis_filtered.fa",
+        "annotation/arabidopsis_filtered.t2g"
+     output:
+        REF_FILT
+     run:
+        shell("mkdir -p {REF_PATH}/arabidopsis_filt")
+        shell("{PROBER} prepare --transcript-to-gene-map {input[5]} --bowtie --bowtie-path {input[0]} --bowtie2 --bowtie2-path {input[1]}"
+              " {input[4]} {REF_PATH}/arabidopsis_filt/arabidopsis_filt")
+        shell("{input[3]} 21 {REF_PATH}/arabidopsis_filt/arabidopsis_filt.transcripts.fa {REF_PATH}/arabidopsis_filt/arabidopsis_filt.mappability")

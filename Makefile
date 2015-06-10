@@ -1,6 +1,6 @@
 .PHONY : clean
 
 clean:
-	rm -rf builds *~ .snakemake 
+	rm -rf *~ .snakemake 
 	cd tools ; $(MAKE) clean
 	cd annotation ; $(MAKE) clean

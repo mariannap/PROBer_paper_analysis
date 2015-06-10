@@ -1,56 +1,55 @@
+TOOLS_PATH = "tools"
 PROGRAMS = ["cutadapt-1.6", "samtools-0.1.19", "bowtie-1.0.0", "bowtie2-2.1.0", "rsem-1.2.20", "PROBer-0.1.2"]
 SOURCE_CODES = expand("tools/{program}.tar.gz", program = PROGRAMS)
-TOOLS = expand("builds/{program}", program = PROGRAMS)
+TOOLS = expand("tools/{program}", program = PROGRAMS)
+PROBER = "tools/{}/build/src/PROBer".format(PROGRAMS[5])
 
-rule build:
-     output: "builds"
-     shell: "mkdir -p builds"
 
 rule build_cutadapt:
-     input: "builds", SOURCE_CODES[0]
+     input: SOURCE_CODES[0]
      output: TOOLS[0]
      run: 
-          shell("tar -C builds -xzf {input[1]}")
+          shell("tar -C {TOOLS_PATH} -xzf {input}")
           shell("pip install Cython")
 	  shell("cd {output} ; python setup.py build_ext -i")
           shell("touch {output}")
 
 rule build_samtools:
-     input: "builds", SOURCE_CODES[1]
+     input: SOURCE_CODES[1]
      output: TOOLS[1]
      run: 
-          shell("tar -C builds -xzf {input[1]}")
+          shell("tar -C {TOOLS_PATH} -xzf {input}")
 	  shell("cd {output} ; make")
           shell("touch {output}")
 
 rule build_bowtie:
-     input: "builds", SOURCE_CODES[2]
+     input: SOURCE_CODES[2]
      output: TOOLS[2]
      run: 
-          shell("tar -C builds -xzf {input[1]}")
+          shell("tar -C {TOOLS_PATH} -xzf {input}")
 	  shell("cd {output} ; make")
           shell("touch {output}")
 
 rule build_bowtie2:
-     input: "builds", SOURCE_CODES[3]
+     input: SOURCE_CODES[3]
      output: TOOLS[3]
      run: 
-          shell("tar -C builds -xzf {input[1]}")
+          shell("tar -C {TOOLS_PATH} -xzf {input}")
 	  shell("cd {output} ; make")
           shell("touch {output}")
 
 rule build_rsem:
-     input: "builds", SOURCE_CODES[4]
+     input: SOURCE_CODES[4]
      output: TOOLS[4]
      run: 
-          shell("tar -C builds -xzf {input[1]}")
+          shell("tar -C {TOOLS_PATH} -xzf {input}")
 	  shell("cd {output} ; make")
           shell("touch {output}")
 
 rule build_PROBer:
-     input: "builds", SOURCE_CODES[5]
+     input: SOURCE_CODES[5]
      output: TOOLS[5]
      run: 
-          shell("tar -C builds -xzf {input[1]}")
+          shell("tar -C {TOOLS_PATH} -xzf {input}")
           shell("cd {output} ; mkdir -p build ; cd build ; cmake .. ; make")
           shell("touch {output}")
