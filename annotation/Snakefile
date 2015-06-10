@@ -1,9 +1,9 @@
 ANNO_PATH = "annotation"
-ANNOTATIONS = expand("{ANNO_PATH}/{file}", ANNO_PATH = ANNO_PATH, 
-              file = ["18S_rRNA.fa", "18S_rRNA.structure", "25S_rRNA.fa", "25S_rRNA.structure", "arabidopsis_filtered.fa", "arabidopsis_filtered.t2g"])
+ANNOTATIONS = expand("{ANNO_PATH}/{name}_rRNA.{suffix}", ANNO_PATH = ANNO_PATH, name = ["18S", "25S"], suffix = ["fa", "structure"])
+ANNOTATIONS.extend(expand("{ANNO_PATH}/arabidopsis_{name}.{suffix}", ANNO_PATH = ANNO_PATH, name = ["filtered", "spike"], suffix = ["fa", "t2g"]))
 
 SHAPE_RNAS = expand("{ANNO_PATH}/{name}", ANNO_PATH = ANNO_PATH, name = ["RNaseP_WT", "pT181_long", "pT181_short"])
-ANNOTATIONS.extend(expand("{name}.{suffix}", name = SHAPE_RNAS, suffix = ["fa", "gamma", "beta"]))
+ANNOTATIONS.extend(expand("{name}.{suffix}", name = SHAPE_RNAS, suffix = ["gamma", "beta"]))
 
 
 rule unzip_TAIR10:
@@ -20,7 +20,8 @@ rule unzip_ground_truth_bpseq:
 
 rule unzip_SHAPE_data:
      input: "{}/SHAPE_data.zip".format(ANNO_PATH)
-     output: expand("{name}.adducts", name = SHAPE_RNAS)
+     output: expand("{name}.adducts", name = SHAPE_RNAS),
+             "{}/SHAPE.t2g".format(ANNO_PATH)
      shell: "unzip {input} -d {ANNO_PATH} ; touch {output}"
 
 rule extract_info_from_bpseq:
@@ -60,3 +61,12 @@ rule process_SHAPE_data:
      params: "{name}"
      shell: "{ANNO_PATH}/scripts/processSHAPEdata {input} {params}"
  
+rule generate_spike_in_reference:
+     input: expand("{rna}.fa", rna = SHAPE_RNAS), 
+            rules.generate_filtered_reference.output[:2],
+            rules.unzip_SHAPE_data.output[3]
+     output: expand("{ANNO_PATH}/arabidopsis_spike.{suffix}", ANNO_PATH = ANNO_PATH, suffix = ["fa", "t2g"])
+     run:
+        shell("cat {input[0]} {input[1]} {input[2]} {input[3]} > {output[0]}")
+        shell("cat {input[5]} {input[4]} > {output[1]}")
+

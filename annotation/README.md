@@ -25,12 +25,13 @@ The above four transcripts will be removed from the reference since they are red
 
 ### SHAPE data used for digital spike-in experiments
 
-`SHAPE_data.zip` contains three files:
+`SHAPE_data.zip` contains four files:
 - `RNaseP_WT.adducts`
 - `pT181_long.adducts`
 - `pT181_short.adducts`
+- `SHAPE.t2g`
 
-They are experimentally measured SHAPE data of three short RNAs from [Lucks _et al._ PNAS2011](http://www.pnas.org/content/108/27/11063.long). We obtained them from [Sharon Aviran](http://bme.ucdavis.edu/aviranlab/).
+The first three files are experimentally measured SHAPE data for three short RNAs from [Lucks _et al._ PNAS2011](http://www.pnas.org/content/108/27/11063.long). We obtained them from [Sharon Aviran](http://bme.ucdavis.edu/aviranlab/). The last file defines the isoform - gene relationship. It says that pT181_long and pT181_short are isoforms of a same gene.
 
 ### Scripts
 
@@ -49,3 +50,8 @@ The generated filtered reference will contain three files:
 - `arabidopsis_filtered.fa`, the filtered set of transcript sequences, which is used to build `PROBer` references and map reads.
 - `arabidopsis_filtered.t2g`, transcript id to gene id mapping. Each line contains two fields. The first one gives the transcript id and the second one gives the gene id.
 - `arabidopsis_filtered.dup`, a list of removed transcripts due to redundancy.
+
+The generated spike-in reference will contain two files:
+
+- `arabidopsis_spike.fa`, which contains the 3 digital spike-in sequences in the top.
+- `arabidopsis_spike.t2g`, the transcript id to gene id mapping.
