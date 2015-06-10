@@ -21,7 +21,7 @@ rule build_samtools:
      run: 
           shell("tar -C builds -xzf {input[1]}")
 	  shell("cd {output} ; make")
-	  shell("touch {output}")
+          shell("touch {output}")
 
 rule build_bowtie:
      input: "builds", SOURCE_CODES[2]
@@ -29,7 +29,7 @@ rule build_bowtie:
      run: 
           shell("tar -C builds -xzf {input[1]}")
 	  shell("cd {output} ; make")
-	  shell("touch {output}")
+          shell("touch {output}")
 
 rule build_bowtie2:
      input: "builds", SOURCE_CODES[3]
@@ -37,7 +37,7 @@ rule build_bowtie2:
      run: 
           shell("tar -C builds -xzf {input[1]}")
 	  shell("cd {output} ; make")
-	  shell("touch {output}")
+          shell("touch {output}")
 
 rule build_rsem:
      input: "builds", SOURCE_CODES[4]
@@ -45,7 +45,7 @@ rule build_rsem:
      run: 
           shell("tar -C builds -xzf {input[1]}")
 	  shell("cd {output} ; make")
-	  shell("touch {output}")
+          shell("touch {output}")
 
 rule build_PROBer:
      input: "builds", SOURCE_CODES[5]

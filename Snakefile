@@ -9,9 +9,3 @@ rule all:
      input: TOOLS,
             ANNOTATIONS
 
-onsuccess:
-        print("Success!")
-
-onerror:
-        print("Error!")
-                                  
