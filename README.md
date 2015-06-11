@@ -4,6 +4,8 @@ Reproduce PROBer paper analysis
 
 ### Prerequisites
 
+Please make sure that you have `Perl`, `Python`, and `R` installed.
+
 You need to install [Snakemake](https://bitbucket.org/johanneskoester/snakemake/wiki/Home). 
 
 You also need to install [SRA Toolkit](http://www.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?view=software) in order to use [fastq-dump](http://www.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?view=toolkit_doc&f=fastq-dump).
@@ -63,8 +65,12 @@ The meaning of each data is listed in the table below:
 Type
 
 ```
-snakemake
+snakemake -j <number_of_threads>
 ```
 
-in the top directory. 
+in the top directory. `<number_of_threads>` is the total number of threads you want to use. 
+
+##### Running time and memory usage measurement
+
+Please make sure that your server has at least 40 cores. In addition, please do not run any **Python** scripts when you try to repeat the analysis. Otherwise, the time/memory measurements might be inaccurate and/or the snakemake may crash.
  

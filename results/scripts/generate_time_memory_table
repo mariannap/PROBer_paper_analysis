@@ -1,0 +1,45 @@
+#!/usr/bin/env python2
+
+from sys import argv, exit
+
+if len(argv) != 3:
+    print("Usage: generate_time_memory_table input_name output_file")
+    exit(-1)
+
+header = ["Step", "Runtime", "Memory"]
+steps = ["Alignment and Parsing", "EM algorithm", "Generating BAM files"]
+
+def parse_time(line):
+    return int(line.split("\t")[1][:-2])
+
+def parse_memory(line):
+    return line.split("\t")[1][:-1];
+
+def format_time(time):
+    seconds = time % 60
+    time /= 60
+    minutes = time % 60
+    hours = time / 60
+
+    return "{2}h {1}m {0}s".format(seconds, minutes, hours)
+
+times = []
+with open("{}.time".format(argv[1])) as fin:
+    times.append(parse_time(fin.readline()))
+    times.append(parse_time(fin.readline()))
+
+with open("{}.bam.time".format(argv[1])) as fin:
+    times.append(parse_time(fin.readline()))
+
+times[1] -= times[2]
+
+mems = ["", "", "-"]
+
+with open("{}.mem".format(argv[1])) as fin:
+    mems[0] = parse_memory(fin.readline())
+    mems[1] = parse_memory(fin.readline())
+
+with open(argv[2], "w") as fout:
+    fout.write("\t".join(header) + "\n")
+    for i in xrange(3):
+        fout.write(steps[i] + "\t" + format_time(times[i]) + "\t" + mems[i] + "\n")

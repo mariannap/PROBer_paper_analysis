@@ -1,0 +1,50 @@
+RESULTS_PATH = "results"
+EXPERIMENT_PATH = "exp"
+
+
+CHANNELS = ["minus", "plus"]
+PROBER_SUFF = ["gamma", "beta", "expr"]
+PROBER_STAT = ["theta", "read_model"]
+
+
+RESULTS = expand("{path}/{file}", path = RESULTS_PATH, file = ["number_of_reads_in_real_data.txt", "time_and_memory_table.txt"])
+
+
+REAL = "dms_real"
+
+
+#### Count number of reads in (-) and (+) channels after adaptors are trimmed
+
+rule count_reads:
+     input: REAL_DATA
+     output: RESULTS[0]
+     run:
+        shell("wc -l {input[0]} | python3 -c 'print(\"(-): {{}}\".format(int(input().split()[0]) // 4))' > {output}")
+        shell("wc -l {input[1]} | python3 -c 'print(\"(+): {{}}\".format(int(input().split()[0]) // 4))' >> {output}")
+
+#### Evaluate running time and memory usage
+
+rule time_and_memory:
+     input:
+        TOOLS[2], TOOLS[5],
+        REAL_DATA,
+        REF_FILT
+     output:
+        expand("{path}/{name}.{suffix}", path = EXPERIMENT_PATH, name = REAL, suffix = PROBER_SUFF),
+        expand("{path}/{name}.stat/{name}_{channel}.{suffix}", path = EXPERIMENT_PATH, name = REAL, channel = CHANNELS, suffix = PROBER_STAT),
+        expand("{path}/{name}_{channel}.bam", path = EXPERIMENT_PATH, name = REAL, channel = CHANNELS),
+        expand("{path}/{name}.{suffix}", path = EXPERIMENT_PATH, name = REAL, suffix = ["time", "bam.time", "mem"])
+     threads: 40
+     message: "Run PROBer on the real data and measure running time and memory usage."
+     run:
+        shell("{PROBER} estimate --time --bowtie --bowtie-path {input[0]} -p {threads} --output-bam --read-length 37 --size-selection-min 21 --size-selection-max 526 "
+              "{REF_FILT_NAME} {EXPERIMENT_PATH}/{REAL} --reads {input[2]} {input[3]} & "
+              "{RESULTS_PATH}/scripts/detect_peak_memory {EXPERIMENT_PATH}/{REAL}")
+
+rule generate_time_and_memory_table:
+     input:
+        expand("{path}/{name}.{suffix}", path = EXPERIMENT_PATH, name = REAL, suffix = ["time", "bam.time", "mem"])
+     output:
+        RESULTS[1]
+     shell:
+        "{RESULTS_PATH}/scripts/generate_time_memory_table {EXPERIMENT_PATH}/{REAL} {RESULTS[1]}"

@@ -1,0 +1,30 @@
+DATA_PATH = "data"
+REAL_DATA = expand("{DATA_PATH}/dms_real_{channel}_1.fq", DATA_PATH = DATA_PATH, channel = ["minus", "plus"])
+
+
+rule remove_adaptor:
+     input:
+        TOOLS[0], 
+        DATA_PATH + "/{accession}.fastq"
+     output:
+        DATA_PATH + "/{accession}_trimmed.fq",
+        DATA_PATH + "/{accession}_discarded.fq"
+     run:
+        shell("{input[0]}/bin/cutadapt -u 3 -a GATCGGAAGAGCACACGTCTGAACTCCAGTCAC -m 21 -o {output[0]} --too-short-output={output[1]} {input[1]}")
+
+rule pool_minus:
+     input:
+        DATA_PATH + "/SRR933551_trimmed.fq",
+        DATA_PATH + "/SRR933557_trimmed.fq"
+     output:
+        REAL_DATA[0]
+     shell: "cat {input[0]} {input[1]} > {output}"
+
+rule pool_plus:
+     input:
+        DATA_PATH + "/SRR933552_trimmed.fq",
+        DATA_PATH + "/SRR933556_trimmed.fq"
+     output:
+        REAL_DATA[1]
+     shell: "cat {input[0]} {input[1]} > {output}"
+

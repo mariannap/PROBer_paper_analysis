@@ -1,0 +1,128 @@
+#!/usr/bin/env perl
+
+use strict;
+use Class::Struct;
+use FileHandle;
+use Switch;
+
+struct( mem_rec => [ value => '$', mem => '$', line => '$' ]);
+
+# redefine special variable's content
+$" = "\n";
+
+
+my $out_mem = new FileHandle;
+
+if (scalar(@ARGV) != 1) {
+    print "Usage: detect_peak_memory output_name\n";
+    exit(-1);
+}
+
+my $outFN = $ARGV[0];
+my @names = ("python", "bowtie", "PROBer-parse", "PROBer-run-em");
+my $n = 4;
+
+my @mems = (0, 0);
+my @evidences = ("", "");
+
+
+$out_mem->open(">$outFN.raw.mem");
+
+my $command = "top -n 1 -u bli -b | grep bli";
+
+my $active = 1;
+my $line;
+
+do {
+    $line = `$command`;
+    my @arr = split(/\n/, $line);
+    for (my $i = 0; $i <= $#arr; $i++) {
+	$arr[$i] =~ s/^[ ]+//;
+	$arr[$i] =~ s/[ ]+$//;
+    }
+
+    my $cur_item;
+    my %list = ();
+
+    $active = 0;
+    
+    for (my $i = 0; $i <= $#arr; $i++) {
+	my @tmp = split(/[ \t]+/, $arr[$i]);
+	
+	my $id = -1;
+	for (my $j = 0; $j < $n; $j++) {
+	    if (index($tmp[11], $names[$j]) >= 0) { 
+		$id = $j;
+		last;
+	    }
+	}
+	
+	if ($id >= 0) {
+	    if ($id == 0) { $active = 1; }
+	
+	    $cur_item = new mem_rec;
+	    $cur_item->value(&convert($tmp[5]));
+	    $cur_item->mem($tmp[5]);
+	    $cur_item->line($arr[$i]);
+
+	    $list{$id} = $cur_item;
+	}
+    }
+
+    if ($active) {
+	foreach my $prog (keys %list) {
+	    print $out_mem $list{$prog}->line."\n";
+	}
+	print $out_mem "----------------\n";
+
+        my $step1 = 0;
+        my $evidence = "";
+
+        if (exists($list{1})) {
+            $step1 += $list{1}->value;
+            $evidence .= $list{1}->line."\n";
+        }
+
+        if (exists($list{2})) {
+            $step1 += $list{2}->value;
+            $evidence .= $list{2}->line."\n";
+        }
+
+        if ($mems[0] < $step1) {
+            $mems[0] = $step1;
+            $evidences[0] = $evidence;
+        }
+
+        if (exists($list{3}) && ($mems[1] < $list{3}->value)) {
+            $mems[1] = $list{3}->value;
+            $evidences[1] = $list{3}->line."\n";
+        }
+
+	sleep 3;
+    }
+
+} while ($active);
+
+$out_mem->close();
+
+open(OUTPUT, ">$outFN.mem");
+printf(OUTPUT "Alignment and Parsing\t%.2f GB\n", $mems[0] / 1024.0 / 1024.0 / 1024.0);
+printf(OUTPUT "EM Algorithm\t%.2f GB\n", $mems[1] / 1024.0 / 1024.0 / 1024.0);
+print OUTPUT "\nEvidence:\n";
+print OUTPUT $evidences[0]."\n";
+print OUTPUT $evidences[1]."\n";
+close(OUTPUT);
+
+sub convert {
+    my $tmp = $_[0];
+    my $res;
+
+    switch(chop($tmp)) {
+	case 'k' { $res = $tmp * 1024; }
+	case 'm' { $res = $tmp * 1024 * 1024; }
+	case 'g' { $res = $tmp * 1024 * 1024 * 1024; }
+	else { $res = $_[0]; }
+    }
+
+    return $res;
+}
