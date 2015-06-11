@@ -40,8 +40,6 @@ def updateStat(cname, ctype, ctid, chap):
             N12r += 1
 
 
-cnt = 0
-
 cname = ""
 ctype = ttype = 0 # 0, unmapped, 1, alignable, 2, filtered
 chap = thap = False # if the current alignment line suggests a rRNA alignment
@@ -76,10 +74,6 @@ for aread in sam_in:
         #if ctid != aread.tid:
         #    ctid = -1
         chap = chap or thap
-
-    cnt += 1
-    if cnt % 1000000 == 0:
-        print("FIN {}".format(cnt))
 
 updateStat(cname, ctype, ctid, chap)
 
