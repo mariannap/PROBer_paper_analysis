@@ -1,6 +1,11 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 from sys import argv, exit
+
+try:
+    xrange
+except NameError:
+    xrange = range
 
 if len(argv) != 6:
     print("Usage: genome_to_transcript_set genome_fasta_file gene_annotation_gtf_file remove_list additional_transcripts_fasta_file output_name")

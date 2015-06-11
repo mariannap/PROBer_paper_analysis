@@ -13,16 +13,6 @@ Annotation
 - `18S_rRNA.bpseq`, 18S rRNA's structure and sequence information, is downloaded from [here](http://www.rna.icmb.utexas.edu/RNA/Structures/d.16.e.A.thaliana.bpseq).
 - `25S_rRNA.bpseq`, 25S rRNA's structure and sequence information, is downloaded from [here](http://www.rna.icmb.utexas.edu/RNA/Structures/d.23.e.A.thaliana.bpseq).
 
-### Remove list
-
-`remove_list.txt` contains four transcript ids:
-- `AT2G01010.1`, one copy of 18S rRNA.
-- `AT3G41768.1`, the other copy of 18S rRNA.
-- `AT2G01020.1`, 5.8S rRNA, part of 25S rRNA.
-- `AT2G01021.1`, unknown protien, part of 25S rRNA.
-
-The above four transcripts will be removed from the reference since they are redundant. 
-
 ### SHAPE data used for digital spike-in experiments
 
 `SHAPE_data.zip` contains four files:
@@ -32,6 +22,18 @@ The above four transcripts will be removed from the reference since they are red
 - `SHAPE.t2g`
 
 The first three files are experimentally measured SHAPE data for three short RNAs from [Lucks _et al._ PNAS2011](http://www.pnas.org/content/108/27/11063.long). We obtained them from [Sharon Aviran](http://bme.ucdavis.edu/aviranlab/). The last file defines the isoform - gene relationship. It says that pT181_long and pT181_short are isoforms of a same gene.
+
+### Text files
+
+`remove_list.txt` contains four transcript ids:
+- `AT2G01010.1`, one copy of 18S rRNA.
+- `AT3G41768.1`, the other copy of 18S rRNA.
+- `AT2G01020.1`, 5.8S rRNA, part of 25S rRNA.
+- `AT2G01021.1`, unknown protien, part of 25S rRNA.
+
+The above four transcripts will be removed from the reference since they are redundant. 
+
+`rRNA_list.txt` contains transcript ids for all rRNAs contained in the resulting filtered reference.
 
 ### Scripts
 

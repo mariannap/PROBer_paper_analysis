@@ -1,6 +1,11 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 from sys import argv, exit
+
+try:
+    xrange
+except NameError:
+    xrange = range
 
 if len(argv) != 3:
     print("Usage: generate_time_memory_table input_name output_file")
