@@ -1,0 +1,26 @@
+#!/usr/bin/env python
+
+try:
+    long
+except NameError:
+    long = int
+
+from sys import argv, exit
+
+if len(argv) != 3:
+    print("Usage: generate_grid_search_table input_name output_file")
+    exit(-1)
+
+values = ["0.0001", "0.001", "0.01", "0.1"]
+
+with open(argv[2], "w") as fout:
+    fout.write("d_gamma \\ d_beta\t" + "\t".join(values) + "\n")
+    for gamma in values:
+        fout.write(gamma)
+        for beta in values:
+            with open("{}_{}_{}.logMAP".format(argv[1], gamma, beta)) as fin:
+                fout.write("\t{:,}".format(long(fin.readline()[:-1])))
+        fout.write("\n")
+
+
+            

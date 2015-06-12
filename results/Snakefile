@@ -7,7 +7,9 @@ PROBER_SUFF = ["gamma", "beta", "expr"]
 PROBER_STAT = ["theta", "read_model"]
 
 
-RESULTS = expand("{path}/{file}", path = RESULTS_PATH, file = ["number_of_reads_in_real_data.txt", "time_and_memory_table.txt", "mapping_statistics_table.txt"])
+RESULTS = expand("{path}/{file}", path = RESULTS_PATH, 
+                 file = ["number_of_reads_in_real_data.txt", "time_and_memory_table.txt", "mapping_statistics_table.txt",
+                         "grid_search_for_prior.txt"])
 
 
 REAL = "dms_real"
@@ -67,4 +69,27 @@ rule generate_mapping_statistics_table:
         RESULTS[2]
      shell:
         "{RESULTS_PATH}/scripts/generate_mapping_statistics_table {input} {output}"
+
+#### Generating prior value grid search table
+
+rule run_PROBer_for_grid_search:
+     input:
+        TOOLS[5],
+        expand("{path}/{name}_{channel}.bam", path = EXP_PATH, name = REAL, channel = CHANNELS),
+        REF_FILT
+     output:
+        "{path}/{name}_{{gamma}}_{{beta}}.logMAP".format(path = EXP_PATH, name = REAL)
+     threads: 60
+     shell:
+        "{PROBER} estimate -p {threads} --read-length 37 --size-selection-min 21 --size-selection-max 526 " 
+        "--gamma-init {wildcards.gamma} --beta-init {wildcards.beta} -q --output-logMAP " 
+        "{REF_FILT_NAME} {EXP_PATH}/{REAL}_{wildcards.gamma}_{wildcards.beta} --bam {input[1]} {input[2]}"
+
+rule generate_grid_search_table:
+     input:
+        expand("{path}/{name}_{gamma}_{beta}.logMAP", path = EXP_PATH, name = REAL, gamma = ["0.0001", "0.001", "0.01", "0.1"], beta = ["0.0001", "0.001", "0.01", "0.1"])
+     output:
+        RESULTS[3]
+     shell:
+        "{RESULTS_PATH}/scripts/generate_grid_search_table {EXP_PATH}/{REAL} {output}"
 
