@@ -37,10 +37,9 @@ rule time_and_memory:
         expand("{path}/{name}_{channel}.bam", path = EXP_PATH, name = REAL, channel = CHANNELS),
         expand("{path}/{name}.{suffix}", path = EXP_PATH, name = REAL, suffix = ["time", "bam.time", "mem"])
      threads: 40
-     message: "Run PROBer on the real data and measure running time and memory usage."
-     run:
-        shell("{PROBER} estimate --time --memory --bowtie --bowtie-path {input[0]} -p {threads} --output-bam --read-length 37 --size-selection-min 21 --size-selection-max 526 "
-              "{REF_FILT_NAME} {EXP_PATH}/{REAL} --reads {input[2]} {input[3]}")
+     shell:
+        "{PROBER} estimate --time --memory --bowtie --bowtie-path {input[0]} -p {threads} --output-bam --read-length 37 --size-selection-min 21 --size-selection-max 526 "
+        "{REF_FILT_NAME} {EXP_PATH}/{REAL} --reads {input[2]} {input[3]}"
 
 rule generate_time_and_memory_table:
      input:
