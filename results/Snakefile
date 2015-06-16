@@ -1,5 +1,6 @@
 RESULTS_PATH = "results"
 EXP_PATH = "exp"
+SIMPARAM_PATH = "simulation_parameters"
 
 
 CHANNELS = ["minus", "plus"]

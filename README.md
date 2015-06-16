@@ -72,5 +72,6 @@ in the top directory. `<number_of_threads>` is the total number of threads you w
 
 ##### Running time and memory usage measurement
 
-Please make sure that your server has at least 40 cores. In addition, please do not run any **Python** scripts when you try to repeat the analysis. Otherwise, the time/memory measurements might be inaccurate and/or the snakemake may crash.
+Please make sure that your server has at least 40 cores in order to make sure the time measurement is comparable to what we reported in our paper.
+
  

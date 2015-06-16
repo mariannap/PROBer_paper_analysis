@@ -21,7 +21,8 @@ rule unzip_ground_truth_bpseq:
 rule unzip_SHAPE_data:
      input: "{}/SHAPE_data.zip".format(ANNO_PATH)
      output: expand("{name}.adducts", name = SHAPE_RNAS),
-             "{}/SHAPE.t2g".format(ANNO_PATH)
+             "{}/SHAPE.t2g".format(ANNO_PATH),
+             "{}/spikes_info.txt".format(ANNO_PATH)
      shell: "unzip {input} -d {ANNO_PATH} ; touch {output}"
 
 rule extract_info_from_bpseq:

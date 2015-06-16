@@ -20,8 +20,8 @@ Annotation
 - `pT181_long.adducts`
 - `pT181_short.adducts`
 - `SHAPE.t2g`
-
-The first three files are experimentally measured SHAPE data for three short RNAs from [Lucks _et al._ PNAS2011](http://www.pnas.org/content/108/27/11063.long). We obtained them from [Sharon Aviran](http://bme.ucdavis.edu/aviranlab/). The last file defines the isoform - gene relationship. It says that pT181_long and pT181_short are isoforms of a same gene.
+- `spikes_info.txt`
+The first three files are experimentally measured SHAPE data for three short RNAs from [Lucks _et al._ PNAS2011](http://www.pnas.org/content/108/27/11063.long). We obtained them from [Sharon Aviran](http://bme.ucdavis.edu/aviranlab/). The next file defines the isoform - gene relationship. It says that pT181_long and pT181_short are isoforms of a same gene. The last file records each RNA's length.
 
 ### Text files
 

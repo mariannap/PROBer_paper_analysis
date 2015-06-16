@@ -1,0 +1,86 @@
+#!/usr/bin/env python
+
+try:
+    xrange
+except NameError:
+    xrange = range
+
+
+from sys import argv, exit
+
+if len(argv) != 7:
+    print("Usage: python convertThetaforSpike output_name expression spikes_info.txt expression_file theta_minus_file theta_plus_file")
+    exit(-1)
+
+outname = argv[1]
+expr = float(argv[2])
+spike_info_file = argv[3]
+expr_file = argv[4]
+theta_minus = argv[5]
+theta_plus = argv[6]
+
+
+# Generate theta files
+names = []
+efflens = []
+tpms = []
+
+fin = open(spike_info_file)
+for line in fin:
+    fields = line[:-1].split('\t')
+    names.append(fields[0])
+    efflens.append(int(fields[1]) - 6 + 1)
+    tpms.append(expr)
+fin.close()
+
+nextra = len(names)
+
+fin = open(expr_file)
+lno = 0
+for line in fin:
+    if lno > 0:
+        fields = line[:-1].split('\t')
+        names.append(fields[0])
+        efflens.append(int(fields[2]))
+        tpms.append(float(fields[5]))
+    lno += 1
+fin.close()
+
+M = len(tpms)
+
+factor = (1e6 - expr * nextra) / sum(tpms[nextra:])
+for i in xrange(nextra, M):
+    tpms[i] *= factor
+
+fout = open("{}.expr".format(outname), "w")
+fout.write("transcript_id\tefflen\tTPM\n")
+for i in xrange(M):
+    fout.write("{}\t{}\t{:.10g}\n".format(names[i], efflens[i], tpms[i]))
+fout.close()
+
+
+def generateTheta(inpF, outF):
+    fin = open(inpF)
+    fin.readline()
+    alpha0 = float(fin.readline()[:-1].split('\t')[0])
+    fin.close()
+
+    fout = open(outF, "w")
+    fout.write(str(M) + "\n")
+
+    thetas = [0.0] * (M + 1)
+    thetas[0] = alpha0
+    denom = 0.0
+    for i in xrange(M):
+        thetas[i + 1] = tpms[i] * efflens[i]
+        denom += thetas[i + 1]
+    for i in xrange(M):
+        thetas[i + 1] = (1.0 - alpha0) * (thetas[i + 1] / denom)
+
+    fout.write("\t".join(["{:.10g}".format(x) for x in thetas]) + "\n")
+    fout.close()
+
+
+token = outname[outname.rfind("/") + 1:]
+generateTheta(theta_minus, "{}.stat/{}_minus.theta".format(outname, token))
+generateTheta(theta_plus, "{}.stat/{}_plus.theta".format(outname, token))
