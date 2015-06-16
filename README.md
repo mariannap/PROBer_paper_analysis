@@ -4,7 +4,7 @@ Reproduce PROBer paper analysis
 
 ### Prerequisites
 
-Please make sure that you have `Perl`, `Python`, `R`, and [pysam](https://github.com/pysam-developers/pysam) installed.
+Please make sure that you have `Perl`, `Python`, `R`, and [pysam](https://github.com/pysam-developers/pysam) installed. In addition, please make sure `numpy` package of Python is also installed.
 
 You need to install [Snakemake](https://bitbucket.org/johanneskoester/snakemake/wiki/Home). 
 

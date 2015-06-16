@@ -35,21 +35,39 @@ rule build_simulation:
         for i in range(len(input)):
             shell("cp {{input[{0}]}} {{output[{0}]}}".format(i))
 
+rule build_sim_rsem:
+     input: "{}/sim_ground_truth.expr".format(SIMPARAM_PATH),
+            "{}/sim_ground_truth_minus.read_model".format(SIMPARAM_PATH)
+     output: expand("{path}/sim_rsem/sim_rsem.{suffix}", path = SIMPARAM_PATH, suffix = ["isoforms.results", "model"])
+     run:
+        shell("mkdir -p {SIMPARAM_PATH}/sim_rsem")
+        shell("cp {input[0]} {output[0]}")
+        shell("{SIMPARAM_PATH}/scripts/convert_to_rsem_model {input[1]} {output[1]}")
+
 rule build_spike_in:
      input: expand("{path}/digital_spike.{suffix}", path = SIMPARAM_PATH, suffix = ["gamma", "beta"]),
             expand("{path}/sim_ground_truth_{channel}.read_model", path = SIMPARAM_PATH, channel = CHANNELS),
             "{}/spikes_info.txt".format(ANNO_PATH),
             "{}/sim_ground_truth.expr".format(SIMPARAM_PATH),
             expand("{path}/sim_ground_truth_{channel}.theta", path = SIMPARAM_PATH, channel = CHANNELS)
-     output: expand("{path}/{name}/{name}.{suffix}", path = SIMPARAM_PATH, name = "spike_in_{{expr}}TPM", suffix = ["gamma", "beta"]),
-             expand("{path}/{name}/{name}.stat/{name}_{channel}.read_model", path = SIMPARAM_PATH, name = "spike_in_{{expr}}TPM", channel = CHANNELS),
-             expand("{path}/{name}/{name}.expr", path = SIMPARAM_PATH, name = "spike_in_{{expr}}TPM"),
-             expand("{path}/{name}/{name}.stat/{name}_{channel}.theta", path = SIMPARAM_PATH, name = "spike_in_{{expr}}TPM", channel = CHANNELS)
+     output: expand("{path}/{name}/{name}.{suffix}", path = SIMPARAM_PATH, name = "spike_in_{expr}TPM", suffix = ["gamma", "beta"]),
+             expand("{path}/{name}/{name}.stat/{name}_{channel}.read_model", path = SIMPARAM_PATH, name = "spike_in_{expr}TPM", channel = CHANNELS),
+             expand("{path}/{name}/{name}.expr", path = SIMPARAM_PATH, name = "spike_in_{expr}TPM"),
+             expand("{path}/{name}/{name}.stat/{name}_{channel}.theta", path = SIMPARAM_PATH, name = "spike_in_{expr}TPM", channel = CHANNELS)
      run:
-        shell("mkdir -p {SIMPARAM_PATH}/spike_in_{expr}/spike_in_{expr}.stat")
+        shell("mkdir -p {SIMPARAM_PATH}/spike_in_{wildcards.expr}TPM/spike_in_{wildcards.expr}TPM.stat")
         for i in range(4):
             shell("cp {{input[{0}]}} {{output[{0}]}}".format(i))
-        shell("{SIMPARAM_PATH}/scripts/convertThetaforSpike {SIMPARAM_PATH}/spike_in_{expr}/spike_in_{expr} {expr} {input[4]} {input[5]} {input[6]} {input[7]}")
+        shell("{SIMPARAM_PATH}/scripts/convertThetaforSpike {SIMPARAM_PATH}/spike_in_{wildcards.expr}TPM/spike_in_{wildcards.expr}TPM {wildcards.expr} {input[4]} {input[5]} {input[6]} {input[7]}")
 
-
-
+rule build_fake:
+     input: expand("{path}/sim_ground_truth.{suffix}", path = SIMPARAM_PATH, suffix = PROBER_SUFF),
+            expand("{path}/sim_ground_truth_{channel}.{suffix}", path = SIMPARAM_PATH, channel = CHANNELS, suffix = PROBER_STAT)
+     output: expand("{path}/{name}/{name}.{suffix}", path = SIMPARAM_PATH, name = "sim_fake", suffix = PROBER_SUFF),
+             expand("{path}/{name}/{name}.stat/{name}_{channel}.{suffix}", path = SIMPARAM_PATH, name = "sim_fake", channel = CHANNELS, suffix = PROBER_STAT)
+     run:
+        shell("mkdir -p {SIMPARAM_PATH}/sim_fake/sim_fake.stat")
+        for i in range(len(input)):
+            if i != 1:
+               shell("cp {{input[{0}]}} {{output[{0}]}}".format(i))
+        shell("{SIMPARAM_PATH}/scripts/makeFakeBeta {ANNO_PATH} {input[1]} {output[1]} 20150528")
