@@ -25,10 +25,5 @@ rule all:
             RESULTS
 
 rule test:
-     input: expand("simulation_parameters/digital_spike.{suffix}", suffix = ["gamma", "beta"]),
-            expand("simulation_parameters/sim_ground_truth.{suffix}", suffix = ["beta", "gamma", "expr"]),
-            expand("simulation_parameters/sim_ground_truth_{channel}.{suffix}", channel = ["minus", "plus"], suffix = ["theta", "read_model"]),
-            "simulation_parameters/input_list_boxplot.txt",
-            expand("simulation_parameters/spike_in_{expr}TPM/spike_in_{expr}TPM.expr", expr = ["1e5", "1e4", "1e3", "1e2"])
-            
+     input: expand("{path}/sim_spike_{expr}TPM_{channel}_{num}.fq", path = DATA_PATH, expr = ["1e5", "1e4", "1e3", "1e2"], channel = CHANNELS, num = [1, 2])
 
