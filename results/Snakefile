@@ -162,7 +162,7 @@ rule bowtie_alignment_best_strata:
 
 rule extract_count_vector_for_Ding_method:
      input: "{sample_name}_{channel}_best_strata.bam",
-            expand("{ref}.grp", ref = [REF_FILT_NAME, REF_SPIKE_NAME])
+            expand("{ref_name}.grp", ref_name = [REF_FILT_NAME, REF_SPIKE_NAME])
      output: "{sample_name}_{channel}_best_strata.counts"
      run:
         if wildcards.sample_name.startswith("sim_spike"):
@@ -200,6 +200,19 @@ rule calculate_Talkish_score:
      output: "{sample_name}_Talkish.scores"
      shell: "{RESULTS_PATH}/scripts/calcTalkish {input} {output}"
 
+rule generate_melt_file:
+     input: expand("{ref_name}.{suffix}", ref_name = REF_FILT_NAME, suffix = ["mappability", "transcripts.fa"]),
+            expand("{path}/sim_ground_truth.{suffix}", path = SIMPARAM_PATH, suffix = ["expr", "beta"]),
+            expand("{{sample_name}}_{last_part}", last_part = ["SE.beta", "SE_RSEM.beta", "Ding.scores", "Talkish.scores"])
+     output: "{sample_name}_results_melt.txt"
+     shell: "{RESULTS_PATH}/scripts/analyzeResAC {wildcards.sample_name}_results plot 45 {input[2]} {input[0]} {input[1]} {input[3]} {input[4]} {input[5]} {input[6]} {input[7]}"
+
+rule generate_box_plot:
+     input: "dms_{name}_results_melt.txt"
+     output: "{name}_boxplot.pdf"
+     shell: "{RESULTS_PATH}/scripts/genBoxPlot {input} {output}"
+
+ 
 
 
 
