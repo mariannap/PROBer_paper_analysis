@@ -9,7 +9,7 @@ PROBER_STAT = ["theta", "read_model"]
 
 
 RESULTS = expand("{path}/{file}", path = RESULTS_PATH, 
-                 file = ["number_of_reads_in_real_data.txt", "time_and_memory_table.txt", "mapping_statistics_table.txt"])
+                 file = ["number_of_reads_in_real_data.txt", "time_and_memory_table.txt", "mapping_statistics_table.txt", "sim_boxplot.pdf", "sim2_boxplot.pdf"])
 #                         "grid_search_for_prior.txt"])
 
 
@@ -102,10 +102,9 @@ rule run_PROBer_for_grid_search:
 
 rule bowtie_alignment_all:
      input: TOOLS[1], TOOLS[2],
-            "{sample_name}_{channel}_1.fq",
+            "{}/{{sample_name}}_{{channel}}_1.fq".format(DATA_PATH),
             REF_FILT, REF_SPIKE
-     output: "{sample_name}_{channel}.bam",
-             "{sample_name}_{channel}.err"
+     output: expand("{path}/{{sample_name}}_{{channel}}.{suffix}", path = EXP_PATH, suffix = ["bam", "err"])
      threads: 30
      run:
         if wildcards.sample_name.startswith("sim_spike"):
@@ -117,9 +116,9 @@ rule bowtie_alignment_all:
 
 rule run_PROBer:
      input: TOOLS[5],
-            expand("{{sample_name}}_{channel}.bam", channel = CHANNELS),
+            expand("{path}/{{sample_name}}_{channel}.bam", path = EXP_PATH, channel = CHANNELS),
             REF_FILT, REF_SPIKE
-     output: expand("{{sample_name}}.{suffix}", suffix = PROBER_SUFF)
+     output: expand("{path}/{{sample_name}}.{suffix}", path = EXP_PATH, suffix = PROBER_SUFF)
      threads: 30
      run:
         if wildcards.sample_name.startswith("sim_spike"):
@@ -131,10 +130,10 @@ rule run_PROBer:
 
 rule run_RSEM_Spats_start_pipeline:
      input: TOOLS[6],
-            expand("{{sample_name}}_{channel}.bam", channel = CHANNELS),
-            "{SIMPARAM_PATH}/input_list_boxplot.txt",
+            expand("{path}/{{sample_name}}_{channel}.bam", path = EXP_PATH, channel = CHANNELS),
+            "{}/input_list_boxplot.txt".format(SIMPARAM_PATH),
             REF_FILT, REF_SPIKE
-     output: expand("{{sample_name}}.{suffix}", suffix = ["gamma", "beta"])
+     output: expand("{path}/{{sample_name}}.{suffix}", path = EXP_PATH, suffix = ["gamma", "beta"])
      threads: 30
      run:
         if wildcards.sample_name.startswith("sim_spike"):
@@ -146,10 +145,9 @@ rule run_RSEM_Spats_start_pipeline:
 
 rule bowtie_alignment_best_strata:
      input: TOOLS[1], TOOLS[2],
-            "{sample_name}_{channel}_1.fq",
+            "{}/{{sample_name}}_{{channel}}_1.fq".format(DATA_PATH),
             REF_FILT, REF_SPIKE
-     output: "{sample_name}_{channel}_best_strata.bam",
-             "{sample_name}_{channel}_best_strata.err"
+     output: expand("{path}/{{sample_name}}_{{channel}}_best_strata.{suffix}", path = EXP_PATH, suffix = ["bam", "err"])
      threads: 30
      run:
         if wildcards.sample_name.startswith("sim_spike"):
@@ -161,9 +159,9 @@ rule bowtie_alignment_best_strata:
 
 
 rule extract_count_vector_for_Ding_method:
-     input: "{sample_name}_{channel}_best_strata.bam",
+     input: "{}/{{sample_name}}_{{channel}}_best_strata.bam".format(EXP_PATH),
             expand("{ref_name}.grp", ref_name = [REF_FILT_NAME, REF_SPIKE_NAME])
-     output: "{sample_name}_{channel}_best_strata.counts"
+     output: "{}/{{sample_name}}_{{channel}}_best_strata.counts".format(EXP_PATH)
      run:
         if wildcards.sample_name.startswith("sim_spike"):
            shell("{RESULTS_PATH}/scripts/extractCountVectorsForDing {input[2]} {input[0]} {output}")
@@ -171,16 +169,15 @@ rule extract_count_vector_for_Ding_method:
            shell("{RESULTS_PATH}/scripts/extractCountVectorsForDing {input[1]} {input[0]} {output}")
 
 rule calculate_Ding_score:
-     input: expand("{{sample_name}}_{channel}_best_strata.counts", channel = CHANNELS)
-     output: "{sample_name}_Ding.scores"
+     input: expand("{path}/{{sample_name}}_{channel}_best_strata.counts", path = EXP_PATH, channel = CHANNELS)
+     output: "{}/{{sample_name}}_Ding.scores".format(EXP_PATH)
      shell: "{RESULTS_PATH}/scripts/calcDing {input} {output}"
 
 rule bowtie_alignment_best:
      input: TOOLS[1], TOOLS[2],
-            "{sample_name}_{channel}_1.fq",
+            "{}/{{sample_name}}_{{channel}}_1.fq".format(DATA_PATH),
             REF_FILT, REF_SPIKE
-     output: "{sample_name}_{channel}_best.bam",
-             "{sample_name}_{channel}_best.err"
+     output: expand("{path}/{{sample_name}}_{{channel}}_best.{suffix}", path = EXP_PATH, suffix = ["bam", "err"])
      threads: 30
      run:
         if wildcards.sample_name.startswith("sim_spike"):
@@ -191,36 +188,23 @@ rule bowtie_alignment_best:
                  "{input[0]}/samtools view -b -S -o {output[0]} -")
 
 rule extract_count_vector_for_Talkish_method:
-     input: "{sample_name}_{channel}_best.bam"
-     output: "{sample_name}_{channel}_best.counts"
+     input: "{}/{{sample_name}}_{{channel}}_best.bam".format(EXP_PATH)
+     output: "{}/{{sample_name}}_{{channel}}_best.counts".format(EXP_PATH)
      shell: "{RESULTS_PATH}/scripts/extractCountVectors {output} {input} all"
 
 rule calculate_Talkish_score:
-     input: expand("{{sample_name}}_{channel}_best.counts", channel = CHANNELS)
-     output: "{sample_name}_Talkish.scores"
+     input: expand("{path}/{{sample_name}}_{channel}_best.counts", path = EXP_PATH, channel = CHANNELS)
+     output: "{}/{{sample_name}}_Talkish.scores".format(EXP_PATH)
      shell: "{RESULTS_PATH}/scripts/calcTalkish {input} {output}"
 
 rule generate_melt_file:
      input: expand("{ref_name}.{suffix}", ref_name = REF_FILT_NAME, suffix = ["mappability", "transcripts.fa"]),
             expand("{path}/sim_ground_truth.{suffix}", path = SIMPARAM_PATH, suffix = ["expr", "beta"]),
-            expand("{{sample_name}}_{last_part}", last_part = ["SE.beta", "SE_RSEM.beta", "Ding.scores", "Talkish.scores"])
-     output: "{sample_name}_results_melt.txt"
+            expand("{path}/{{sample_name}}_{last_part}", path = EXP_PATH, last_part = ["SE.beta", "SE_RSEM.beta", "Ding.scores", "Talkish.scores"])
+     output: "{}/{{sample_name}}_results_melt.txt".format(EXP_PATH)
      shell: "{RESULTS_PATH}/scripts/analyzeResAC {wildcards.sample_name}_results plot 45 {input[2]} {input[0]} {input[1]} {input[3]} {input[4]} {input[5]} {input[6]} {input[7]}"
 
 rule generate_box_plot:
-     input: "dms_{name}_results_melt.txt"
-     output: "{name}_boxplot.pdf"
+     input: "{}/dms_{{out_name}}_results_melt.txt".format(EXP_PATH)
+     output: "{}/{{out_name}}_boxplot.pdf".format(RESULTS_PATH)
      shell: "{RESULTS_PATH}/scripts/genBoxPlot {input} {output}"
-
- 
-
-
-
-            
-
-
-
-
-
-          
-     

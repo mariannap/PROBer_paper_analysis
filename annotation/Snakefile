@@ -26,10 +26,9 @@ rule unzip_SHAPE_data:
      shell: "unzip {input} -d {ANNO_PATH} ; touch {output}"
 
 rule extract_info_from_bpseq:
-     input: "{name}.bpseq"
-     output: "{name}.fa", "{name}.structure"
-     params: "{name}"
-     shell: "{ANNO_PATH}/scripts/extractInfoFromBPSeq {input} {params}"
+     input: "{}/{{rna_name}}.bpseq".format(ANNO_PATH}
+     output: expand("{path}/{{rna_name}}.{suffix}", path = ANNO_PATH, suffix = ["fa", "structure"])
+     shell: "{ANNO_PATH}/scripts/extractInfoFromBPSeq {input} {ANNO_PATH}/{wildcards.rna_name}"
 
 rule convert:
      input: rules.unzip_TAIR10.output[0]
@@ -57,10 +56,9 @@ rule generate_filtered_reference:
      shell: "{ANNO_PATH}/scripts/genome_to_transcript_set {input} {params}"
 
 rule process_SHAPE_data:
-     input: "{name}.adducts"
-     output: expand("{{name}}.{suffix}", suffix = ["fa", "gamma", "beta"])
-     params: "{name}"
-     shell: "{ANNO_PATH}/scripts/processSHAPEdata {input} {params}"
+     input: "{}/{{shape_name}}.adducts".format(ANNO_PATH)
+     output: expand("{path}/{{shape_name}}.{suffix}", path = ANNO_PATH, suffix = ["fa", "gamma", "beta"])
+     shell: "{ANNO_PATH}/scripts/processSHAPEdata {input} {ANNO_PATH}/{wildcards.shape_name}"
  
 rule generate_spike_in_reference:
      input: expand("{rna}.fa", rna = SHAPE_RNAS), 
