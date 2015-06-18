@@ -75,7 +75,8 @@ rule build_fake:
         shell("{SIMPARAM_PATH}/scripts/makeFakeBeta {ANNO_PATH} {input[1]} {output[1]} 20150528")
 
 rule simulate:
-     input: rules.build_simulation.output,
+     input: TOOLS[5],
+            rules.build_simulation.output,
             REF_FILT
      output: expand("{path}/{name}_{channel}_{num}.fq", path = DATA_PATH, name = SIM, channel = CHANNELS, num = [1, 2])
      run:
@@ -86,7 +87,8 @@ rule simulate:
         shell("{PROBER} simulate {REF_FILT_NAME} {SIMPARAM_PATH}/simulation.config {SIMPARAM_PATH}/simulation/simulation plus 30000000 {DATA_PATH}/{SIM} --seed {my_seed}")
 
 rule simulate2:
-     input: rules.build_simulation.output,
+     input: TOOLS[5],
+            rules.build_simulation.output,
             REF_FILT
      output: expand("{path}/{name}_{channel}_{num}.fq", path = DATA_PATH, name = SIM2, channel = CHANNELS, num = [1, 2])
      run:
@@ -97,13 +99,15 @@ rule simulate2:
         shell("{PROBER} simulate {REF_FILT_NAME} {SIMPARAM_PATH}/simulation.config {SIMPARAM_PATH}/simulation/simulation plus 30000000 {DATA_PATH}/{SIM2} --seed {my_seed}")
 
 rule rsem_simulate:
-     input: rules.build_sim_rsem.output,
+     input: TOOLS[4],
+            rules.build_sim_rsem.output,
             REF_FILT
      output: "{}/{}.fq".format(DATA_PATH, RSEM_SIM)
      shell: "{TOOLS[4]}/rsem-simulate-reads {REF_FILT_NAME} {input[1]} {input[0]} 0.09 30000000 {DATA_PATH}/{RSEM_SIM} --seed 20150526"
 
 rule simulate_spike_in:
-     input: rules.build_spike_in.output,
+     input: TOOLS[5],
+            rules.build_spike_in.output,
             REF_SPIKE
      output: expand("{path}/{name}_{channel}_{num}.fq", path = DATA_PATH, name = "sim_spike_{expr}TPM", channel = CHANNELS, num = [1, 2])
      run:
@@ -114,7 +118,8 @@ rule simulate_spike_in:
         shell("{PROBER} simulate {REF_SPIKE_NAME} {SIMPARAM_PATH}/simulation.config {SIMPARAM_PATH}/spike_in_{wildcards.expr}TPM/spike_in_{wildcards.expr}TPM plus 30000000 {DATA_PATH}/sim_spike_{wildcards.expr}TPM --seed {my_seed}")
 
 rule simulate_fake:
-     input: rules.build_fake.output,
+     input: TOOLS[5],
+            rules.build_fake.output,
             REF_FILT
      output: expand("{path}/{name}_{channel}_{num}.fq", path = DATA_PATH, name = FAKE, channel = CHANNELS, num = [1, 2])
      run:

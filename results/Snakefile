@@ -96,3 +96,94 @@ rule run_PROBer_for_grid_search:
 #     shell:
 #        "{RESULTS_PATH}/scripts/generate_grid_search_table {EXP_PATH}/{REAL} {output}"
 
+#########
+
+#########
+
+rule bowtie_alignment_all:
+     input: TOOLS[1], TOOLS[2],
+            "{sample_name}_{channel}_1.fq",
+            REF_FILT, REF_SPIKE
+     output: "{sample_name}_{channel}.bam",
+             "{sample_name}_{channel}.err"
+     threads: 30
+     run:
+        if wildcards.sample_name.startswith("sim_spike"):
+           shell("{input[1]}/bowtie --norc -v 3 -a -m 200 -S -p {threads} {REF_SPIKE_NAME} {input[2]} 2> {output[1]} | "
+                 "{input[0]}/samtools view -b -S -o {output[0]} -")
+        else:
+           shell("{input[1]}/bowtie --norc -v 3 -a -m 200 -S -p {threads} {REF_FILT_NAME} {input[2]} 2> {output[1]} | "
+                 "{input[0]}/samtools view -b -S -o {output[0]} -")
+
+rule run_PROBer:
+     input: TOOLS[5],
+            expand("{{sample_name}}_{channel}.bam", channel = CHANNELS),
+            REF_FILT, REF_SPIKE
+     output: expand("{{sample_name}}.{suffix}", suffix = PROBER_SUFF)
+     threads: 30
+     run:
+        if wildcards.sample_name.startswith("sim_spike"):
+           shell("{PROBER} estimate -p {threads} --read-length 37 --size-selection-min 21 --size-selection-max 526 "
+                 "{REF_SPIKE_NAME} {wildcards.sample_name}_SE --bam {input[1]} {input[2]}")
+        else:
+           shell("{PROBER} estimate -p {threads} --read-length 37 --size-selection-min 21 --size-selection-max 526 "
+                 "{REF_FILT_NAME} {wildcards.sample_name}_SE --bam {input[1]} {input[2]}")
+
+rule run_RSEM_Spats_start_pipeline:
+     input: TOOLS[6],
+            expand("{{sample_name}}_{channel}.bam", channel = CHANNELS),
+            "{SIMPARAM_PATH}/input_list_boxplot.txt",
+            REF_FILT, REF_SPIKE
+     output: expand("{{sample_name}}.{suffix}", suffix = ["gamma", "beta"])
+     threads: 30
+     run:
+        if wildcards.sample_name.startswith("sim_spike"):
+           shell("{input[0]}/PROBer-single-batch-estimate -p {threads} --input-list {input[3]} {REF_SPIKE_NAME} {wildcards.sample_name}_SE_RSEM "
+                 "--bam {input[1]} {input[2]}")
+        else:
+           shell("{input[0]}/PROBer-single-batch-estimate -p {threads} --input-list {input[3]} {REF_FILT_NAME} {wildcards.sample_name}_SE_RSEM "
+                 "--bam {input[1]} {input[2]}")
+
+rule bowtie_alignment_best_strata:
+     input: TOOLS[1], TOOLS[2],
+            "{sample_name}_{channel}_1.fq",
+            REF_FILT, REF_SPIKE
+     output: "{sample_name}_{channel}_best_strata.bam",
+             "{sample_name}_{channel}_best_strata.err"
+     threads: 30
+     run:
+        if wildcards.sample_name.startswith("sim_spike"):
+           shell("{input[1]}/bowtie --norc -v 3 -a -v 3 --best --strata -S -p {threads} {REF_SPIKE_NAME} {input[2]} 2> {output[1]} | "
+                 "{input[0]}/samtools view -b -S -o {output[0]} -")
+        else:
+           shell("{input[1]}/bowtie --norc -v 3 -a -v 3 --best --strata -S -p {threads} {REF_FILT_NAME} {input[2]} 2> {output[1]} | "
+                 "{input[0]}/samtools view -b -S -o {output[0]} -")
+
+
+rule extract_count_vector_for_Ding_method:
+     input: "{sample_name}_{channel}_best_strata.bam",
+            expand("{ref}.grp", ref = [REF_FILT_NAME, REF_SPIKE_NAME])
+     output: "{sample_name}_{channel}_best_strata.counts"
+     run:
+        if wildcards.sample_name.startswith("sim_spike"):
+           shell("{RESULTS_PATH}/scripts/extractCountVectorsForDing {input[2]} {input[0]} {output}")
+        else:
+           shell("{RESULTS_PATH}/scripts/extractCountVectorsForDing {input[1]} {input[0]} {output}")
+
+rule calculate_Ding_score:
+     input: expand("{{sample_name}}_{channel}_best_strata.counts", channel = CHANNELS)
+     output: "{sample_name}_Ding.scores"
+     shell: "{RESULTS_PATH}/scripts/calcDing {input} {output}"
+
+rule extract_count_vector_for_Talkish_method:
+
+
+
+            
+
+
+
+
+
+          
+     
