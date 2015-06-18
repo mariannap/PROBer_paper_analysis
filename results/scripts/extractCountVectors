@@ -1,0 +1,102 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+import pysam
+import copy
+
+try:
+    xrange
+except NameError:
+    xrange = range
+
+class Fake:
+    def __init__(self, qname, tid, pos, tags):
+        self.qname = qname
+        self.tid = tid
+        self.pos = pos
+        self.tags = copy.copy(tags)
+
+def updateVec(read):
+    if requireAll:
+        i = read.tid
+    else:
+        i = tid2num.get(read.tid, -1)
+        
+    if i >= 0:
+        value = float(dict(read.tags).get("ZW", 1.0))
+        vectors[i][read.pos] += value
+
+
+if len(argv) < 4:
+    print("Usage: python extractCountVectors output.txt input.bam [name1 name2 ... | unique name1 name2 | all | all_unique]")
+    exit(-1)
+
+sam_in = pysam.Samfile(argv[2], "rb")
+
+vectors = []
+tid2num = dict()
+
+requireAll = False
+
+if argv[3].startswith("all"):
+    requireAll = True
+    M = sam_in.nreferences
+    for i in xrange(M):
+        vector = [0] * sam_in.lengths[i]
+        vectors.append(vector)
+else:
+    sp = 4 if argv[3] == "unique" else 3        
+    for i in xrange(sp, len(argv)):
+        if argv[i] in sam_in.references:
+            tid = sam_in.references.index(argv[i])
+            vector = [0] * sam_in.lengths[tid]
+            vectors.append(vector)
+            tid2num[tid] = i - sp
+        else:
+            print("Warning: {} is not a valid transcript id!".format(argv[i]))
+
+
+requireUnique = argv[3].find("unique") >= 0
+
+cnt = 0
+cread = None
+isUnique = False
+
+for aread in sam_in:
+    if (not aread.is_unmapped) and (not aread.is_paired or aread.is_read1) and (not ("ZF" in dict(aread.tags))):
+        assert not aread.is_reverse
+
+        if not requireUnique:
+            updateVec(aread)
+        else:
+            if cread == None or cread.qname != aread.qname:
+                if isUnique:
+                    updateVec(cread)
+                cread = Fake(aread.qname, aread.tid, aread.pos, aread.tags)
+                isUnique = True
+            else:
+                isUnique = False
+
+    cnt += 1
+    if cnt % 1000000 == 0:
+        print("{} FIN!".format(cnt))
+
+if requireUnique and isUnique:
+    updateVec(cread)
+
+
+
+fout = open(argv[1], "w")
+
+#if requireAll:
+#    num_through = 0
+#    num_drop = 0
+#    for i in xrange(len(vectors)):
+#        num_through += vectors[i][0]
+#        num_drop += sum(vectors[i][1:])
+#    fout.write("{:.2f} {:.2f}\n".format(num_drop, num_through))
+
+for i in xrange(len(vectors)):
+    fout.write(" ".join(["{:.2f}".format(x) for x in vectors[i]]) + "\n")
+
+fout.close()
