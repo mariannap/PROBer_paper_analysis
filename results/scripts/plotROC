@@ -1,0 +1,79 @@
+#!/usr/bin/env Rscript
+
+argv = commandArgs(TRUE)
+if (length(argv) < 6 || length(argv) > 7) {
+   cat("Usage: plotROC ground_truth_dir exclude_bp PROBer_est Ding_est Talkish_est output_name [legend_position]\n")
+   q(status = 1)
+}
+
+legendPos = "topleft" # default
+if (length(argv) == 7) legendPos = argv[7]
+
+library(pROC)
+truth18S = scan(sprintf("%s/18S_rRNA.structure", argv[1]), what = 0)
+truth25S = scan(sprintf("%s/25S_rRNA.structure", argv[1]), what = 0)
+
+seq18S = unlist(strsplit(scan(sprintf("%s/18S_rRNA.fa", argv[1]), what = "", skip=1), split=""))
+seq25S = unlist(strsplit(scan(sprintf("%s/25S_rRNA.fa", argv[1]), what = "", skip=1), split=""))
+
+len18S = length(seq18S)
+len25S = length(seq25S)
+exclude_bp = as.numeric(argv[2])
+
+isAC_18S = seq18S == "A" | seq18S == "C"
+isAC_25S = seq25S == "A" | seq25S == "C"
+
+idx1 = which(isAC_18S[1:(len18S-exclude_bp)])
+idx2 = which(isAC_25S[1:(len25S-exclude_bp)])
+
+cat(len18S, len25S, exclude_bp, "\n")
+
+Bo18S = as.numeric(scan(argv[3], what = "", skip = 1, nlines = 1)[3:1804])
+Ding18S = scan(argv[4], what = double(), nlines = 1)[-1]
+Talkish18S = scan(argv[5], what = double(), nlines = 1)[-1]
+
+roc18SBo = roc(truth18S[idx1], Bo18S[idx1], direciton = ">")
+roc18SDing = roc(truth18S[idx1], Ding18S[idx1], direction = ">")
+roc18STalkish = roc(truth18S[idx1], Talkish18S[idx1], direction =">")
+
+Bo25S = as.numeric(scan(argv[3], what = "", skip = 2, nlines = 1)[3:3535])
+Ding25S = scan(argv[4], what = double(), skip = 1, nlines = 1)[-1]
+Talkish25S = scan(argv[5], what = double(), skip = 1, nlines = 1)[-1]
+
+roc25SBo = roc(truth25S[idx2], Bo25S[idx2], direciton = ">")
+roc25SDing = roc(truth25S[idx2], Ding25S[idx2], direction = ">")
+roc25STalkish = roc(truth25S[idx2], Talkish25S[idx2], direction =">")
+
+
+
+pdf(sprintf("%s_18S.pdf", argv[6]))
+par(oma = c(0, 0, 1, 0))
+plot.roc(roc18SBo, col="red")
+plot.roc(roc18SDing, col="green", add=T)
+plot.roc(roc18STalkish, col="blue", add=T)
+PROBerAUC = as.expression(bquote(paste("PROBer, AUC = ", .(sprintf("%.2f", roc18SBo$auc)))))
+DingAUC = as.expression(bquote(paste("Ding ", italic("et al."), ", AUC = ", .(sprintf("%.2f", roc18SDing$auc)))))
+TalkishAUC = as.expression(bquote(paste("Talkish ", italic("et al."), ", AUC = ", .(sprintf("%.2f", roc18STalkish$auc)))))
+legends = c(PROBerAUC, DingAUC, TalkishAUC)
+legend(legendPos, legend=legends, lty=1, col=c("red", "green", "blue"))
+dev.off()
+
+cat(sprintf("18S: PROBer = %.2f, Ding = %.2f, Talkish = %.2f\n", roc18SBo$auc, roc18SDing$auc, roc18STalkish$auc))
+
+
+
+pdf(sprintf("%s_25S.pdf", argv[6]))
+par(oma = c(0, 0, 1, 0))
+plot.roc(roc25SBo, col="red")
+plot.roc(roc25SDing, col="green", add=T)
+plot.roc(roc25STalkish, col="blue", add=T)
+PROBerAUC = as.expression(bquote(paste("PROBer, AUC = ", .(sprintf("%.2f", roc25SBo$auc)))))
+DingAUC = as.expression(bquote(paste("Ding ", italic("et al."), ", AUC = ", .(sprintf("%.2f", roc25SDing$auc)))))
+TalkishAUC = as.expression(bquote(paste("Talkish ", italic("et al."), ", AUC = ", .(sprintf("%.2f", roc25STalkish$auc)))))
+legends = c(PROBerAUC, DingAUC, TalkishAUC)
+legend(legendPos, legend=legends, lty=1, col=c("red", "green", "blue"))
+dev.off()
+
+cat(sprintf("25S: PROBer = %.2f, Ding = %.2f, Talkish = %.2f\n", roc25SBo$auc, roc25SDing$auc, roc25STalkish$auc))
+
+

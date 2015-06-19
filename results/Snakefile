@@ -9,8 +9,10 @@ PROBER_STAT = ["theta", "read_model"]
 
 
 RESULTS = expand("{path}/{file}", path = RESULTS_PATH, 
-                 file = ["number_of_reads_in_real_data.txt", "time_and_memory_table.txt", "mapping_statistics_table.txt", "grid_search_for_prior.txt",
-                         "sim_boxplot.pdf", "sim2_boxplot.pdf", "scatters.pdf"])
+                 file = ["number_of_reads_in_real_data.txt", "time_and_memory_table.txt", "mapping_statistics_table.txt", 
+                                                            # "grid_search_for_prior.txt", 
+                                                              "digital_spike_in.txt",
+                         "sim_boxplot.pdf", "sim2_boxplot.pdf", "scatters.pdf", "real_ROC_18S.pdf", "real_ROC_25S.pdf", "fake_ROC_18S.pdf", "fake_ROC_25S.pdf"])
 
 
 REAL = "dms_real"
@@ -18,13 +20,13 @@ SIM = "dms_sim"
 RSEM_SIM = "rsem_sim"
 SIM2 = "dms_sim2"
 FAKE = "dms_sim_fake"
-
+SIM_SPIKE = "sim_spike"
 
 #### Count number of reads in (-) and (+) channels after adaptors are trimmed
 
 rule count_reads:
      input: REAL_DATA
-     output: RESULTS[0]
+     output: "{}/number_of_reads_in_real_data.txt".format(RESULTS_PATH)
      run:
         shell("wc -l {input[0]} | python3 -c 'print(\"(-): {{:,}}\".format(int(input().split()[0]) // 4))' > {output}")
         shell("wc -l {input[1]} | python3 -c 'print(\"(+): {{:,}}\".format(int(input().split()[0]) // 4))' >> {output}")
@@ -50,7 +52,7 @@ rule generate_time_and_memory_table:
      input:
         expand("{path}/{name}.{suffix}", path = EXP_PATH, name = REAL, suffix = ["time", "bam.time", "mem"])
      output:
-        RESULTS[1]
+        "{}/time_and_memory_table.txt".format(RESULTS_PATH)
      shell:
         "{RESULTS_PATH}/scripts/generate_time_memory_table {EXP_PATH}/{REAL} {RESULTS[1]}"
 
@@ -69,7 +71,7 @@ rule generate_mapping_statistics_table:
      input:
         expand("{path}/{name}_{channel}.stats.txt", path = EXP_PATH, name = REAL, channel = CHANNELS)
      output:
-        RESULTS[2]
+        "{}/mapping_statistics_table.txt".format(RESULTS_PATH)
      shell:
         "{RESULTS_PATH}/scripts/generate_mapping_statistics_table {input} {output}"
 
@@ -92,7 +94,7 @@ rule generate_grid_search_table:
      input:
         expand("{path}/{name}_{gamma}_{beta}.logMAP", path = EXP_PATH, name = REAL, gamma = ["0.0001", "0.001", "0.01", "0.1"], beta = ["0.0001", "0.001", "0.01", "0.1"])
      output:
-        RESULTS[3]
+        "{}/grid_search_for_prior.txt".format(RESULTS_PATH)
      shell:
         "{RESULTS_PATH}/scripts/generate_grid_search_table {EXP_PATH}/{REAL} {output}"
 
@@ -107,7 +109,7 @@ rule bowtie_alignment_all:
      output: expand("{path}/{{sample_name}}_{{channel}}.{suffix}", path = EXP_PATH, suffix = ["bam", "err"])
      threads: 30
      run:
-        if wildcards.sample_name.startswith("sim_spike"):
+        if wildcards.sample_name.startswith(SIM_SPIKE):
            shell("{input[1]}/bowtie --norc -v 3 -a -m 200 -S -p {threads} {REF_SPIKE_NAME} {input[2]} 2> {output[1]} | "
                  "{input[0]}/samtools view -b -S -o {output[0]} -")
         else:
@@ -121,15 +123,15 @@ rule run_PROBer:
      output: expand("{path}/{{sample_name}}_SE.{suffix}", path = EXP_PATH, suffix = PROBER_SUFF)
      threads: 30
      run:
-        if wildcards.sample_name.startswith("sim_spike"):
+        if wildcards.sample_name.startswith(SIM_SPIKE):
            shell("{PROBER} estimate -p {threads} --read-length 37 --size-selection-min 21 --size-selection-max 526 "
-                 "{REF_SPIKE_NAME} {wildcards.sample_name}_SE --bam {input[1]} {input[2]}")
+                 "{REF_SPIKE_NAME} {EXP_PATH}/{wildcards.sample_name}_SE --bam {input[1]} {input[2]}")
         else:
            shell("{PROBER} estimate -p {threads} --read-length 37 --size-selection-min 21 --size-selection-max 526 "
-                 "{REF_FILT_NAME} {wildcards.sample_name}_SE --bam {input[1]} {input[2]}")
+                 "{REF_FILT_NAME} {EXP_PATH}/{wildcards.sample_name}_SE --bam {input[1]} {input[2]}")
 
 rule run_RSEM_Spats_start_pipeline:
-     input: TOOLS[4], TOOLS[6]
+     input: TOOLS[4], TOOLS[6],
             expand("{path}/{{sample_name}}_{channel}.bam", path = EXP_PATH, channel = CHANNELS),
             "{}/input_list_boxplot.txt".format(SIMPARAM_PATH),
             REF_FILT, REF_SPIKE
@@ -137,11 +139,11 @@ rule run_RSEM_Spats_start_pipeline:
              expand("{path}/{{sample_name}}_SE_RSEM_{channel}.isoforms.results", path = EXP_PATH, channel = CHANNELS)
      threads: 30
      run:
-        if wildcards.sample_name.startswith("sim_spike"):
-           shell("{input[1]}/PROBer-single-batch-estimate -p {threads} --input-list {input[4]} --RSEM-path {input[0]} {REF_SPIKE_NAME} {wildcards.sample_name}_SE_RSEM "
+        if wildcards.sample_name.startswith(SIM_SPIKE):
+           shell("{input[1]}/PROBer-single-batch-estimate -p {threads} --input-list {input[4]} --RSEM-path {input[0]} {REF_SPIKE_NAME} {EXP_PATH}/{wildcards.sample_name}_SE_RSEM "
                  "--bam {input[2]} {input[3]}")
         else:
-           shell("{input[1]}/PROBer-single-batch-estimate -p {threads} --input-list {input[4]} --RSEM-path {input[0]} {REF_FILT_NAME} {wildcards.sample_name}_SE_RSEM "
+           shell("{input[1]}/PROBer-single-batch-estimate -p {threads} --input-list {input[4]} --RSEM-path {input[0]} {REF_FILT_NAME} {EXP_PATH}/{wildcards.sample_name}_SE_RSEM "
                  "--bam {input[2]} {input[3]}")
 
 rule bowtie_alignment_best_strata:
@@ -151,7 +153,7 @@ rule bowtie_alignment_best_strata:
      output: expand("{path}/{{sample_name}}_{{channel}}_best_strata.{suffix}", path = EXP_PATH, suffix = ["bam", "err"])
      threads: 30
      run:
-        if wildcards.sample_name.startswith("sim_spike"):
+        if wildcards.sample_name.startswith(SIM_SPIKE):
            shell("{input[1]}/bowtie --norc -a -v 3 --best --strata -S -p {threads} {REF_SPIKE_NAME} {input[2]} 2> {output[1]} | "
                  "{input[0]}/samtools view -b -S -o {output[0]} -")
         else:
@@ -164,7 +166,7 @@ rule extract_count_vector_for_Ding_method:
             expand("{ref_name}.grp", ref_name = [REF_FILT_NAME, REF_SPIKE_NAME])
      output: "{}/{{sample_name}}_{{channel}}_best_strata.counts".format(EXP_PATH)
      run:
-        if wildcards.sample_name.startswith("sim_spike"):
+        if wildcards.sample_name.startswith(SIM_SPIKE):
            shell("{RESULTS_PATH}/scripts/extractCountVectorsForDing {input[2]} {input[0]} {output}")
         else:
            shell("{RESULTS_PATH}/scripts/extractCountVectorsForDing {input[1]} {input[0]} {output}")
@@ -181,7 +183,7 @@ rule bowtie_alignment_best:
      output: expand("{path}/{{sample_name}}_{{channel}}_best.{suffix}", path = EXP_PATH, suffix = ["bam", "err"])
      threads: 30
      run:
-        if wildcards.sample_name.startswith("sim_spike"):
+        if wildcards.sample_name.startswith(SIM_SPIKE):
            shell("{input[1]}/bowtie --norc -v 3 --best -S -p {threads} {REF_SPIKE_NAME} {input[2]} 2> {output[1]} | "
                  "{input[0]}/samtools view -b -S -o {output[0]} -")
         else:
@@ -203,12 +205,16 @@ rule generate_melt_file:
             expand("{path}/sim_ground_truth.{suffix}", path = SIMPARAM_PATH, suffix = ["expr", "beta"]),
             expand("{path}/{{sample_name}}_{last_part}", path = EXP_PATH, last_part = ["SE.beta", "SE_RSEM.beta", "Ding.scores", "Talkish.scores"])
      output: "{}/{{sample_name}}_results_melt.txt".format(EXP_PATH)
-     shell: "{RESULTS_PATH}/scripts/analyzeResAC {wildcards.sample_name}_results plot 45 {input[2]} {input[0]} {input[1]} {input[3]} {input[4]} {input[5]} {input[6]} {input[7]}"
+     shell: "{RESULTS_PATH}/scripts/analyzeResAC {EXP_PATH}/{wildcards.sample_name}_results plot 45 {input[2]} {input[0]} {input[1]} {input[3]} {input[4]} {input[5]} {input[6]} {input[7]}"
+
+#### Generate box plots on simulated data sets for comparing different methods
 
 rule generate_box_plot:
      input: "{}/dms_{{out_name}}_results_melt.txt".format(EXP_PATH)
      output: "{}/{{out_name}}_boxplot.pdf".format(RESULTS_PATH)
      shell: "{RESULTS_PATH}/scripts/genBoxPlot {input} {output}"
+
+#### Generate scatter plots for comparing abundance estimates between PROBer and RSEM
 
 rule bowtie_rsem_sim:
      input: TOOLS[1], TOOLS[2],
@@ -233,8 +239,38 @@ rule generate_scatter_plots:
             "{}/dms_sim_SE.expr".format(EXP_PATH),
             expand("{path}/dms_sim_SE_RSEM_{channel}.isoforms.results", path = EXP_PATH, channel = CHANNELS),
             rules.run_rsem_on_rsem_simulated_data.output
-     output: RESULTS[6]
+     output: "{}/scatters.pdf".format(RESULTS_PATH)
      shell:
         "{RESULTS_PATH}/scripts/genExprScatterPlots {input} {output}"
-            
+
+#### Generate digital spike-in experiment results
+
+rule generate_digital_spike_in_results:
+     input: "{}/digital_spike.beta".format(SIMPARAM_PATH),
+            expand("{path}/{name}_{expr}TPM_{last_part}", path = EXP_PATH, name = SIM_SPIKE, expr = ["1e2", "1e3", "1e4", "1e5"], 
+                   last_part = ["SE.beta", "SE_RSEM.beta", "Ding.scores", "Talkish.scores"])
+     output: "{}/digital_spike_in.txt".format(RESULTS_PATH)
+     shell: "{RESULTS_PATH}/scripts/analyzeSpikes {input[0]} {EXP_PATH}/{SIM_SPIKE} 45 {output}"
+
+#### Generate ROC curves for real data
+
+rule generate_ROC_for_real:
+     input: "{}/sim_ground_truth.beta".format(SIMPARAM_PATH),
+            expand("{path}/{name}_{method}.scores", path = EXP_PATH, name = REAL, method = ["Ding", "Talkish"]),
+            ANNOTATIONS[:4]
+     output: expand("{path}/real_ROC_{rna}.pdf", path = RESULTS_PATH, rna = ["18S", "25S"])
+     shell: "{RESULTS_PATH}/scripts/plotROC {ANNO_PATH} 45 {input[0]} {input[1]} {input[2]} {RESULTS_PATH}/real_ROC"
+
+#### Generate results for "fake" simulated data
+
+rule generate_ROC_for_fake:
+     input: expand("{path}/{name}_{last_part}", path = EXP_PATH, name = FAKE, last_part = ["SE.beta", "Ding.scores", "Talkish.scores"]),
+            ANNOTATIONS[:4]
+     output: expand("{path}/fake_ROC_{rna}.pdf", path = RESULTS_PATH, rna = ["18S", "25S"])
+     shell: "{RESULTS_PATH}/scripts/plotROC {ANNO_PATH} 45 {input[0]} {input[1]} {input[2]} {RESULTS_PATH}/fake_ROC bottomright"
+
+
+
+
+             
      

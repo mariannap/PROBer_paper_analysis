@@ -109,13 +109,13 @@ rule simulate_spike_in:
      input: TOOLS[5],
             rules.build_spike_in.output,
             REF_SPIKE
-     output: expand("{path}/{name}_{channel}_{num}.fq", path = DATA_PATH, name = "sim_spike_{expr}TPM", channel = CHANNELS, num = [1, 2])
+     output: expand("{path}/{name}_{{expr}}TPM_{channel}_{num}.fq", path = DATA_PATH, name = SIM_SPIKE, channel = CHANNELS, num = [1, 2])
      run:
         random.seed(20150518)
         my_seed = random.getrandbits(32)
-        shell("{PROBER} simulate {REF_SPIKE_NAME} {SIMPARAM_PATH}/simulation.config {SIMPARAM_PATH}/spike_in_{wildcards.expr}TPM/spike_in_{wildcards.expr}TPM minus 30000000 {DATA_PATH}/sim_spike_{wildcards.expr}TPM --seed {my_seed}")
+        shell("{PROBER} simulate {REF_SPIKE_NAME} {SIMPARAM_PATH}/simulation.config {SIMPARAM_PATH}/spike_in_{wildcards.expr}TPM/spike_in_{wildcards.expr}TPM minus 30000000 {DATA_PATH}/{SIM_SPIKE}_{wildcards.expr}TPM --seed {my_seed}")
         my_seed = random.getrandbits(32)
-        shell("{PROBER} simulate {REF_SPIKE_NAME} {SIMPARAM_PATH}/simulation.config {SIMPARAM_PATH}/spike_in_{wildcards.expr}TPM/spike_in_{wildcards.expr}TPM plus 30000000 {DATA_PATH}/sim_spike_{wildcards.expr}TPM --seed {my_seed}")
+        shell("{PROBER} simulate {REF_SPIKE_NAME} {SIMPARAM_PATH}/simulation.config {SIMPARAM_PATH}/spike_in_{wildcards.expr}TPM/spike_in_{wildcards.expr}TPM plus 30000000 {DATA_PATH}/{SIM_SPIKE}_{wildcards.expr}TPM --seed {my_seed}")
 
 rule simulate_fake:
      input: TOOLS[5],
@@ -128,4 +128,3 @@ rule simulate_fake:
         shell("{PROBER} simulate {REF_FILT_NAME} {SIMPARAM_PATH}/simulation.config {SIMPARAM_PATH}/sim_fake/sim_fake minus 30000000 {DATA_PATH}/{FAKE} --seed {my_seed}")
         my_seed = random.getrandbits(32)
         shell("{PROBER} simulate {REF_FILT_NAME} {SIMPARAM_PATH}/simulation.config {SIMPARAM_PATH}/sim_fake/sim_fake plus 30000000 {DATA_PATH}/{FAKE} --seed {my_seed}")
-

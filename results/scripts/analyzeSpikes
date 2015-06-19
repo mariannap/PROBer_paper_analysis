@@ -1,0 +1,90 @@
+#!/usr/bin/env Rscript
+
+argv = commandArgs(TRUE)
+if (length(argv) != 4) {
+    cat("Usage: analyzeSpikes grount_truth.beta experiment_prefix trim_length(>=6) output_file\n")
+    q(status = 1)
+}
+
+trim_length = as.integer(argv[3])
+if (trim_length < 6) {
+   cat("Error: trim_length < 6!\n")
+   q(status = 1)
+}
+
+parseSingleLine = function(con, isBeta) {
+  res = NULL
+  fields = scan(con, what = "", nlines = 1)
+  if (isBeta) {
+     res = as.numeric(fields[3:(length(fields) - (trim_length - 6))])
+  } else {
+     res = as.numeric(fields[2:(length(fields) - trim_length)])
+  }
+  return (res) 
+}
+
+loadSpikesFromOneFile = function(filename) {
+    con = file(filename, open = "r")
+    isBeta = grepl(".beta$", filename)
+
+    if (isBeta) scan(con, what = "", nlines = 1)
+
+    rec = list(RNaseP = parseSingleLine(con, isBeta), 
+               pT181_long = parseSingleLine(con, isBeta),
+               pT181_short = parseSingleLine(con, isBeta))
+
+    close(con)
+
+    return (rec)
+}
+
+calcCorr = function(ground_truth = gt, exp) {
+    res = list(Pearson = c(cor(gt$RNaseP, exp$RNaseP), cor(gt$pT181_long, exp$pT181_long), cor(gt$pT181_short, exp$pT181_short)),
+               Spearman = c(cor(gt$RNaseP, exp$RNaseP, method="spearman"), cor(gt$pT181_long, exp$pT181_long, method="spearman"), cor(gt$pT181_short, exp$pT181_short, method="spearman")))
+    return (res)
+}
+
+# eid: expression id; rid: RNA id
+genOutStr = function(eid, rid, type, PROBerRes, RSEMSpatsRes, DingRes, TalkishRes) {
+    res_str = ""
+    if (type == 0) {
+        res_str = sprintf("%.2f/%.2f/%.2f/%.2f", PROBerRes[[eid]]$Pearson[rid], RSEMSpatsRes[[eid]]$Pearson[rid], DingRes[[eid]]$Pearson[rid], TalkishRes[[eid]]$Pearson[rid])
+    } else {
+        res_str = sprintf("%.2f/%.2f/%.2f/%.2f", PROBerRes[[eid]]$Spearman[rid], RSEMSpatsRes[[eid]]$Spearman[rid], DingRes[[eid]]$Spearman[rid], TalkishRes[[eid]]$Spearman[rid])
+    }
+    return (res_str)
+}
+
+printPearsonTable = function(outcon, PROBerRes, RSEMSpatsRes, DingRes, TalkishRes) {
+    header = c("RNA/TPM", "100", "1000", "10000", "100000")
+    cat(file = outcon, header, "\n", sep = "\t")
+    cat(file = outcon, "RNase P", sapply(1:4, genOutStr, 1, 0, PROBerRes, RSEMSpatsRes, DingRes, TalkishRes), "\n", sep = "\t")
+    cat(file = outcon, "pT181 long", sapply(1:4, genOutStr, 2, 0, PROBerRes, RSEMSpatsRes, DingRes, TalkishRes), "\n", sep = "\t")
+    cat(file = outcon, "pT181 short", sapply(1:4, genOutStr, 3, 0, PROBerRes, RSEMSpatsRes, DingRes, TalkishRes), "\n", sep = "\t")    
+    cat(file = outcon, "\n")
+}
+
+printSpearmanTable = function(outcon, PROBerRes, RSEMSpatsRes, DingRes, TalkishRes) {
+    header = c("RNA/TPM", "100", "1000", "10000", "100000")
+    cat(file = outcon, header, "\n", sep = "\t")
+    cat(file = outcon, "RNase P", sapply(1:4, genOutStr, 1, 1, PROBerRes, RSEMSpatsRes, DingRes, TalkishRes), "\n", sep = "\t")
+    cat(file = outcon, "pT181 long", sapply(1:4, genOutStr, 2, 1, PROBerRes, RSEMSpatsRes, DingRes, TalkishRes), "\n", sep = "\t")
+    cat(file = outcon, "pT181 short", sapply(1:4, genOutStr, 3, 1, PROBerRes, RSEMSpatsRes, DingRes, TalkishRes), "\n", sep = "\t")    
+    cat(file = outcon, "\n")
+}
+
+gt = loadSpikesFromOneFile(argv[1])
+prefix = argv[2]
+PROBerL = lapply(sprintf("%s_1e%dTPM_SE.beta", prefix, 2:5), loadSpikesFromOneFile)
+RSEMSpatsL = lapply(sprintf("%s_1e%dTPM_SE_RSEM.beta", prefix, 2:5), loadSpikesFromOneFile)
+DingL = lapply(sprintf("%s_1e%dTPM_Ding.scores", prefix, 2:5), loadSpikesFromOneFile)
+TalkishL = lapply(sprintf("%s_1e%dTPM_Talkish.scores", prefix, 2:5), loadSpikesFromOneFile)
+
+PROBerRes = lapply(PROBerL, calcCorr, ground_truth = gt)
+RSEMSpatsRes = lapply(RSEMSpatsL, calcCorr, ground_truth = gt)
+DingRes = lapply(DingL, calcCorr, ground_truth = gt)
+TalkishRes = lapply(TalkishL, calcCorr, ground_truth = gt)
+
+outcon = file(argv[4], open = "w") 
+printPearsonTable(outcon, PROBerRes, RSEMSpatsRes, DingRes, TalkishRes)
+close(outcon)
