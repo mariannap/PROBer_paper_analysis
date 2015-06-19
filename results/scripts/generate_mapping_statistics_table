@@ -1,0 +1,21 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+
+if len(argv) != 4:
+    print("Usage: generate_mapping_statistics_table minus.txt plus.txt output_table")
+    exit(-1)
+
+with open(argv[1]) as fin:
+    minus = fin.readlines()
+
+with open(argv[2]) as fin:
+    plus = fin.readlines()
+
+with open(argv[3], "w") as fout:
+    fout.write("\t\tUnique\tMulti-mapping\tUnalignable\n")
+    fout.write("all\t+\t" + plus[0])
+    fout.write("\t-\t" + minus[0])
+    fout.write("rRNA-\t+\t" + plus[1])
+    fout.write("\t-\t" + minus[1])
+
