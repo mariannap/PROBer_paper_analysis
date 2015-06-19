@@ -17,13 +17,5 @@ include: "results/Snakefile"
 include: "simulation_parameters/Snakefile"
 
 rule all:
-     input: TOOLS,
-            ANNOTATIONS,
-            REF_FILT,
-            REF_SPIKE,
-            REAL_DATA,
-            RESULTS
-
-rule test:
-     input: expand("{path}/sim_spike_{expr}TPM_{channel}_{num}.fq", path = DATA_PATH, expr = ["1e5", "1e4", "1e3", "1e2"], channel = CHANNELS, num = [1, 2])
+     input: RESULTS
 

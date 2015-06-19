@@ -26,7 +26,7 @@ rule unzip_SHAPE_data:
      shell: "unzip {input} -d {ANNO_PATH} ; touch {output}"
 
 rule extract_info_from_bpseq:
-     input: "{}/{{rna_name}}.bpseq".format(ANNO_PATH}
+     input: "{}/{{rna_name}}.bpseq".format(ANNO_PATH)
      output: expand("{path}/{{rna_name}}.{suffix}", path = ANNO_PATH, suffix = ["fa", "structure"])
      shell: "{ANNO_PATH}/scripts/extractInfoFromBPSeq {input} {ANNO_PATH}/{wildcards.rna_name}"
 

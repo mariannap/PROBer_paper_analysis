@@ -118,7 +118,7 @@ rule run_PROBer:
      input: TOOLS[5],
             expand("{path}/{{sample_name}}_{channel}.bam", path = EXP_PATH, channel = CHANNELS),
             REF_FILT, REF_SPIKE
-     output: expand("{path}/{{sample_name}}.{suffix}", path = EXP_PATH, suffix = PROBER_SUFF)
+     output: expand("{path}/{{sample_name}}_SE.{suffix}", path = EXP_PATH, suffix = PROBER_SUFF)
      threads: 30
      run:
         if wildcards.sample_name.startswith("sim_spike"):
@@ -133,7 +133,7 @@ rule run_RSEM_Spats_start_pipeline:
             expand("{path}/{{sample_name}}_{channel}.bam", path = EXP_PATH, channel = CHANNELS),
             "{}/input_list_boxplot.txt".format(SIMPARAM_PATH),
             REF_FILT, REF_SPIKE
-     output: expand("{path}/{{sample_name}}.{suffix}", path = EXP_PATH, suffix = ["gamma", "beta"])
+     output: expand("{path}/{{sample_name}}_SE_RSEM.{suffix}", path = EXP_PATH, suffix = ["gamma", "beta"])
      threads: 30
      run:
         if wildcards.sample_name.startswith("sim_spike"):
@@ -208,3 +208,4 @@ rule generate_box_plot:
      input: "{}/dms_{{out_name}}_results_melt.txt".format(EXP_PATH)
      output: "{}/{{out_name}}_boxplot.pdf".format(RESULTS_PATH)
      shell: "{RESULTS_PATH}/scripts/genBoxPlot {input} {output}"
+
