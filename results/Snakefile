@@ -133,14 +133,14 @@ rule run_PROBer:
 rule run_RSEM_Spats_start_pipeline:
      input: TOOLS[4], TOOLS[6],
             expand("{path}/{{sample_name}}_{channel}.bam", path = EXP_PATH, channel = CHANNELS),
-            "{}/input_list_boxplot.txt".format(SIMPARAM_PATH),
+            expand("{path}/input_list_{part}.txt", path = SIMPARAM_PATH, part = ["boxplot", "spikes"]),
             REF_FILT, REF_SPIKE
      output: expand("{path}/{{sample_name}}_SE_RSEM.{suffix}", path = EXP_PATH, suffix = ["gamma", "beta"]),
              expand("{path}/{{sample_name}}_SE_RSEM_{channel}.isoforms.results", path = EXP_PATH, channel = CHANNELS)
      threads: 30
      run:
         if wildcards.sample_name.startswith(SIM_SPIKE):
-           shell("{input[1]}/PROBer-single-batch-estimate -p {threads} --input-list {input[4]} --RSEM-path {input[0]} {REF_SPIKE_NAME} {EXP_PATH}/{wildcards.sample_name}_SE_RSEM "
+           shell("{input[1]}/PROBer-single-batch-estimate -p {threads} --input-list {input[5]} --RSEM-path {input[0]} {REF_SPIKE_NAME} {EXP_PATH}/{wildcards.sample_name}_SE_RSEM "
                  "--bam {input[2]} {input[3]}")
         else:
            shell("{input[1]}/PROBer-single-batch-estimate -p {threads} --input-list {input[4]} --RSEM-path {input[0]} {REF_FILT_NAME} {EXP_PATH}/{wildcards.sample_name}_SE_RSEM "
@@ -268,7 +268,6 @@ rule generate_ROC_for_fake:
             ANNOTATIONS[:4]
      output: expand("{path}/fake_ROC_{rna}.pdf", path = RESULTS_PATH, rna = ["18S", "25S"])
      shell: "{RESULTS_PATH}/scripts/plotROC {ANNO_PATH} 45 {input[0]} {input[1]} {input[2]} {RESULTS_PATH}/fake_ROC bottomright"
-
 
 
 

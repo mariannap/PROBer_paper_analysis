@@ -56,7 +56,7 @@ genOutStr = function(eid, rid, type, PROBerRes, RSEMSpatsRes, DingRes, TalkishRe
 }
 
 printPearsonTable = function(outcon, PROBerRes, RSEMSpatsRes, DingRes, TalkishRes) {
-    header = c("RNA/TPM", "100", "1000", "10000", "100000")
+    header = c("RNA\\TPM", "100", "1000", "10000", "100000")
     cat(file = outcon, header, "\n", sep = "\t")
     cat(file = outcon, "RNase P", sapply(1:4, genOutStr, 1, 0, PROBerRes, RSEMSpatsRes, DingRes, TalkishRes), "\n", sep = "\t")
     cat(file = outcon, "pT181 long", sapply(1:4, genOutStr, 2, 0, PROBerRes, RSEMSpatsRes, DingRes, TalkishRes), "\n", sep = "\t")
@@ -65,7 +65,7 @@ printPearsonTable = function(outcon, PROBerRes, RSEMSpatsRes, DingRes, TalkishRe
 }
 
 printSpearmanTable = function(outcon, PROBerRes, RSEMSpatsRes, DingRes, TalkishRes) {
-    header = c("RNA/TPM", "100", "1000", "10000", "100000")
+    header = c("RNA\\TPM", "100", "1000", "10000", "100000")
     cat(file = outcon, header, "\n", sep = "\t")
     cat(file = outcon, "RNase P", sapply(1:4, genOutStr, 1, 1, PROBerRes, RSEMSpatsRes, DingRes, TalkishRes), "\n", sep = "\t")
     cat(file = outcon, "pT181 long", sapply(1:4, genOutStr, 2, 1, PROBerRes, RSEMSpatsRes, DingRes, TalkishRes), "\n", sep = "\t")
