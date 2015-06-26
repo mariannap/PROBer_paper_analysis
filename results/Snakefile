@@ -11,7 +11,7 @@ PROBER_STAT = ["theta", "read_model"]
 RESULTS = expand("{path}/{file}", path = RESULTS_PATH, 
                  file = ["number_of_reads_in_real_data.txt", "time_and_memory_table.txt", "mapping_statistics_table.txt", 
                                                             # "grid_search_for_prior.txt", 
-                                                              "digital_spike_in.txt",
+                                                              "digital_spike_in.txt", "fake_pearson_table.txt",
                          "sim_boxplot.pdf", "sim2_boxplot.pdf", "scatters.pdf", "real_ROC_18S.pdf", "real_ROC_25S.pdf", "fake_ROC_18S.pdf", "fake_ROC_25S.pdf"])
 
 
@@ -268,6 +268,13 @@ rule generate_ROC_for_fake:
             ANNOTATIONS[:4]
      output: expand("{path}/fake_ROC_{rna}.pdf", path = RESULTS_PATH, rna = ["18S", "25S"])
      shell: "{RESULTS_PATH}/scripts/plotROC {ANNO_PATH} 45 {input[0]} {input[1]} {input[2]} {RESULTS_PATH}/fake_ROC bottomright"
+
+rule generate_table_for_fake:
+     input: expand("{path}/{name}/{name}.beta", path = SIMPARAM_PATH, name = "sim_fake"),
+            expand("{path}/{name}_{last_part}", path = EXP_PATH, name = FAKE, last_part = ["SE.beta", "Ding.scores", "Talkish.scores"])
+     output: "{}/fake_pearson_table.txt".format(RESULTS_PATH)
+     shell: "{RESULTS_PATH}/scripts/analyzeFake {input[0]} {EXP_PATH}/{FAKE} 45 {output}"
+
 
 
 

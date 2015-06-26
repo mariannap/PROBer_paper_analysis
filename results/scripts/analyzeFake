@@ -1,0 +1,64 @@
+#!/usr/bin/env Rscript
+
+argv = commandArgs(TRUE)
+if (length(argv) != 4) {
+    cat("Usage: analyzeFake grount_truth.beta experiment_prefix trim_length(>=6) output_file\n")
+    q(status = 1)
+}
+
+trim_length = as.integer(argv[3])
+if (trim_length < 6) {
+   cat("Error: trim_length < 6!\n")
+   q(status = 1)
+}
+
+parseSingleLine = function(con, isBeta) {
+  res = NULL
+  fields = scan(con, what = "", nlines = 1)
+  if (isBeta) {
+     res = as.numeric(fields[3:(length(fields) - (trim_length - 6))])
+  } else {
+     res = as.numeric(fields[2:(length(fields) - trim_length)])
+  }
+  return (res) 
+}
+
+loadSpikesFromOneFile = function(filename) {
+    con = file(filename, open = "r")
+    isBeta = grepl(".beta$", filename)
+
+    if (isBeta) scan(con, what = "", nlines = 1)
+
+    rec = list(r18S = parseSingleLine(con, isBeta), 
+               r25S = parseSingleLine(con, isBeta))
+
+    close(con)
+
+    return (rec)
+}
+
+calcCorr = function(ground_truth = gt, exp) {
+    res = list(Pearson = c(cor(gt$r18S, exp$r18S), cor(gt$r25S, exp$r25S)))
+    return (res)
+}
+
+printPearsonTable = function(outcon, PROBerRes, DingRes, TalkishRes) {
+    header = c("", "PROBer", "Ding et al.", "Talkish et al.")
+    cat(file = outcon, sprintf("\tPROBer\tDing et al.\tTalkish et al.\n"))
+    cat(file = outcon, sprintf("18S rRNA\t%.2f\t%.2f\t%.2f\n", PROBerRes$Pearson[1], DingRes$Pearson[1], TalkishRes$Pearson[1]))
+    cat(file = outcon, sprintf("25S rRNA\t%.2f\t%.2f\t%.2f\n", PROBerRes$Pearson[2], DingRes$Pearson[2], TalkishRes$Pearson[2]))
+}
+
+gt = loadSpikesFromOneFile(argv[1])
+prefix = argv[2]
+PROBer = loadSpikesFromOneFile(sprintf("%s_SE.beta", prefix))
+Ding = loadSpikesFromOneFile(sprintf("%s_Ding.scores", prefix))
+Talkish = loadSpikesFromOneFile(sprintf("%s_Talkish.scores", prefix))
+
+PROBerRes = calcCorr(gt, PROBer)
+DingRes = calcCorr(gt, Ding)
+TalkishRes = calcCorr(gt, Talkish)
+
+outcon = file(argv[4], open = "w") 
+printPearsonTable(outcon, PROBerRes, DingRes, TalkishRes)
+close(outcon)
