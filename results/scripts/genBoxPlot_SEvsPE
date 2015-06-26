@@ -1,0 +1,33 @@
+#!/usr/bin/env Rscript
+
+argv = commandArgs(TRUE)
+if (length(argv) != 2) {
+    cat("Usage: genBoxPlot_SEvsPE input_data.txt output_name.pdf\n")
+    q(status = 1)
+}
+
+input_data = argv[1]
+output_file = argv[2]
+
+data = read.table(input_data, header = TRUE)
+m = dim(data)[2]
+vars = names(data)
+
+library(reshape2)
+data_long = melt(data, id.vars = vars[1:5], measure.vars = vars[6:m], variable.name = "method", value.name = "corr")
+data_long[,"method"] = factor(data_long[,"method"])
+data_long[,"Range"] = factor(3 - data_long[,"Range"])
+
+cols = c("red", "chartreuse2")
+boxcols = rep(cols, 4)
+methods = c("Single-end reads", "Paired-end reads")
+intervals = expression(paste("[", 50, ", ", 100, "]"), paste("(", 10^2, ", ", 10^3, "]"), paste("(", 10^3, ", ", 10^4, "]"), paste("(", 10^4, ", ", 10^6, "]"))
+
+pdf(output_file)
+par(mar = c(5, 5, 0, 0) + 0.1)
+boxplot(corr ~ method * Range, data = data_long, col = boxcols, outcol = boxcols, at = c(1:2, 5:6, 9:10, 13:14), names = rep("", 8), pch = 20, boxwex = 0.5, xlim = c(1, 16))
+legend("bottomright", fill = cols, legend = methods)
+mtext(intervals, side = 1, line = 1.5, at = c(1.5, 5.5, 9.5, 13.5), cex = 1.2)
+mtext("Transcripts per million range", side = 1, line = 3.5, cex = 1.5)
+mtext("Pearson correlation coefficient", side = 2, line = 3, cex = 1.5)
+dev.off()
