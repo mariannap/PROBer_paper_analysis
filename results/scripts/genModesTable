@@ -1,0 +1,24 @@
+#!/usr/bin/env Rscript
+
+argv = commandArgs(TRUE)
+if (length(argv) != 3) {
+   cat("Usage: genModesTable gt_expr input_name output_file\n")
+   q(status = 1)
+}
+
+loadTPM = function(file) {
+    data = read.table(file, header = T, stringsAsFactors = F)
+    return (data[,"TPM"] + 1e-4)        
+}
+
+calcCorr = function(file, gt) {
+    tpm = loadTPM(file)
+    return (cor(log10(gt), log10(tpm)))
+}
+
+gt = loadTPM(argv[1])
+vecs = sapply(sprintf("%s_%s.expr", argv[2], c("SE", "SE_ML", "SE_sep_minus", "SE_sep_plus", "SE_sep_ML_minus", "SE_sep_ML_plus")), calcCorr, gt)
+con = file(argv[3], open = "w")
+cat("\tjoint MAP\tjoint ML\tseparate MAP\tseparate ML\n", file = con)
+cat(sprintf("log10 Pearson Corr\t%.2f\t%.2f\t%.2f/%.2f\t%.2f/%.2f\n", vecs[1], vecs[2], vecs[3], vecs[4], vecs[5], vecs[6]), file = con)
+close(con)
