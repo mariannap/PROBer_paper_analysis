@@ -272,10 +272,11 @@ rule generate_ROC_for_fake:
      shell: "{RESULTS_PATH}/scripts/plotROC {ANNO_PATH} 45 {input[0]} {input[1]} {input[2]} {RESULTS_PATH}/fake_ROC bottomright"
 
 rule generate_table_for_fake:
-     input: expand("{path}/{name}/{name}.beta", path = SIMPARAM_PATH, name = "sim_fake"),
+     input: expand("{ref_name}.transcripts.fa", ref_name = REF_FILT_NAME),
+            expand("{path}/{name}/{name}.beta", path = SIMPARAM_PATH, name = "sim_fake"),
             expand("{path}/{name}_{last_part}", path = EXP_PATH, name = FAKE, last_part = ["SE.beta", "Ding.scores", "Talkish.scores"])
      output: "{}/fake_pearson_table.txt".format(RESULTS_PATH)
-     shell: "{RESULTS_PATH}/scripts/analyzeFake {input[0]} {EXP_PATH}/{FAKE} 45 {output}"
+     shell: "{RESULTS_PATH}/scripts/analyzeFake {input[0]} {input[1]} {EXP_PATH}/{FAKE} 45 {output}"
 
 #### PE vs. SE
 

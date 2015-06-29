@@ -1,18 +1,32 @@
 #!/usr/bin/env Rscript
 
 argv = commandArgs(TRUE)
-if (length(argv) != 4) {
-    cat("Usage: analyzeFake grount_truth.beta experiment_prefix trim_length(>=6) output_file\n")
+if (length(argv) != 5) {
+    cat("Usage: analyzeFake reference.fa grount_truth.beta experiment_prefix trim_length(>=6) output_file\n")
     q(status = 1)
 }
 
-trim_length = as.integer(argv[3])
+trim_length = as.integer(argv[4])
 if (trim_length < 6) {
    cat("Error: trim_length < 6!\n")
    q(status = 1)
 }
 
-parseSingleLine = function(con, isBeta) {
+extractACforOneSeq = function(con) {
+    bases = unlist(strsplit(scan(con, what = "", skip = 1, nlines = 1), split = ""))
+    return (bases[1 : (length(bases) - trim_length)] %in% c("A", "C"))
+}
+
+extractACPositions = function(filename) {
+    con = file(filename, open = "r")
+    isAC = list(r18S = extractACforOneSeq(con),
+                r25S = extractACforOneSeq(con))
+    close(con)
+    
+    return(isAC)
+}
+
+parseSingleLine = function(con, isBeta, isAC) {
   res = NULL
   fields = scan(con, what = "", nlines = 1)
   if (isBeta) {
@@ -20,17 +34,17 @@ parseSingleLine = function(con, isBeta) {
   } else {
      res = as.numeric(fields[2:(length(fields) - trim_length)])
   }
-  return (res) 
+  return (res[isAC]) 
 }
 
-loadSpikesFromOneFile = function(filename) {
+loadSpikesFromOneFile = function(filename, isAC) {
     con = file(filename, open = "r")
     isBeta = grepl(".beta$", filename)
 
     if (isBeta) scan(con, what = "", nlines = 1)
 
-    rec = list(r18S = parseSingleLine(con, isBeta), 
-               r25S = parseSingleLine(con, isBeta))
+    rec = list(r18S = parseSingleLine(con, isBeta, isAC$r18S), 
+               r25S = parseSingleLine(con, isBeta, isAC$r25S))
 
     close(con)
 
@@ -49,16 +63,17 @@ printPearsonTable = function(outcon, PROBerRes, DingRes, TalkishRes) {
     cat(file = outcon, sprintf("25S rRNA\t%.2f\t%.2f\t%.2f\n", PROBerRes$Pearson[2], DingRes$Pearson[2], TalkishRes$Pearson[2]))
 }
 
-gt = loadSpikesFromOneFile(argv[1])
-prefix = argv[2]
-PROBer = loadSpikesFromOneFile(sprintf("%s_SE.beta", prefix))
-Ding = loadSpikesFromOneFile(sprintf("%s_Ding.scores", prefix))
-Talkish = loadSpikesFromOneFile(sprintf("%s_Talkish.scores", prefix))
+isAC = extractACPositions(argv[1])
+gt = loadSpikesFromOneFile(argv[2], isAC)
+prefix = argv[3]
+PROBer = loadSpikesFromOneFile(sprintf("%s_SE.beta", prefix), isAC)
+Ding = loadSpikesFromOneFile(sprintf("%s_Ding.scores", prefix), isAC)
+Talkish = loadSpikesFromOneFile(sprintf("%s_Talkish.scores", prefix), isAC)
 
 PROBerRes = calcCorr(gt, PROBer)
 DingRes = calcCorr(gt, Ding)
 TalkishRes = calcCorr(gt, Talkish)
 
-outcon = file(argv[4], open = "w") 
+outcon = file(argv[5], open = "w") 
 printPearsonTable(outcon, PROBerRes, DingRes, TalkishRes)
 close(outcon)

@@ -29,9 +29,11 @@ rule generate_spike_in_parameters:
 
 rule build_simulation:
      input: expand("{path}/sim_ground_truth.{suffix}", path = SIMPARAM_PATH, suffix = PROBER_SUFF),
-            expand("{path}/sim_ground_truth_{channel}.{suffix}", path = SIMPARAM_PATH, channel = CHANNELS, suffix = PROBER_STAT)
+            expand("{path}/sim_ground_truth_{channel}.{suffix}", path = SIMPARAM_PATH, channel = "minus", suffix = PROBER_STAT),
+            expand("{path}/sim_ground_truth_{channel}.{suffix}", path = SIMPARAM_PATH, channel = "plus", suffix = PROBER_STAT)
      output: expand("{path}/{name}/{name}.{suffix}", path = SIMPARAM_PATH, name = "simulation", suffix = PROBER_SUFF),
-             expand("{path}/{name}/{name}.stat/{name}_{channel}.{suffix}", path = SIMPARAM_PATH, name = "simulation", channel = CHANNELS, suffix = PROBER_STAT)
+             expand("{path}/{name}/{name}.stat/{name}_{channel}.{suffix}", path = SIMPARAM_PATH, name = "simulation", channel = "minus", suffix = PROBER_STAT),
+             expand("{path}/{name}/{name}.stat/{name}_{channel}.{suffix}", path = SIMPARAM_PATH, name = "simulation", channel = "plus", suffix = PROBER_STAT)
      run:
         shell("mkdir -p {SIMPARAM_PATH}/simulation/simulation.stat")
         for i in range(len(input)):
@@ -64,9 +66,11 @@ rule build_spike_in:
 
 rule build_fake:
      input: expand("{path}/sim_ground_truth.{suffix}", path = SIMPARAM_PATH, suffix = PROBER_SUFF),
-            expand("{path}/sim_ground_truth_{channel}.{suffix}", path = SIMPARAM_PATH, channel = CHANNELS, suffix = PROBER_STAT)
+            expand("{path}/sim_ground_truth_{channel}.{suffix}", path = SIMPARAM_PATH, channel = "minus", suffix = PROBER_STAT),
+            expand("{path}/sim_ground_truth_{channel}.{suffix}", path = SIMPARAM_PATH, channel = "plus", suffix = PROBER_STAT)
      output: expand("{path}/{name}/{name}.{suffix}", path = SIMPARAM_PATH, name = "sim_fake", suffix = PROBER_SUFF),
-             expand("{path}/{name}/{name}.stat/{name}_{channel}.{suffix}", path = SIMPARAM_PATH, name = "sim_fake", channel = CHANNELS, suffix = PROBER_STAT)
+             expand("{path}/{name}/{name}.stat/{name}_{channel}.{suffix}", path = SIMPARAM_PATH, name = "sim_fake", channel = "minus", suffix = PROBER_STAT),
+             expand("{path}/{name}/{name}.stat/{name}_{channel}.{suffix}", path = SIMPARAM_PATH, name = "sim_fake", channel = "plus", suffix = PROBER_STAT)
      run:
         shell("mkdir -p {SIMPARAM_PATH}/sim_fake/sim_fake.stat")
         for i in range(len(input)):
