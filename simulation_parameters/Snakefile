@@ -107,7 +107,7 @@ rule rsem_simulate:
             rules.build_sim_rsem.output,
             REF_FILT
      output: "{}/{}.fq".format(DATA_PATH, RSEM_SIM)
-     shell: "{TOOLS[4]}/rsem-simulate-reads {REF_FILT_NAME} {input[1]} {input[0]} 0.09 30000000 {DATA_PATH}/{RSEM_SIM} --seed 20150526"
+     shell: "{TOOLS[4]}/rsem-simulate-reads {REF_FILT_NAME} {input[2]} {input[1]} 0.09 30000000 {DATA_PATH}/{RSEM_SIM} --seed 20150526"
 
 rule simulate_spike_in:
      input: TOOLS[5],
