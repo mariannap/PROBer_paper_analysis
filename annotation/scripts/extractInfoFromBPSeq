@@ -15,7 +15,7 @@ seq = []
 truth = []
 with open(argv[1]) as fin:
     for i in xrange(4):
-        fin.next()
+        next(fin)
     for line in fin:        
         fields = line[:-1].split()
         seq.append(fields[1] if fields[1] != "U" else "T")
