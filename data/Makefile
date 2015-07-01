@@ -2,5 +2,8 @@
 
 clean:
 	rm -f *~ .snakemake
-	rm -f *.sra *.fastq
+	rm -f *.fq
+	rm -f *.results
+
+
 
