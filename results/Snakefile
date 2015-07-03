@@ -10,7 +10,7 @@ PROBER_STAT = ["theta", "read_model"]
 
 RESULTS = expand("{path}/{file}", path = RESULTS_PATH, 
                  file = ["number_of_reads_in_real_data.txt", "time_and_memory_table.txt", "mapping_statistics_table.txt", 
-                                                            # "grid_search_for_prior.txt", 
+                                                             "grid_search_for_prior.txt", 
                                                               "digital_spike_in.txt", "fake_pearson_table.txt", "sim_modes_table.txt",
                          "sim_boxplot.pdf", "sim2_boxplot.pdf", "scatters.pdf", "real_ROC_18S.pdf", "real_ROC_25S.pdf", "fake_ROC_18S.pdf", "fake_ROC_25S.pdf",
                          "sim_SEvsPE_boxplot.pdf", "sim_SEvsPE_half_boxplot.pdf", "sim2_SEvsPE_boxplot.pdf", "sim2_SEvsPE_half_boxplot.pdf",
@@ -86,7 +86,7 @@ rule run_PROBer_for_grid_search:
         REF_FILT
      output:
         "{path}/{name}_{{gamma}}_{{beta}}.logMAP".format(path = EXP_PATH, name = REAL)
-     threads: 60
+     threads: 30
      shell:
         "{PROBER} estimate -p {threads} --read-length 37 --size-selection-min 21 --size-selection-max 526 " 
         "--gamma-init {wildcards.gamma} --beta-init {wildcards.beta} -q --output-logMAP " 
