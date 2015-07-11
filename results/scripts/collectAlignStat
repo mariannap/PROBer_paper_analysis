@@ -77,5 +77,5 @@ for aread in sam_in:
 
 updateStat(cname, ctype, ctid, chap)
 
-print("{1:,}\t{2:,}\t{0:,}".format(N0, N11, N12 + N2))
-print("{1:,}\t{2:,}\t{0:,}".format(N0, N11 - N11r, N12 - N12r + N2))
+print("{:,}\t{:,}\t{:,}\t{:,}".format(N11, N12, N0, N2))
+print("{:,}\t{:,}\t{:,}\t{:,}".format(N11 - N11r, N12 - N12r, N0, N2))

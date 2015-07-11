@@ -13,7 +13,7 @@ with open(argv[2]) as fin:
     plus = fin.readlines()
 
 with open(argv[3], "w") as fout:
-    fout.write("\t\tUnique\tMulti-mapping\tUnalignable\n")
+    fout.write("\t\tUnique\tMulti-mapping\tUnalignable\tFiltered\n")
     fout.write("all\t+\t" + plus[0])
     fout.write("\t-\t" + minus[0])
     fout.write("rRNA-\t+\t" + plus[1])
