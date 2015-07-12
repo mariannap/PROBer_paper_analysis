@@ -74,4 +74,8 @@ in the top directory. `<number_of_threads>` is the total number of threads you w
 
 Please make sure that your server has at least 40 cores in order to make sure the time measurement is comparable to what we reported in our paper.
 
- 
+### Notes
+
+1. Each run of the snakemake may provide slightly different results (although qualitatively the same). In our Snakemake pipeline, we first run PROBer on the real data set with 40 threads. In this multi-threading setting, the results PROBer generates are not exactly the same each time due to floating point errors. Then our Snakemake pipeline generates simulated data sets based on these real data results and thus produces different simulated data sets. Lastly, the different simulated data sets will produce slightly different final results.
+
+2. In our pipeline, we use PROBer to simulate paired-end reads and then pick the first mates as the simulated single-end reads. In this way, when we compare the effects of single-end vs paired-end reads on estimation accuracy, we can make sure these data sets are generated in the same batch.
