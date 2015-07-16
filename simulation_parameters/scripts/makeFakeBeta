@@ -43,7 +43,7 @@ def findIndicator(gtpath, rna, n):
 
     indicator = [0] * n
     for i in xrange(n):
-        if stru[i] == 0 and (seq[i] == 'A' or seq[i] == 'C'):
+        if stru[i] == 1 and (seq[i] == 'A' or seq[i] == 'C'):
             indicator[i] = 1
 
     return indicator

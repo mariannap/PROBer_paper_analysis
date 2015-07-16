@@ -32,17 +32,17 @@ Bo18S = as.numeric(scan(argv[3], what = "", skip = 1, nlines = 1)[3:1804])
 Ding18S = scan(argv[4], what = double(), nlines = 1)[-1]
 Talkish18S = scan(argv[5], what = double(), nlines = 1)[-1]
 
-roc18SBo = roc(truth18S[idx1], Bo18S[idx1], direciton = ">")
-roc18SDing = roc(truth18S[idx1], Ding18S[idx1], direction = ">")
-roc18STalkish = roc(truth18S[idx1], Talkish18S[idx1], direction =">")
+roc18SBo = roc(truth18S[idx1], Bo18S[idx1], direciton = "<")
+roc18SDing = roc(truth18S[idx1], Ding18S[idx1], direction = "<")
+roc18STalkish = roc(truth18S[idx1], Talkish18S[idx1], direction ="<")
 
 Bo25S = as.numeric(scan(argv[3], what = "", skip = 2, nlines = 1)[3:3535])
 Ding25S = scan(argv[4], what = double(), skip = 1, nlines = 1)[-1]
 Talkish25S = scan(argv[5], what = double(), skip = 1, nlines = 1)[-1]
 
-roc25SBo = roc(truth25S[idx2], Bo25S[idx2], direciton = ">")
-roc25SDing = roc(truth25S[idx2], Ding25S[idx2], direction = ">")
-roc25STalkish = roc(truth25S[idx2], Talkish25S[idx2], direction =">")
+roc25SBo = roc(truth25S[idx2], Bo25S[idx2], direciton = "<")
+roc25SDing = roc(truth25S[idx2], Ding25S[idx2], direction = "<")
+roc25STalkish = roc(truth25S[idx2], Talkish25S[idx2], direction ="<")
 
 
 
