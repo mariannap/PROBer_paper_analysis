@@ -109,6 +109,65 @@ You can find all tables and figures under the `results` directory.
         </tr>
 </table>
 
+<table>
+        <tr>
+                <th>Figure Name</th>
+                <th>File Name</th>
+        </tr>
+        <tr>
+                <td>Figure 3</td>
+                <td>sim_boxplot.pdf</td>
+        </tr>
+        <tr>
+                <td>Figure S6</td>
+                <td>sim2_boxplot.pdf</td>
+        </tr>
+        <tr>
+                <td>Figure S7a</td>
+                <td>sim_SEvsPE_boxplot.pdf</td>
+        </tr>
+        <tr>
+                <td>Figure S7b</td>
+                <td>sim_SEvsPE_half_boxplot.pdf</td>
+        </tr>
+        <tr>
+                <td>Figure S7c</td>
+                <td>sim2_SEvsPE_boxplot.pdf</td>
+        </tr>
+        <tr>
+                <td>Figure S7d</td>
+                <td>sim2_SEvsPE_half_boxplot.pdf</td>
+        </tr>
+        <tr>
+                <td>Figure S8a</td>
+                <td>real_ROC_18S.pdf</td>
+        </tr>
+        <tr>
+                <td>Figure S8b</td>
+                <td>real_ROC_25S.pdf</td>
+        </tr>
+        <tr>
+                <td>Figure S9a</td>
+                <td>fake_ROC_18S.pdf</td>
+        </tr>
+        <tr>
+                <td>Figure S9b</td>
+                <td>fake_ROC_25S.pdf</td>
+        </tr>
+        <tr>
+                <td>Figure S10</td>
+                <td>scatters.pdf</td>
+        </tr>
+        <tr>
+                <td>Figure S11a</td>
+                <td>sim_modes_boxplot.pdf</td>
+        </tr>
+        <tr>
+                <td>Figure S11b</td>
+                <td>sim_modes_half_boxplot.pdf</td>
+        </tr>
+</table>
+
  
 ### Notes
 
