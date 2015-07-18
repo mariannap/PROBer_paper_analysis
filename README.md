@@ -166,6 +166,7 @@ You can find all tables and figures under the `results` directory.
                 <td>Figure S11b</td>
                 <td>sim_modes_half_boxplot.pdf</td>
         </tr>
+        <caption>test</caption>
 </table>
 
  
