@@ -78,39 +78,8 @@ Please make sure that your server has at least 40 cores in order to make sure th
 
 You can find all tables and figures under the `results` directory.
 
+The mappings between figure names in our draft and file names under `results` are shown in the table below: 
 <table>
-        <tr>
-                <th>Table Name</th>
-                <th>File Name</th>
-        </tr>
-        <tr>
-                <td>Table S1</td>
-                <td>grid_search_for_prior.txt</td>
-        </tr>
-        <tr>
-                <td>Table S2</td>
-                <td>mapping_statistics_table.txt</td>
-        </tr>
-        <tr>
-                <td>Table S3</td>
-                <td>time_and_memory_table.txt</td>
-        </tr>
-        <tr>
-                <td>Table S5</td>
-                <td>digital_spike_in.txt</td>
-        </tr>
-        <tr>
-                <td>Table S6</td>
-                <td>fake_pearson_table.txt</td>
-        </tr>
-        <tr>
-                <td>Table S7</td>
-                <td>sim_modes_table.txt</td>
-        </tr>
-</table>
-
-<table>
-        <caption>Mapping from figure names appeared in our draft to file names under folder `results`</caption>
         <tr>
                 <th>Figure Name</th>
                 <th>File Name</th>
@@ -169,7 +138,40 @@ You can find all tables and figures under the `results` directory.
         </tr>
 </table>
 
- 
+The mappings between table names in our draft and file names under `results` are shown in the table below:
+<table>
+        <tr>
+                <th>Table Name</th>
+                <th>File Name</th>
+        </tr>
+        <tr>
+                <td>Table S1</td>
+                <td>grid_search_for_prior.txt</td>
+        </tr>
+        <tr>
+                <td>Table S2</td>
+                <td>mapping_statistics_table.txt</td>
+        </tr>
+        <tr>
+                <td>Table S3</td>
+                <td>time_and_memory_table.txt</td>
+        </tr>
+        <tr>
+                <td>Table S5</td>
+                <td>digital_spike_in.txt</td>
+        </tr>
+        <tr>
+                <td>Table S6</td>
+                <td>fake_pearson_table.txt</td>
+        </tr>
+        <tr>
+                <td>Table S7</td>
+                <td>sim_modes_table.txt</td>
+        </tr>
+</table>
+
+In addition, the file `number_of_reads_in_real_data.txt` under `results` lists the number of reads left in the control and treatment groups after preprocessing.
+   
 ### Notes
 
 1. Each run of the snakemake may provide slightly different results (although qualitatively the same). In our Snakemake pipeline, we first run PROBer on the real data set with 40 threads. In this multi-threading setting, the results PROBer generates are not exactly the same each time due to floating point errors. Then our Snakemake pipeline generates simulated data sets based on these real data results and thus produces different simulated data sets. Lastly, the different simulated data sets will produce slightly different final results.
