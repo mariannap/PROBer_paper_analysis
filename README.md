@@ -39,8 +39,8 @@ The meaning of each data is listed in the table below:
 
 <table>
         <tr>
-                <th>accession</th>
-                <th>meaning</th>
+                <th>Accession</th>
+                <th>Meaning</th>
         </tr>
         <tr>
                 <td>SRR933551</td>
@@ -74,6 +74,42 @@ in the top directory. `<number_of_threads>` is the total number of threads you w
 
 Please make sure that your server has at least 40 cores in order to make sure the time measurement is comparable to what we reported in our paper.
 
+#### Results
+
+You can find all tables and figures under the `results` directory.
+
+<table>
+        <tr>
+                <th>Table Name</th>
+                <th>File Name</th>
+        </tr>
+        <tr>
+                <td>Table S1</td>
+                <td>grid_search_for_prior.txt</td>
+        </tr>
+        <tr>
+                <td>Table S2</td>
+                <td>mapping_statistics_table.txt</td>
+        </tr>
+        <tr>
+                <td>Table S3</td>
+                <td>time_and_memory_table.txt</td>
+        </tr>
+        <tr>
+                <td>Table S5</td>
+                <td>digital_spike_in.txt</td>
+        </tr>
+        <tr>
+                <td>Table S6</td>
+                <td>fake_pearson_table.txt</td>
+        </tr>
+        <tr>
+                <td>Table S7</td>
+                <td>sim_modes_table.txt</td>
+        </tr>
+</table>
+
+ 
 ### Notes
 
 1. Each run of the snakemake may provide slightly different results (although qualitatively the same). In our Snakemake pipeline, we first run PROBer on the real data set with 40 threads. In this multi-threading setting, the results PROBer generates are not exactly the same each time due to floating point errors. Then our Snakemake pipeline generates simulated data sets based on these real data results and thus produces different simulated data sets. Lastly, the different simulated data sets will produce slightly different final results.
