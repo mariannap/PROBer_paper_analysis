@@ -110,6 +110,7 @@ You can find all tables and figures under the `results` directory.
 </table>
 
 <table>
+        <caption>Mapping from figure names appeared in our draft to file names under folder `results`</caption>
         <tr>
                 <th>Figure Name</th>
                 <th>File Name</th>
@@ -166,7 +167,6 @@ You can find all tables and figures under the `results` directory.
                 <td>Figure S11b</td>
                 <td>sim_modes_half_boxplot.pdf</td>
         </tr>
-        <caption>test</caption>
 </table>
 
  
