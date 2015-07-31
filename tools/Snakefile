@@ -10,7 +10,7 @@ rule build_cutadapt:
      output: TOOLS[0]
      run: 
           shell("tar -C {TOOLS_PATH} -xzf {input}")
-          shell("pip install Cython")
+#          shell("pip install Cython")
 	  shell("cd {output} ; python setup.py build_ext -i")
           shell("touch {output}")
 

@@ -6,7 +6,7 @@ Reproduce PROBer paper analysis
 
 First, you need to install [Snakemake](https://bitbucket.org/johanneskoester/snakemake/wiki/Home). 
 
-Then, please make sure that you have `Perl`, `Python` and `R`(>= 3.1.0) installed. For `Python`, we additionally require the following packages installed: [numpy](http://www.numpy.org), [scipy](http://www.scipy.org/), and [pysam](https://github.com/pysam-developers/pysam). For `R`, please install the [pROC](http://cran.r-project.org/web/packages/pROC) and [reshape2](http://cran.r-project.org/web/packages/reshape2) packages.
+Then, please make sure that you have `Perl`, `Python` and `R`(>= 3.1.0) installed. For `Python`, we additionally require the following packages installed: [Cython](http://cython.org/), [numpy](http://www.numpy.org), [scipy](http://www.scipy.org/), and [pysam](https://github.com/pysam-developers/pysam). For `R`, please install the [pROC](http://cran.r-project.org/web/packages/pROC) and [reshape2](http://cran.r-project.org/web/packages/reshape2) packages.
 
 You also need to install [SRA Toolkit](http://www.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?view=software) in order to use [fastq-dump](http://www.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?view=toolkit_doc&f=fastq-dump).
 
