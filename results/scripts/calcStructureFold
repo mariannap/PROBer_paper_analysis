@@ -1,0 +1,53 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+import math
+import numpy
+
+if len(argv) != 4:
+    print("Usage: python calcStructureFold minus.counts plus.counts output.txt")
+    exit(-1)
+
+def convert(arr):
+    res = [math.log(float(x) + 1.0) for x in arr]
+    l = float(len(res))
+    res.append(0.0)
+    denom = sum(res) / l
+    res = [(x / denom if denom > 0.0 else 0.0) for x in res]
+    return res
+
+def calc_norm_factor(rsr):
+    data = sorted(rsr[1:], reverse = True)
+    s = len(data)
+    fr = int(round(float(s) / 100.0 * 2.0))
+    to = int(round(float(s) / 100.0 * 10.0))
+    return numpy.mean(data[fr:to])
+
+
+fm = open(argv[1])
+fp = open(argv[2])
+fout = open(argv[3], "w")
+
+cnt = 0
+for line in fm:
+    line2 = fp.readline()
+
+    mc = convert(line[:-1].split())
+    mp = convert(line2[:-1].split())
+    rsr = [max(y - x, 0) for (x, y) in zip(mc, mp)]
+    norm_factor = calc_norm_factor(rsr)
+    if norm_factor > 0.0:
+        fsr = [min(x / norm_factor, 7.0) for x in rsr]
+    else:
+        fsr = list(rsr)
+    fout.write(" ".join([str(x) for x in fsr]) + "\n")
+
+    cnt += 1
+    if cnt % 1000 == 0:
+        print("{} FIN!".format(cnt))
+
+fm.close()
+fp.close()
+fout.close()
+
+print("FSRs are written.")
