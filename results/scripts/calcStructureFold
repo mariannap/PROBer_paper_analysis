@@ -19,8 +19,8 @@ def convert(arr):
 def calc_norm_factor(data):
     data.sort(reverse = True)
     s = len(data)
-    fr = int(round(float(s) / 100.0 * 2.0))
-    to = int(round(float(s) / 100.0 * 10.0))
+    fr = int(float(s) / 100.0 * 2.0)
+    to = int(float(s) / 100.0 * 10.0)
     return numpy.mean(data[fr:to])
 
 
