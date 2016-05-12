@@ -37,7 +37,7 @@ def calcScore(signal, control, density):
     if len(pos) > 0:
         values = scipy.stats.mstats.winsorize(values, limits = 0.05)
         minv = max(0.0, min(values))
-        span = max(score) - minv
+        span = max(values) - minv
         if span > 0.0:
             for (a_pos, a_value) in zip(pos, values):
                 if a_value > 0.0:
@@ -74,7 +74,7 @@ for line in fm:
     else:
         icSHAPE = calcScore(signal, control, density)
 
-    fout.write(" ".join(["{%.10g}".format(x) for x in icSHAPE]) + "\n")
+    fout.write(" ".join([str(x) for x in icSHAPE]) + "\n")
 
     cnt += 1
     if cnt % 1000 == 0:

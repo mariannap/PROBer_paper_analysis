@@ -24,7 +24,7 @@ for line in fm:
     line2 = fp.readline()
     mc = convert([float(x) for x in line[:-1].split()])
     mp = convert([float(x) for x in line2[:-1].split()])
-    modseq = [y / x for (x, y) in zip(mc, mp)])
+    modseq = [y / x for (x, y) in zip(mc, mp)]
     fout.write(" ".join([str(x) for x in modseq]) + "\n")
 
     cnt = cnt + 1

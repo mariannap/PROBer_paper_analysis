@@ -17,7 +17,7 @@ def update(alignments):
     frac = 1.0 / len(alignments)
     for (tid, start, end) in alignments:
         assert tid != None and start != None and end != None
-        i = read.tid if requireAll else tid2num.get(read.tid, -1)
+        i = tid if requireAll else tid2num.get(tid, -1)
         if i >= 0:
             for pos in xrange(start, end):
                 vectors[i][pos] += frac
@@ -25,10 +25,10 @@ def update(alignments):
 ### Designed only for reproducing PROBer paper
 
 if len(argv) < 4:
-    print("Usage: python calcBaseDensity output.txt input.bam [all | name1 name2 ...]")
+    print("Usage: python calcBaseDensity input.bam output.txt [all | name1 name2 ...]")
     exit(-1)
 
-sam_in = pysam.AlignmentFile(argv[2], "rb")
+sam_in = pysam.AlignmentFile(argv[1], "rb")
 
 vectors = []
 tid2num = dict()
@@ -74,7 +74,7 @@ for aread in sam_in:
 update(alignments)
 
 
-fout = open(argv[1], "w")
+fout = open(argv[2], "w")
 for i in xrange(len(vectors)):
-    fout.write(" ".join(["{:.10g}".format(x) for x in vectors[i]]) + "\n")
+    fout.write(" ".join(["{:.2f}".format(x) for x in vectors[i]]) + "\n")
 fout.close()
