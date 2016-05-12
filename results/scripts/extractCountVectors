@@ -2,101 +2,109 @@
 
 from sys import argv, exit
 import pysam
-import copy
+
 
 try:
     xrange
 except NameError:
     xrange = range
 
-class Fake:
-    def __init__(self, qname, tid, pos, tags):
-        self.qname = qname
-        self.tid = tid
-        self.pos = pos
-        self.tags = copy.copy(tags)
 
-def updateVec(read):
-    if requireAll:
-        i = read.tid
-    else:
-        i = tid2num.get(read.tid, -1)
-        
-    if i >= 0:
-        value = float(dict(read.tags).get("ZW", 1.0))
-        vectors[i][read.pos] += value
+def loadMap(map_file):
+    genes = []
+
+    with open(map_file) as fin:
+        prev = curr = gid = -1
+        for line in fin:
+            curr = int(line[:-1])
+            if gid >= 0:
+                genes.extend([gid] * (curr - prev))
+            prev = curr
+            gid += 1
+
+    return genes
 
 
-if len(argv) < 4:
-    print("Usage: python extractCountVectors output.txt input.bam [name1 name2 ... | unique name1 name2 | all | all_unique]")
+def gene_multi(alignments):
+    if len(alignments) <= 1:
+        return False
+
+    gid = genes[alignments[0][0]]
+    for i in xrange(1, len(alignments)):
+        if gid != genes[alignments[i][0]]:
+            return True
+
+    return False
+
+
+def update(alignments):
+    if len(alignments) == 0 or len(genes) > 0 and gene_multi(alignments):
+        return
+
+    frac = 1.0 / len(alignments) if len(genes) == 0 else 1.0
+    for (tid, pos) in alignments:
+        i = tid if requireAll else tid2num.get(tid, -1)
+        if i >= 0:
+            vectors[i][pos] += frac
+
+
+if len(argv) < 5:
+    print("Usage: python extractCountVectors input.bam <ref_name.grp/None> output.txt [all | name1 name2 ...]")
     exit(-1)
 
-sam_in = pysam.Samfile(argv[2], "rb")
+sam_in = pysam.AlignmentFile(argv[1], "rb")
+
+genes = []
+if argv[2] != "None":
+    genes = loadMap(argv[2])
+
 
 vectors = []
 tid2num = dict()
 
 requireAll = False
 
-if argv[3].startswith("all"):
+if argv[4] == "all":
     requireAll = True
     M = sam_in.nreferences
     for i in xrange(M):
         vector = [0] * sam_in.lengths[i]
         vectors.append(vector)
 else:
-    sp = 4 if argv[3] == "unique" else 3        
-    for i in xrange(sp, len(argv)):
+    for i in xrange(4, len(argv)):
         if argv[i] in sam_in.references:
             tid = sam_in.references.index(argv[i])
             vector = [0] * sam_in.lengths[tid]
             vectors.append(vector)
-            tid2num[tid] = i - sp
+            tid2num[tid] = i - 4
         else:
             print("Warning: {} is not a valid transcript id!".format(argv[i]))
 
 
-requireUnique = argv[3].find("unique") >= 0
-
 cnt = 0
-cread = None
-isUnique = False
+cname = ""
+alignments = []
 
 for aread in sam_in:
-    if (not aread.is_unmapped) and (not aread.is_paired or aread.is_read1) and (not ("ZF" in dict(aread.tags))):
-        assert not aread.is_reverse
+    if not aread.is_unmapped:
+        assert not aread.is_reverse and not aread.is_paired
 
-        if not requireUnique:
-            updateVec(aread)
-        else:
-            if cread == None or cread.qname != aread.qname:
-                if isUnique:
-                    updateVec(cread)
-                cread = Fake(aread.qname, aread.tid, aread.pos, aread.tags)
-                isUnique = True
-            else:
-                isUnique = False
+        if cname != aread.query_name:
+            update(alignments)
+            cname = aread.query_name
+            alignments = []
+
+        alignments.append((aread.reference_id, aread.reference_start))
 
     cnt += 1
     if cnt % 1000000 == 0:
         print("{} FIN!".format(cnt))
 
-if requireUnique and isUnique:
-    updateVec(cread)
+update(alignments)
 
-
-
-fout = open(argv[1], "w")
-
-#if requireAll:
-#    num_through = 0
-#    num_drop = 0
-#    for i in xrange(len(vectors)):
-#        num_through += vectors[i][0]
-#        num_drop += sum(vectors[i][1:])
-#    fout.write("{:.2f} {:.2f}\n".format(num_drop, num_through))
-
+print("Begin to generate outputs.")
+fout = open(argv[3], "w")
 for i in xrange(len(vectors)):
-    fout.write(" ".join(["{:.2f}".format(x) for x in vectors[i]]) + "\n")
-
+    fout.write(" ".join(["{:.6f}".format(x) for x in vectors[i]]) + "\n")
 fout.close()
+print("Done.")
