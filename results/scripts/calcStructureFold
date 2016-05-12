@@ -16,8 +16,8 @@ def convert(arr):
     res = [(x / denom if denom > 0.0 else 0.0) for x in res]
     return res
 
-def calc_norm_factor(rsr):
-    data = sorted(rsr[1:], reverse = True)
+def calc_norm_factor(data):
+    data.sort(reverse = True)
     s = len(data)
     fr = int(round(float(s) / 100.0 * 2.0))
     to = int(round(float(s) / 100.0 * 10.0))
@@ -26,21 +26,18 @@ def calc_norm_factor(rsr):
 
 fm = open(argv[1])
 fp = open(argv[2])
-fout = open(argv[3], "w")
 
 cnt = 0
+RSRs = []
+data = []
+
 for line in fm:
     line2 = fp.readline()
 
-    mc = convert(line[:-1].split())
-    mp = convert(line2[:-1].split())
-    rsr = [max(y - x, 0) for (x, y) in zip(mc, mp)]
-    norm_factor = calc_norm_factor(rsr)
-    if norm_factor > 0.0:
-        fsr = [min(x / norm_factor, 7.0) for x in rsr]
-    else:
-        fsr = list(rsr)
-    fout.write(" ".join([str(x) for x in fsr]) + "\n")
+    mc = convert(line[:-1].split())[1:]
+    mp = convert(line2[:-1].split())[1:]
+    RSRs.append([max(y - x, 0) for (x, y) in zip(mc, mp)])
+    data.extend(RSRs[-1])
 
     cnt += 1
     if cnt % 1000 == 0:
@@ -48,6 +45,18 @@ for line in fm:
 
 fm.close()
 fp.close()
-fout.close()
 
-print("FSRs are written.")
+print("Raw structural reactivities are calculated.")
+
+norm_factor = calc_norm_factor(data)
+print("2%-8% normalization factor is calculated.")
+print("Factor = {}.".format(norm_factor))
+
+fout = open(argv[3], "w")
+cnt = 0
+for rsr in RSRs:
+    fout.write(" ".join([str(min(x / norm_factor, 7.0)) for x in rsr]) + "\n")
+    cnt += 1
+    if cnt % 10000 == 0:
+        print("{} FIN!".format(cnt))
+fout.close()

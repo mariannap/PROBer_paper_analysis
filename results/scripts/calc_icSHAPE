@@ -1,0 +1,86 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+import numpy
+import scipy.stats
+
+try:
+    xrange
+except NameError:
+    xrange = range
+
+
+def normalizeRT(vec):
+    scale_factor = 0.0
+    if len(vec) > 64:
+        tmp = sorted(vec[32:-32], reverse=True)
+        tlen = len(tmp)
+        scale_factor = numpy.mean(tmp[int(tlen / 20.0):int(tlen / 10.0)])
+
+    if scale_factor > 1.0:
+        return [x / scale_factor for x in vec]
+
+    return None
+
+
+def calcScore(signal, control, density):
+    scores = [0.0] * len(signal)
+
+    pos = []
+    values = []
+
+    for i in xrange(len(signal)):
+        if density[i] > 0.0:
+            pos.append(i)
+            values.append((signal[i] - 0.25 * control[i]) / density[i])
+
+    if len(pos) > 0:
+        values = scipy.stats.mstats.winsorize(values, limits = 0.05)
+        minv = max(0.0, min(values))
+        span = max(score) - minv
+        if span > 0.0:
+            for (a_pos, a_value) in zip(pos, values):
+                if a_value > 0.0:
+                    scores[a_pos] = (a_value - minv) / span
+
+    return scores
+
+if len(argv) != 5:
+    print("Usage: python calcSpitale minus.counts plus.counts minus.density output.txt")
+    exit(-1)
+
+fm = open(argv[1])
+fp = open(argv[2])
+fd = open(argv[3])
+fout = open(argv[4], "w")
+
+cnt = 0
+
+for line in fm:
+    line2 = fp.readline()
+    line3 = fd.readline()
+
+    control = [float(x) for x in line.strip().split()[1:]] + [0.0]
+    signal = [float(x) for x in line2.strip().split()[1:]] + [0.0]
+    
+    density = [float(x) for x in line3.strip().split()]
+
+    control = normalizeRT(control)
+    signal = normalizeRT(signal)
+    density = normalizeRT(density)
+
+    if control == None or signal == None or density == None:
+        icSHAPE = [0.0] * len(signal)
+    else:
+        icSHAPE = calcScore(signal, control, density)
+
+    fout.write(" ".join(["{%.10g}".format(x) for x in icSHAPE]) + "\n")
+
+    cnt += 1
+    if cnt % 1000 == 0:
+        print("{} FIN!".format(cnt))
+
+fm.close()
+fp.close()
+fd.close()
+fout.close()

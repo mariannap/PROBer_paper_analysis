@@ -12,7 +12,7 @@ def convert(arr):
 
     
 if len(argv) != 4:
-    print("Usage: python calcTalkish minus.counts plus.counts output.txt")
+    print("Usage: python calcModseq minus.counts plus.counts output.txt")
     exit(-1)
 
 fm = open(argv[1])
@@ -20,15 +20,12 @@ fp = open(argv[2])
 fout = open(argv[3], "w")
 
 cnt = 0
-
 for line in fm:
     line2 = fp.readline()
-    if cnt >= 0:
-        mc = convert([float(x) for x in line[:-1].split()])
-        mp = convert([float(x) for x in line2[:-1].split()])
-        talkish = [0]
-        talkish.extend([y / x for (x, y) in zip(mc, mp)])
-        fout.write(" ".join([str(x) for x in talkish]) + "\n")
+    mc = convert([float(x) for x in line[:-1].split()])
+    mp = convert([float(x) for x in line2[:-1].split()])
+    modseq = [y / x for (x, y) in zip(mc, mp)])
+    fout.write(" ".join([str(x) for x in modseq]) + "\n")
 
     cnt = cnt + 1
     if cnt % 1000 == 0:

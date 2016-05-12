@@ -1,0 +1,80 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+import pysam
+
+
+try:
+    xrange
+except NameError:
+    xrange = range
+
+
+def update(alignments):
+    if len(alignments) == 0:
+        return
+
+    frac = 1.0 / len(alignments)
+    for (tid, start, end) in alignments:
+        assert tid != None and start != None and end != None
+        i = read.tid if requireAll else tid2num.get(read.tid, -1)
+        if i >= 0:
+            for pos in xrange(start, end):
+                vectors[i][pos] += frac
+
+### Designed only for reproducing PROBer paper
+
+if len(argv) < 4:
+    print("Usage: python calcBaseDensity output.txt input.bam [all | name1 name2 ...]")
+    exit(-1)
+
+sam_in = pysam.AlignmentFile(argv[2], "rb")
+
+vectors = []
+tid2num = dict()
+
+requireAll = False
+
+if argv[3].startswith("all"):
+    requireAll = True
+    M = sam_in.nreferences
+    for i in xrange(M):
+        vector = [0] * sam_in.lengths[i]
+        vectors.append(vector)
+else:
+    for i in xrange(3, len(argv)):
+        if argv[i] in sam_in.references:
+            tid = sam_in.references.index(argv[i])
+            vector = [0] * sam_in.lengths[tid]
+            vectors.append(vector)
+            tid2num[tid] = i - 3
+        else:
+            print("Warning: {} is not a valid transcript id!".format(argv[i]))
+
+
+cnt = 0
+cname = ""
+alignments = []
+
+for aread in sam_in:
+    if not aread.is_unmapped:
+        assert not aread.is_reverse and not aread.is_paired
+
+        if cname != aread.query_name:
+            update(alignments)
+            cname = aread.query_name
+            alignments = []
+
+        alignments.append((aread.reference_id, aread.reference_start, aread.reference_end))
+        
+    cnt += 1
+    if cnt % 1000000 == 0:
+        print("{} FIN!".format(cnt))
+
+update(alignments)
+
+
+fout = open(argv[1], "w")
+for i in xrange(len(vectors)):
+    fout.write(" ".join(["{:.10g}".format(x) for x in vectors[i]]) + "\n")
+fout.close()
