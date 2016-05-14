@@ -3,6 +3,11 @@
 from sys import argv, exit
 import pysam
 
+try:
+    xrange
+except NameError:
+    xrange = range
+
 if len(argv) != 3:
     print("Usage: trimMismatch input.bam output.fq")
     exit(-1)
@@ -69,4 +74,4 @@ fout.close()
 
 print("max_skip = {}.".format(max_skip))
 print("Rate = {:.2f}%, nSmall = {}.".format(nMis * 100.0 / nAlign, nSmall))
-print("Minimum read length = {}.\n".format(min_read_len)
+print("Minimum read length = {}.\n".format(min_read_len))
