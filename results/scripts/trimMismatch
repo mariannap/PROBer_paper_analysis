@@ -1,0 +1,72 @@
+#!/usr/bin/evn python
+
+from sys import argv, exit
+import pysam
+
+if len(argv) != 3:
+    print("Usage: trimMismatch input.bam output.fq")
+    exit(-1)
+
+def output(fout, aread, nskip):
+    name = aread.query_name
+    seq = aread.query_sequence[nskip:] 
+    qual = aread.query_qualities[nskip:]
+    for i in xrange(len(qual)):
+        qual[i] += 33
+    line = "@{0}\n{1}\n+{0}\n{2}\n".format(name, seq, qual.tostring())
+    fout.write(line)
+
+
+def calc_nskip(aread):
+    try:
+        md_str = aread.get_tag("MD")
+
+        nskip = 0
+        md_len = len(md_str)
+        i = 0
+
+        while i < md_len and md_str[i] == '0':
+            nskip += 1
+            i += 1
+            assert (i < md_len) and (md_str[i] in "ACGT")
+            i += 1
+
+        return nskip
+
+    except KeyError:
+        assert False
+        return 0
+
+nAlign = nMis = nSmall = 0
+max_skip = 0
+min_read_len = 25
+
+cnt = 0
+
+sam_in = pysam.AlignmentFile(argv[1], "rb")
+fout = open(argv[2], "w")
+for aread in sam_in:
+    if aread.is_unmapped:
+        output(fout, aread, 0)
+    else:
+        nskip = calc_nskip(aread)
+        output(fout, aread, nskip)
+        max_skip = max(max_skip, nskip)
+
+        nAlign += 1
+        if nskip > 0:
+            nMis += 1
+        if aread.query_length - nskip < 25:
+            nSmall += 1
+            min_read_len = min(min_read_len, aread.query_length - nskip)
+
+    cnt += 1
+    if cnt % 1000000 == 0:
+        print("FIN {}.".format(cnt))
+
+sam_in.close()
+fout.close()
+
+print("max_skip = {}.".format(max_skip))
+print("Rate = {:.2f}%, nSmall = {}.".format(nMis * 100.0 / nAlign, nSmall))
+print("Minimum read length = {}.\n".format(min_read_len)
