@@ -18,7 +18,7 @@ def output(fout, aread, nskip):
     qual = aread.query_qualities[nskip:]
     for i in xrange(len(qual)):
         qual[i] += 33
-    line = "@{0}\n{1}\n+{0}\n{2}\n".format(name, seq, qual.tostring())
+    line = "@{0}\n{1}\n+{0}\n{2}\n".format(name, seq, str(qual, "ascii"))
     fout.write(line)
 
 
