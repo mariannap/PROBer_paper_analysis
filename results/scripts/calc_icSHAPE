@@ -13,9 +13,13 @@ except NameError:
 def normalizeRT(vec):
     scale_factor = 0.0
     if len(vec) > 64:
-        tmp = sorted(vec[32:-32], reverse=True)
-        tlen = len(tmp)
-        scale_factor = numpy.mean(tmp[int(tlen / 20.0):int(tlen / 10.0)])
+        tlen = len(vec) - 64
+        fr = int(tlen / 20.0)
+        to = int(tlen / 10.0)
+        
+        if fr < to:
+            tmp = sorted(vec[32:-32], reverse=True)
+            scale_factor = numpy.mean(tmp[fr:to])
 
     if scale_factor > 1.0:
         return [x / scale_factor for x in vec]
@@ -65,12 +69,14 @@ for line in fm:
     
     density = [float(x) for x in line3.strip().split()]
 
+    tlen = len(control)
+
     control = normalizeRT(control)
     signal = normalizeRT(signal)
     density = normalizeRT(density)
 
     if control == None or signal == None or density == None:
-        icSHAPE = [0.0] * len(signal)
+        icSHAPE = [0.0] * tlen
     else:
         icSHAPE = calcScore(signal, control, density)
 
