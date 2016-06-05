@@ -1,63 +1,39 @@
-TOOLS_PATH = "tools"
-PROGRAMS = ["cutadapt-1.6", "samtools-0.1.19", "bowtie-1.0.0", "bowtie2-2.1.0", "rsem-1.2.20", "PROBer-0.1.2", "other_codes_0.1.1"]
-SOURCE_CODES = expand("tools/{program}.tar.gz", program = PROGRAMS)
-TOOLS = expand("tools/{program}", program = PROGRAMS)
-PROBER = "tools/{}/build/src/PROBer".format(PROGRAMS[5])
-
-
 rule build_cutadapt:
-     input: SOURCE_CODES[0]
-     output: TOOLS[0]
-     run: 
-          shell("tar -C {TOOLS_PATH} -xzf {input}")
-#          shell("pip install Cython")
-	  shell("cd {output} ; python setup.py build_ext -i")
-          shell("touch {output}")
+	input: "{name}.tar.gz"
+	output: "{name}/bin/cutadapt"
+	shell:
+		"tar -C {tools_path} -xzf {input} && "
+		"cd {wildcards.name} && python setup.py build_ext -i && "
+		"cd $OLDPWD && touch {output}"
 
 rule build_samtools:
-     input: SOURCE_CODES[1]
-     output: TOOLS[1]
-     run: 
-          shell("tar -C {TOOLS_PATH} -xzf {input}")
-	  shell("cd {output} ; make")
-          shell("touch {output}")
+	input: "{name}.tar.bz2"
+	output: "{name}/samtools"
+	shell:
+		"tar -C {tools_path} -xjf {input} && "
+		"cd {wildcards.name} && make && "
+		"cd $OLDPWD && touch {output}"
 
 rule build_bowtie:
-     input: SOURCE_CODES[2]
-     output: TOOLS[2]
-     run: 
-          shell("tar -C {TOOLS_PATH} -xzf {input}")
-	  shell("cd {output} ; make")
-          shell("touch {output}")
-
-rule build_bowtie2:
-     input: SOURCE_CODES[3]
-     output: TOOLS[3]
-     run: 
-          shell("tar -C {TOOLS_PATH} -xzf {input}")
-	  shell("cd {output} ; make")
-          shell("touch {output}")
+	input: "{name}-src.zip"
+	output: "{name}/bowtie"
+	shell:
+		"unzip -d {tools_path} {input} && "
+		"cd {wildcards.name} && make && "
+		"cd $OLDPWD && touch {output}"
 
 rule build_rsem:
-     input: SOURCE_CODES[4]
-     output: TOOLS[4]
-     run: 
-          shell("tar -C {TOOLS_PATH} -xzf {input}")
-	  shell("cd {output} ; make")
-          shell("touch {output}")
+	input: "{name}.tar.gz"
+	output: expand("{{name}}/{cmd}", cmd = ["rsem-prepare-reference", "rsem-calculate-expression"])
+	shell:
+		"tar -C {tools_path} -xzf {input} && "
+		"cd {wildcards.name} && make && "
+		"cd $OLDPWD && touch {output}"
 
 rule build_PROBer:
-     input: SOURCE_CODES[5]
-     output: TOOLS[5]
-     run: 
-          shell("tar -C {TOOLS_PATH} -xzf {input}")
-          shell("cd {output} ; mkdir -p build ; cd build ; cmake .. ; make")
-          shell("touch {output}")
-
-rule build_other_codes:
-     input: SOURCE_CODES[6]
-     output: TOOLS[6]
-     run: 
-          shell("tar -C {TOOLS_PATH} -xzf {input}")
-          shell("cd {output} ; make")
-          shell("touch {output}")
+	input: "{name}.tar.gz"
+	output: expand("{{name}}/build/src/{cmd}", cmd = ["PROBer", "PROBer-single-batch-estimate"])
+	shell:
+		"tar -C {tools_path} -xzf {input} && "
+		"mkdir -p {wildcards.name}/build && cd {wildcards.name}/build && cmake .. && make && "
+		"cd $OLDPWD && touch {output}"

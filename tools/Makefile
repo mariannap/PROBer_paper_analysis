@@ -2,6 +2,6 @@
 
 clean:
 	rm -rf *~ .snakemake
-	rm -rf cutadapt-1.6 samtools-0.1.19 bowtie-1.0.0 bowtie2-2.1.0 rsem-1.2.20 PROBer-0.1.2 other_codes_0.1.1
+	rm -rf cutadapt-1.10 samtools-1.3.1 bowtie-1.1.2 RSEM-1.2.31 PROBer-0.2.0
 	rm -rf ._*
 
