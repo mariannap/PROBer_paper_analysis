@@ -1,0 +1,77 @@
+rule download_bpseq:
+	output:
+		expand("{path}/d.{{name}}.bpseq", path = gt_path)
+	shell:
+		"wget -O {output} http://www.rna.icmb.utexas.edu/RNA/Structures/d.{wildcards.name}.bpseq"
+
+rule extract_info_from_bpseq:
+	input: 
+		expand("{path}/{{organism,[a-z]+}}_{{rRNA}}.bpseq", path = gt_path)
+	params: 
+		output_name = "{path}/{{organism,[a-z]+}}_{{rRNA}}".format(path = gt_path)
+	output: 
+		expand("{path}/{{organism,[a-z]+}}_{{rRNA}}.{suffix}", path = gt_path, suffix = ["structure", "fa", "isac"])
+	shell:
+		"{script_path}/extractInfoFromBPSeq {input} {params.output_name} {wildcards.rRNA}_rRNA"
+
+rule generate_arabidopsis_bpseq:
+	input:
+		expand("{path}/d.{number}.e.A.thaliana.bpseq", path = gt_path, number = ["16", "23"])
+	output:
+		expand("{path}/arabidopsis_{rRNA}.bpseq", path = gt_path, rRNA = ["18S", "25S"])
+	shell:
+		"cp {input[0]} {output[0]} && "
+		"head -n 4 {input[1]} > {output[1]} && tail -n 3375 {input[1]} >> {output[1]}"
+
+rule generate_arabidopsis_rRNAs_fa:
+	input:
+		expand("{path}/arabidopsis_{rRNA}.fa", path = gt_path, rRNA = ["18S", "25S"])
+	output:
+		expand("{path}/arabidopsis_rRNAs.fa", path = gt_path)
+	shell:
+		"cat {input} > {output}"
+
+rule generate_yeast_bpseq:
+	input:
+		expand("{path}/d.{number}.e.S.cerevisiae.bpseq", path = gt_path, number = ["16", "23"])
+	output:
+		expand("{path}/yeast_{rRNA}.bpseq", path = gt_path, rRNA = ["18S", "25S"])
+	shell:
+		"cp {input[0]} {output[0]} && "
+        "head -n 4 {input[1]} > {output[1]} && tail -n 3396 {input[1]} >> {output[1]}"
+
+rule generate_mouse_bpseq:
+	input:
+		expand("{path}/d.16.{type}.M.musculus.bpseq", path = gt_path, type = ["e", "m"])
+	output:
+		expand("{path}/mouse_{rRNA}.bpseq", path = gt_path, rRNA = ["18S", "12S_Mt"])
+	shell:
+		"cp {input[0]} {output[0]} && grep -v 146 {input[1]} > {output[1]}"
+
+rule generate_mouse_rRNAs_fa:
+	input:
+		expand("{path}/mouse_{rRNA}.fa", path = gt_path, rRNA = ["18S", "12S_Mt"])
+	output:
+		expand("{path}/mouse_rRNAs.fa", path = gt_path)
+	shell:
+		"cat {input} > {output}"
+
+
+rule unzip_SHAPE_data:
+	input: 
+		expand("{path}/SHAPE_data.zip", path = gt_path)
+	output: 
+		expand("{path}/{name}.adducts", path = gt_path, name = ["RNaseP_WT", "pT181_long", "pT181_short"]),
+		expand("{path}/{file}", path = gt_path, file = ["SHAPE.t2g", "spikes_info.txt"])
+	shell:
+		"unzip {input} -d {gt_path} && touch {output}"
+
+rule process_SHAPE_data:
+	input:
+		expand("{path}/{{shape_name}}.adducts", path = gt_path)
+	params:
+		output_name = "{path}/{{shape_name}}".format(path = gt_path)
+	output:
+		expand("{path}/{{shape_name}}.{suffix}", path = gt_path, suffix = ["fa", "gamma", "beta"])
+	shell:
+		"{script_path}/processSHAPEdata {input} {params.output_name}"

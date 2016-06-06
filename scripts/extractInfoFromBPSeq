@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+
+try:
+    xrange
+except NameError:
+    xrange = range
+
+if len(argv) != 4:
+    print("Usage: extractInfofromBPSeq input.bpseq output_name FASTA_header")
+    exit(-1)
+
+seq = []
+truth = []
+with open(argv[1]) as fin:
+    for i in xrange(4):
+        next(fin)
+    for line in fin:        
+        fields = line[:-1].split()
+        seq.append(fields[1] if fields[1] != "U" else "T")
+        truth.append("0" if int(fields[2]) > 0 else "1")
+
+
+with open(argv[2] + ".structure", "w") as fout:
+    fout.write(" ".join(truth) + "\n")
+
+with open(argv[2] + ".fa", "w") as fout:
+    fout.write(">" + argv[3] + "\n")
+    fout.write("".join(seq) + "\n")
+
+isAC = ["1" if x == 'A' or x == 'C' else "0" for x in seq]
+with open(argv[2] + ".isac", "w") as fout:
+    fout.write(" ".join(isAC) + "\n")
