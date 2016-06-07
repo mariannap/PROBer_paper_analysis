@@ -95,7 +95,7 @@ rule download_mouse_GTF:
 
 rule generate_mouse_remove_list:
     output:
-        "{path}/remove_list.txt".format(path = ref_mosue)
+        "{path}/remove_list.txt".format(path = ref_mouse)
     run:
         with open(output[0], "w") as fout:
             fout.write("ENSMUST00000082388\n")
@@ -111,35 +111,19 @@ rule extract_mouse_transcripts:
     shell:
         "{script_path}/genome_to_transcript_set {input} {mouse_filt}"
 
-# REF_PATH = "references"
+rule download_human_genome:
+    input:
+        FTP.remote("ftp.ensembl.org/pub/release-83/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz")
+    output:
+        "{path}/Homo_sapiens.GRCh38.dna.primary_assembly.fa".format(path = ref_human)
+    shell:
+        "gunzip -c {input} > {output}"
 
-# REF_FILT_NAME = "{}/arabidopsis_filt/arabidopsis_filt".format(REF_PATH)
-# REF_FILT = expand("{REF_FILT_NAME}.{suffix}", REF_FILT_NAME = REF_FILT_NAME, suffix = ["grp", "idx.fa", "seq", "ti", "transcripts.fa", "mappability"])
-# REF_FILT.extend(expand("{REF_FILT_NAME}.{num}.{suffix}", REF_FILT_NAME = REF_FILT_NAME, num = [1, 2, 3, 4], suffix = ["bt2", "ebwt"]))
-# REF_FILT.extend(expand("{REF_FILT_NAME}.rev.{num}.{suffix}", REF_FILT_NAME = REF_FILT_NAME, num = [1, 2], suffix = ["bt2", "ebwt"]))
-
-# REF_SPIKE_NAME = "{}/arabidopsis_spike/arabidopsis_spike".format(REF_PATH)
-# REF_SPIKE = expand("{REF_SPIKE_NAME}.{suffix}", REF_SPIKE_NAME = REF_SPIKE_NAME, suffix = ["grp", "idx.fa", "seq", "ti", "transcripts.fa"])
-# REF_SPIKE.extend(expand("{REF_SPIKE_NAME}.{num}.ebwt", REF_SPIKE_NAME = REF_SPIKE_NAME, num = [1, 2, 3, 4]))
-# REF_SPIKE.extend(expand("{REF_SPIKE_NAME}.rev.{num}.ebwt", REF_SPIKE_NAME = REF_SPIKE_NAME, num = [1, 2]))
-
-
-# rule compile_mappability:
-#      input: "{}/scripts/calcMappability.cpp".format(REF_PATH)
-#      output: "{}/scripts/calcMappability".format(REF_PATH)
-#      shell: "g++ -O3 {input} -o {output}"
-
-
-#         shell("{input[3]} 21 {REF_FILT_NAME}.transcripts.fa {REF_FILT_NAME}.mappability")
-
-# rule generate_arabidopsis_spike:
-#      input:
-#         TOOLS[2], TOOLS[5],
-#         "annotation/arabidopsis_spike.fa",
-#         "annotation/arabidopsis_spike.t2g"
-#      output:
-#         REF_SPIKE
-#      run:
-#         shell("mkdir -p {REF_PATH}/arabidopsis_spike")
-#         shell("{PROBER} prepare --transcript-to-gene-map {input[3]} --bowtie --bowtie-path {input[0]} {input[2]} {REF_SPIKE_NAME}")
-
+rule build_Bowtie_indices_for_iCLIP_analyses:
+    input:
+        rules.download_human_genome.output,
+        PROBer, Bowtie
+    output:
+        touch(human_ref + ".done")
+    shell:
+        "{PROBer} prepare --genome --bowtie --bowtie-path {bowtie_path} {input[0]} {human_ref}"
