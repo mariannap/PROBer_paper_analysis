@@ -3,7 +3,7 @@
 from sys import argv, exit
 
 if len(argv) != 3:
-    print("Usage: convert input.fas output.fa")
+    print("Usage: replace_chromosome_name_for_TAIR10 input.fas output.fa")
     exit(-1)
 
 mymap = {'1':"Chr1", '2':"Chr2", '3':"Chr3", '4':"Chr4", '5':"Chr5", 'm':"ChrM", 'c':"ChrC"}

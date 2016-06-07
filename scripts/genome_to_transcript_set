@@ -1,0 +1,203 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+
+try:
+	xrange
+except NameError:
+	xrange = range
+
+if len(argv) != 6:
+	print("Usage: genome_to_transcript_set genome_fasta_file gene_annotation_gtf_file remove_list additional_transcripts_fasta_file output_name")
+	exit(-1)
+
+alphabet = "ACGT"
+cbase = {'A':'T', 'C':'G', 'G':'C', 'T':'A', 'N':'N'}
+
+class ChromType:
+	def __init__(self, sequence):
+		self.seq = sequence
+		self.chrlen = len(sequence)
+
+	def substr(self, strand, start, end):
+		if strand == '+':
+			return self.seq[start:end]
+		else:
+			return ''.join([cbase[self.seq[self.chrlen - i - 1]] for i in xrange(start, end)])
+
+class Transcript:
+	def __init__(self, tid, seq, gid):
+		self.tid = tid
+		self.seq = seq
+		self.gid = gid
+
+class GTFLine:
+	def __init__(self, line):
+		tmplist = line[:-1].split('\t')
+		self.chrom = tmplist[0]
+		self.feature = tmplist[2]
+		self.start = int(tmplist[3])
+		self.end = int(tmplist[4])
+		self.strand = tmplist[6]
+		self.gid = self.getID(tmplist[8], 'gene_id "', '";')
+		self.tid = self.getID(tmplist[8], 'transcript_id "', '";')
+
+	def getID(self, string, s, e):
+		start = string.index(s) + len(s)
+		end = string.index(e, start)
+		return string[start:end]
+
+class TransRecord:
+	def __init__(self, chrom, gid, strand):
+		self.chrom = chrom
+		self.gid = gid
+		self.strand = strand
+		self.exons = []
+
+def loadGenome(genomeF):
+	""" Load the genome and generate its reverse complements """
+	
+	genome = dict()
+
+	tag = seq = None
+	fin = open(genomeF)
+	for line in fin:
+		if line[0] == '>':
+			if tag != None:
+				genome[tag] = ChromType(seq)
+			tag = line[1:line.find(' ')]
+			print(tag)
+			seq = ""
+		else:
+			seq += ''.join([x if x in alphabet else 'N' for x in line[:-1]])
+
+	if tag != None:
+		genome[tag] = ChromType(seq)
+	fin.close()
+
+	return genome
+
+def loadRemoveList(listF):
+	""" Load a list of transcript ids to remove """
+	
+	removeList = set()
+
+	if listF != "None":
+		with open(listF) as fin:
+			for line in fin:
+				removeList.add(line[:-1])
+
+	return removeList
+
+def loadAdditional(addF):
+	""" Load additional transcripts """
+
+	mytrans = []
+	if addF != "None":
+		with open(addF) as fin:
+			for tag in fin:
+				tag = tag[1:-1]
+				seq = next(fin)[:-1]
+				mytrans.append(Transcript(tag, seq, tag))
+
+	return mytrans
+
+def parseGTF(gtfF):
+	""" Parse GTF file and extract transcript sequences """
+
+	transMap = dict()
+	null_ids = set()
+
+	fin = open(gtfF)
+	for line in fin:
+		if line.startswith('#'):
+			continue
+
+		gtfline = GTFLine(line)
+		if gtfline.feature != "exon":
+			continue
+
+		if gtfline.chrom not in genome:
+			assert gtfline.tid not in transMap
+			null_ids.add(gtfline.tid)
+			continue
+
+		rec = None
+		if gtfline.tid in transMap:
+			rec = transMap[gtfline.tid]
+			assert (rec.chrom == gtfline.chrom) and (rec.strand == gtfline.strand)
+		else:
+			rec = TransRecord(gtfline.chrom, gtfline.gid, gtfline.strand)
+			transMap[gtfline.tid] = rec
+
+		if rec.strand == '+':
+			rec.exons.append((gtfline.start - 1, gtfline.end))
+		else:
+			chrlen = genome[rec.chrom].chrlen
+			rec.exons.append((chrlen - gtfline.end, chrlen - gtfline.start + 1))
+			
+	fin.close()
+
+	tids = sorted(list(transMap.keys()))
+	seqs = set()
+	dup_ids = []
+	mytrans = []
+
+	for tid in tids:
+		rec = transMap[tid]
+		chrseq = genome[rec.chrom]
+
+		rec.exons.sort()
+
+		seq = ""
+		cstart = cend = -1
+		for (start, end) in rec.exons:
+			if cend >= start:
+				cend = max(cend, end)
+			else:
+				if cend > 0:
+					seq += chrseq.substr(rec.strand, cstart, cend)
+				cstart = start
+				cend = end
+		if cend > 0:
+			seq += chrseq.substr(rec.strand, cstart, cend)
+
+		if seq in seqs:
+			dup_ids.append(tid)
+		else:
+			seqs.add(seq)
+			if tid in removeList:
+				null_ids.add(tid)
+			else:
+				mytrans.append(Transcript(tid, seq, rec.gid))
+				
+	return (mytrans, dup_ids, list(null_ids))
+
+def output(output_name, trans, dup_ids, null_ids):
+	""" Generate outputs! """
+	
+	with open(output_name + ".fa", "w") as fout1:
+		with open(output_name + ".t2g", "w") as fout2:
+			for tran in trans:
+				fout1.write(">{}\n".format(tran.tid))
+				fout1.write(tran.seq + "\n")
+				fout2.write("{}\t{}\n".format(tran.tid, tran.gid))
+
+	with open(output_name + ".dup", "w") as fout:
+		fout.write(" ".join(dup_ids) + "\n")
+
+	with open(output_name + ".unextracted", "w") as fout:
+		fout.write(" ".join(null_ids) + "\n")
+
+
+genome  = loadGenome(argv[1])
+print("loadGenome is finished!")
+removeList = loadRemoveList(argv[3])
+print("loadRemoveList is finished!")
+trans = loadAdditional(argv[4])
+print("loadAdditional is finished!")
+(bulk, dup_ids, null_ids) = parseGTF(argv[2])
+print("parseGTF is finished!")
+trans.extend(bulk)
+output(argv[5], trans, dup_ids, null_ids)
+print("output is finished!")

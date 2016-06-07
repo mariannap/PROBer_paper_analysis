@@ -1,5 +1,6 @@
 .PHONY : clean
 
 clean:
-	rm -rf arabidopsis *~
+	rm -rf *~
+
 

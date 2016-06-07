@@ -1,42 +1,145 @@
-REF_PATH = "references"
+from snakemake.remote.FTP import RemoteProvider as FTPRemoteProvider
 
-REF_FILT_NAME = "{}/arabidopsis_filt/arabidopsis_filt".format(REF_PATH)
-REF_FILT = expand("{REF_FILT_NAME}.{suffix}", REF_FILT_NAME = REF_FILT_NAME, suffix = ["grp", "idx.fa", "seq", "ti", "transcripts.fa", "mappability"])
-REF_FILT.extend(expand("{REF_FILT_NAME}.{num}.{suffix}", REF_FILT_NAME = REF_FILT_NAME, num = [1, 2, 3, 4], suffix = ["bt2", "ebwt"]))
-REF_FILT.extend(expand("{REF_FILT_NAME}.rev.{num}.{suffix}", REF_FILT_NAME = REF_FILT_NAME, num = [1, 2], suffix = ["bt2", "ebwt"]))
+FTP = FTPRemoteProvider()
 
-REF_SPIKE_NAME = "{}/arabidopsis_spike/arabidopsis_spike".format(REF_PATH)
-REF_SPIKE = expand("{REF_SPIKE_NAME}.{suffix}", REF_SPIKE_NAME = REF_SPIKE_NAME, suffix = ["grp", "idx.fa", "seq", "ti", "transcripts.fa"])
-REF_SPIKE.extend(expand("{REF_SPIKE_NAME}.{num}.ebwt", REF_SPIKE_NAME = REF_SPIKE_NAME, num = [1, 2, 3, 4]))
-REF_SPIKE.extend(expand("{REF_SPIKE_NAME}.rev.{num}.ebwt", REF_SPIKE_NAME = REF_SPIKE_NAME, num = [1, 2]))
+rule build_PROBer_and_Bowtie_indices:
+    input:
+        expand("{{ref_name}}.{suffix}", suffix = ["fa", "t2g"]),
+        PROBer, Bowtie
+    output:
+        touch("{ref_name}.done")
+    shell:
+        "{PROBer} prepare --transcript-to-gene-map {input[1]} --bowtie --bowtie-path {bowtie_path} {input[0]} {wildcards.ref_name}"
+
+rule download_arabidopsis_genome:
+    input:
+        FTP.remote("ftp.arabidopsis.org/home/tair/Genes/TAIR10_genome_release/TAIR10_chromosome_files/TAIR10_chr_all.fas")
+    output:
+        "{path}/TAIR10_chr_all.fa".format(path = ref_arabidopsis)
+    shell:
+        "{script_path}/replace_chromosome_name_for_TAIR10 {input} {output}"
+
+rule generate_arabidopsis_GTF:
+    input:
+        FTP.remote("ftp.arabidopsis.org/home/tair/Genes/TAIR10_genome_release/TAIR10_gff3/TAIR10_GFF3_genes.gff")
+    output:
+        "{path}/TAIR10_GTF_genes.gtf".format(path = ref_arabidopsis)
+    shell:
+        "{script_path}/gff3_to_gtf {input} {output} mRNA,rRNA,ncRNA,snRNA,tRNA,miRNA,snoRNA"
+
+rule generate_arabidopsis_remove_list:
+    output:
+        "{path}/remove_list.txt".format(path = ref_arabidopsis)
+    run:
+        with open(output[0], "w") as fout:
+            fout.write("AT2G01010.1\nAT3G41768.1\nAT2G01021.1\n")
+
+rule extract_arabidopsis_transcripts:
+    input:
+        rules.download_arabidopsis_genome.output,
+        rules.generate_arabidopsis_GTF.output,
+        rules.generate_arabidopsis_remove_list.output,
+        "{path}/arabidopsis_rRNAs.fa".format(path = gt_path)
+    output:
+        expand("{ref_name}.{suffix}", ref_name = arabidopsis_filt, suffix = ["fa", "t2g", "dup", "unextracted"])
+    shell:
+        "{script_path}/genome_to_transcript_set {input} {arabidopsis_filt}"
+
+rule add_spike_in_sequences_to_arabidopsis_transcripts:
+    input:
+        expand("{path}/{spike_in}.fa", path = gt_path, spike_in = ["RNaseP_WT", "pT181_long", "pT181_short"]),
+        arabidopsis_filt + ".fa",
+        gt_path + "/SHAPE.t2g",
+        arabidopsis_filt + ".t2g"
+    output:
+        expand("{ref_name}.{suffix}", ref_name = arabidopsis_spike, suffix = ["fa", "t2g"])
+    shell:
+        "cat {input[0]} {input[1]} {input[2]} {input[3]} > {output[0]} && "
+        "cat {input[4]} {input[5]} > {output[1]}"
+
+rule generate_yeast_remove_list:
+    output:
+        "{path}/remove_list.txt".format(path = ref_yeast)
+    run:
+        with open(output[0], "w") as fout:
+            fout.write("RDN37-1\nRDN37-2\nRDN18-2\nRDN25-2\nRDN58-2\nRDN5-2\nRDN5-3\nRDN5-4\nRDN5-5\nRDN5-6\nYLR154C-G\n")
+
+rule extract_yeast_transcripts:
+    input:
+        FTP.remote("ftp.ensembl.org/pub/release-84/fasta/saccharomyces_cerevisiae/dna/Saccharomyces_cerevisiae.R64-1-1.dna.toplevel.fa.gz"),
+        FTP.remote("ftp.ensembl.org/pub/release-84/gtf/saccharomyces_cerevisiae/Saccharomyces_cerevisiae.R64-1-1.84.gtf.gz"),
+        rules.generate_yeast_remove_list.output
+    output:
+        expand("{path}/Saccharomyces_cerevisiae.R64-1-1.{suffix}", path = ref_yeast, suffix = ["dna.toplevel.fa", "84.gtf"]),
+        expand("{ref_name}.{suffix}", ref_name = yeast_filt, suffix = ["fa", "t2g", "dup", "unextracted"])
+    shell:
+        "gunzip -c {input[0]} > {output[0]} && "
+        "gunzip -c {input[1]} > {output[1]} && "
+        "{script_path}/genome_to_transcript_set {output[0]} {output[1]} {input[2]} None {yeast_filt}"
+
+rule download_mouse_genome:
+    input:
+        FTP.remote("ftp.ensembl.org/pub/release-74/fasta/mus_musculus/dna/Mus_musculus.GRCm38.74.dna.toplevel.fa.gz")
+    output:
+        "{path}/Mus_musculus.GRCm38.74.dna.toplevel.fa".format(path = ref_mouse)
+    shell:
+        "gunzip -c {input} > {output}"
+
+rule download_mouse_GTF:
+    input:
+        FTP.remote("ftp.ensembl.org/pub/release-74/gtf/mus_musculus/Mus_musculus.GRCm38.74.gtf.gz")
+    output:
+        "{path}/Mus_musculus.GRCm38.74.gtf".format(path = ref_mouse)
+    shell:
+        "gunzip -c {input} > {output}"
+
+rule generate_mouse_remove_list:
+    output:
+        "{path}/remove_list.txt".format(path = ref_mosue)
+    run:
+        with open(output[0], "w") as fout:
+            fout.write("ENSMUST00000082388\n")
+
+rule extract_mouse_transcripts:
+    input:
+        rules.download_mouse_genome.output,
+        rules.download_mouse_GTF.output,
+        rules.generate_mouse_remove_list.output,
+        "{path}/mouse_rRNAs.fa"
+    output:
+        expand("{ref_name}.{suffix}", ref_name = mouse_filt, suffix = ["fa", "t2g", "dup", "unextracted"])
+    shell:
+        "{script_path}/genome_to_transcript_set {input} {mouse_filt}"
+
+# REF_PATH = "references"
+
+# REF_FILT_NAME = "{}/arabidopsis_filt/arabidopsis_filt".format(REF_PATH)
+# REF_FILT = expand("{REF_FILT_NAME}.{suffix}", REF_FILT_NAME = REF_FILT_NAME, suffix = ["grp", "idx.fa", "seq", "ti", "transcripts.fa", "mappability"])
+# REF_FILT.extend(expand("{REF_FILT_NAME}.{num}.{suffix}", REF_FILT_NAME = REF_FILT_NAME, num = [1, 2, 3, 4], suffix = ["bt2", "ebwt"]))
+# REF_FILT.extend(expand("{REF_FILT_NAME}.rev.{num}.{suffix}", REF_FILT_NAME = REF_FILT_NAME, num = [1, 2], suffix = ["bt2", "ebwt"]))
+
+# REF_SPIKE_NAME = "{}/arabidopsis_spike/arabidopsis_spike".format(REF_PATH)
+# REF_SPIKE = expand("{REF_SPIKE_NAME}.{suffix}", REF_SPIKE_NAME = REF_SPIKE_NAME, suffix = ["grp", "idx.fa", "seq", "ti", "transcripts.fa"])
+# REF_SPIKE.extend(expand("{REF_SPIKE_NAME}.{num}.ebwt", REF_SPIKE_NAME = REF_SPIKE_NAME, num = [1, 2, 3, 4]))
+# REF_SPIKE.extend(expand("{REF_SPIKE_NAME}.rev.{num}.ebwt", REF_SPIKE_NAME = REF_SPIKE_NAME, num = [1, 2]))
 
 
-rule compile_mappability:
-     input: "{}/scripts/calcMappability.cpp".format(REF_PATH)
-     output: "{}/scripts/calcMappability".format(REF_PATH)
-     shell: "g++ -O3 {input} -o {output}"
+# rule compile_mappability:
+#      input: "{}/scripts/calcMappability.cpp".format(REF_PATH)
+#      output: "{}/scripts/calcMappability".format(REF_PATH)
+#      shell: "g++ -O3 {input} -o {output}"
 
-rule generate_arabidopsis_filt:
-     input:
-        TOOLS[2], TOOLS[3], TOOLS[5],
-        rules.compile_mappability.output,
-        "annotation/arabidopsis_filtered.fa",
-        "annotation/arabidopsis_filtered.t2g"
-     output:
-        REF_FILT
-     run:
-        shell("mkdir -p {REF_PATH}/arabidopsis_filt")
-        shell("{PROBER} prepare --transcript-to-gene-map {input[5]} --bowtie --bowtie-path {input[0]} --bowtie2 --bowtie2-path {input[1]} {input[4]} {REF_FILT_NAME}")
-        shell("{input[3]} 21 {REF_FILT_NAME}.transcripts.fa {REF_FILT_NAME}.mappability")
 
-rule generate_arabidopsis_spike:
-     input:
-        TOOLS[2], TOOLS[5],
-        "annotation/arabidopsis_spike.fa",
-        "annotation/arabidopsis_spike.t2g"
-     output:
-        REF_SPIKE
-     run:
-        shell("mkdir -p {REF_PATH}/arabidopsis_spike")
-        shell("{PROBER} prepare --transcript-to-gene-map {input[3]} --bowtie --bowtie-path {input[0]} {input[2]} {REF_SPIKE_NAME}")
+#         shell("{input[3]} 21 {REF_FILT_NAME}.transcripts.fa {REF_FILT_NAME}.mappability")
+
+# rule generate_arabidopsis_spike:
+#      input:
+#         TOOLS[2], TOOLS[5],
+#         "annotation/arabidopsis_spike.fa",
+#         "annotation/arabidopsis_spike.t2g"
+#      output:
+#         REF_SPIKE
+#      run:
+#         shell("mkdir -p {REF_PATH}/arabidopsis_spike")
+#         shell("{PROBER} prepare --transcript-to-gene-map {input[3]} --bowtie --bowtie-path {input[0]} {input[2]} {REF_SPIKE_NAME}")
 
