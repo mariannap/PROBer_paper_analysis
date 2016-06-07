@@ -1,9 +1,0 @@
-18S_rRNA	18S
-25S_rRNA	25S
-ATCG00920.1	Chloroplast-encoded 16S
-ATCG00950.1	Chloroplast-encoded 23S
-ATCG00960.1	Chloroplast-encoded 4.5S
-ATCG00970.1	chloroplast-encoded 5S
-ATMG00020.1	Mitochondrial 26S
-ATMG01380.1	Mitochondrial 5S
-ATMG01390.1	Mitochondrial 18S

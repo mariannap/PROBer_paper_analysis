@@ -11,6 +11,18 @@ rule build_PROBer_and_Bowtie_indices:
     shell:
         "{PROBer} prepare --transcript-to-gene-map {input[1]} --bowtie --bowtie-path {bowtie_path} {input[0]} {wildcards.ref_name}"
 
+rule build_RSEM_indices:
+    input:
+        expand("{{ref_name}}.{suffix}", suffix = ["fa", "t2g"]),
+        RSEM_prepare
+    params:
+        ref_rsem = "{ref_name}_rsem"
+    output:
+        touch("{ref_name}_rsem.done")
+    shell:
+        "sed -r 's/([^\\t]+)\\t([^\\t]+)/\\2\\t\\1/' {input[1]} > {params.ref_rsem}.g2t && "
+        "{RSEM_prepare} --transcript-to-gene-map {params.ref_rsem}.g2t {input[0]} {params.ref_rsem}"
+
 rule download_arabidopsis_genome:
     input:
         FTP.remote("ftp.arabidopsis.org/home/tair/Genes/TAIR10_genome_release/TAIR10_chromosome_files/TAIR10_chr_all.fas")
@@ -44,6 +56,15 @@ rule extract_arabidopsis_transcripts:
         expand("{ref_name}.{suffix}", ref_name = arabidopsis_filt, suffix = ["fa", "t2g", "dup", "unextracted"])
     shell:
         "{script_path}/genome_to_transcript_set {input} {arabidopsis_filt}"
+
+rule calculate_mappability_for_arabidopsis_filt:
+    input:
+        arabidopsis_filt + ".done",
+        "{path}/calcMappability".format(path = script_path)
+    output:
+        arabidopsis_filt + ".mappability"
+    shell:
+        "{input[1]} 21 {arabidopsis_filt}.transcripts.fa {output}"
 
 rule add_spike_in_sequences_to_arabidopsis_transcripts:
     input:
@@ -105,7 +126,7 @@ rule extract_mouse_transcripts:
         rules.download_mouse_genome.output,
         rules.download_mouse_GTF.output,
         rules.generate_mouse_remove_list.output,
-        "{path}/mouse_rRNAs.fa"
+        "{path}/mouse_rRNAs.fa".format(path = gt_path)
     output:
         expand("{ref_name}.{suffix}", ref_name = mouse_filt, suffix = ["fa", "t2g", "dup", "unextracted"])
     shell:

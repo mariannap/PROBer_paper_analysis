@@ -1,0 +1,7 @@
+rule compile_mappability:
+	input:
+		script_path + "/calcMappability.cpp"
+	output:
+		script_path + "/calcMappability"
+	shell:
+		"g++ -O3 {input} -o {output}"

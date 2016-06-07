@@ -42,7 +42,7 @@ yeast_filt = "{path}/yeast_filt".format(path = ref_yeast)
 mouse_filt = "{path}/mouse_filt".format(path = ref_mouse)
 human_ref = "{path}/human_ref".format(path = ref_human)
 
-references = expand("{ref_name}.done", ref_name = [arabidopsis_filt, arabidopsis_spike, yeast_filt, mouse_filt, human_ref])
+# references = expand("{ref_name}.done", ref_name = [arabidopsis_filt, arabidopsis_spike, yeast_filt, mouse_filt, human_ref, arabidopsis_filt + "_rsem"])
 
 
 ## Import Snakemake modules
@@ -50,12 +50,10 @@ references = expand("{ref_name}.done", ref_name = [arabidopsis_filt, arabidopsis
 include: "scripts/Snakefile"
 include: "tools/Snakefile"
 include: "ground_truth/Snakefile"
-include: "references/Snakefile"
+# include: "references/Snakefile"
+include: "data/Snakefile"
 
 rule all:
-	input: references
-		
-		# arabidopsis_filt + ".fa",
-		# arabidopsis_spike + ".fa"
+	input: 
 
 
