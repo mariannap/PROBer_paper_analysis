@@ -1,3 +1,5 @@
+from snakemake.utils import makedirs
+
 ## Define variables 
 
 ### scripts
@@ -28,12 +30,8 @@ gt_path = "ground_truth"
 ### references
 ref_path = "references"
 
-ref_arabidopsis = "{path}/arabidopsis".format(path = ref_path)
-ref_yeast = "{path}/yeast".format(path = ref_path)
-ref_mouse = "{path}/mouse".format(path = ref_path)
-ref_human = "{path}/human".format(path = ref_path)
-
-from snakemake.utils import makedirs
+ref_arabidopsis, ref_yeast, ref_mouse, ref_human = expand("{path}/{organism}", path = ref_path, 
+	organism = ["arabidopsis", "yeast", "mouse", "human"])
 makedirs([ref_arabidopsis, ref_yeast, ref_mouse, ref_human])
 
 arabidopsis_filt = "{path}/arabidopsis_filt".format(path = ref_arabidopsis)
@@ -44,6 +42,12 @@ human_ref = "{path}/human_ref".format(path = ref_human)
 
 # references = expand("{ref_name}.done", ref_name = [arabidopsis_filt, arabidopsis_spike, yeast_filt, mouse_filt, human_ref, arabidopsis_filt + "_rsem"])
 
+### data
+data_path = "data"
+
+AssmannLab, McmanusLab, ChangLab, GilbertLab, YeoLab = expand("{path}/{lab}", path = data_path, 
+	lab = ["AssmannLab", "McmanusLab", "ChangLab", "GilbertLab", "YeoLab"])
+makedirs([AssmannLab, McmanusLab, ChangLab, GilbertLab, YeoLab])
 
 ## Import Snakemake modules
 

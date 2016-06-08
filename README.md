@@ -4,6 +4,8 @@ Reproduce PROBer paper analysis
 
 ### Prerequisites
 
+This snakemake workflow is tested and intended to run under Ubuntu Linux 64 bit architecture.
+
 First, you need to install [Snakemake](https://bitbucket.org/johanneskoester/snakemake/wiki/Home). 
 
 Then, please make sure that you have `Perl`, `Python` and `R`(>= 3.1.0) installed. For `Python`, we additionally require the following packages installed: [Cython](http://cython.org/), [numpy](http://www.numpy.org), [scipy](http://www.scipy.org/), and [pysam](https://github.com/pysam-developers/pysam). For `R`, please install the [pROC](http://cran.r-project.org/web/packages/pROC) and [reshape2](http://cran.r-project.org/web/packages/reshape2) packages.
