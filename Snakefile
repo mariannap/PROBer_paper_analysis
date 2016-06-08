@@ -8,15 +8,15 @@ script_path = "scripts"
 ### tools
 tool_path = "tools"
 
-Cutadapt, Samtools, Bowtie = expand("{path}/{program}", path = tool_path, 
-	program = ["cutadapt-1.10/bin/cutadapt", "samtools-1.3.1/samtools", "bowtie-1.1.2/bowtie"])
+fastq_dump, Cutadapt, Samtools, Bowtie = expand("{path}/{program}", path = tool_path, 
+	program = ["sratoolkit.2.6.3-ubuntu64/bin/fastq-dump", "cutadapt-1.10/bin/cutadapt", "samtools-1.3.1/samtools", "bowtie-1.1.2/bowtie"])
 bowtie_path = tool_path + "/bowtie-1.1.2"
 
 RSEM_prepare, RSEM_calculate = expand("{path}/RSEM-1.2.31/{cmd}", path = tool_path, cmd = ["rsem-prepare-reference", "rsem-calculate-expression"])
 
 PROBer, PROBer_single = expand("{path}/PROBer-0.2.0/build/src/{cmd}", path = tool_path, cmd = ["PROBer", "PROBer-single-batch-estimate"])
 
-# tools = [Cutadapt, Samtools, Bowtie, RSEM_prepare, RSEM_calculate, PROBer, PROBer_single]
+# tools = [fastq_dump, Cutadapt, Samtools, Bowtie, RSEM_prepare, RSEM_calculate, PROBer, PROBer_single]
 
 ### ground truth
 gt_path = "ground_truth"
@@ -49,6 +49,22 @@ AssmannLab, McmanusLab, ChangLab, GilbertLab, YeoLab = expand("{path}/{lab}", pa
 	lab = ["AssmannLab", "McmanusLab", "ChangLab", "GilbertLab", "YeoLab"])
 makedirs([AssmannLab, McmanusLab, ChangLab, GilbertLab, YeoLab])
 
+sample_name_to_data = {}
+sample_name_to_data["structure_seq_minus"] = expand("{path}/{run}_trimmed.fq", path = AssmannLab, run = ["SRR933551", "SRR933557"])
+sample_name_to_data["structure_seq_plus"] = expand("{path}/{run}_trimmed.fq", path = AssmannLab, run = ["SRR933552", "SRR933556"])
+sample_name_to_data["mod_seq_minus"] = expand("{path}/{run}_corrected.fq", path = McmanusLab, run = ["SRR955862", "SRR955865"])
+sample_name_to_data["mod_seq_plus"] = expand("{path}/{run}_corrected.fq", path = McmanusLab, run = ["SRR955864", "SRR955871"])
+sample_name_to_data["icSHAPE_dmso"] = ["{path}/SRR1534953_trimmed.fq".format(path = ChangLab)]
+sample_name_to_data["icSHAPE_invitro"] = ["{path}/SRR1534955_trimmed.fq".format(path = ChangLab)]
+sample_name_to_data["icSHAPE_invivo"] = ["{path}/SRR1534957_trimmed.fq".format(path = ChangLab)]
+sample_name_to_data["pseudo_seq_minus"] = expand("{path}/{run}_trimmed.fq", path = GilbertLab, run = ["SRR1327186", "SRR1327187"])
+sample_name_to_data["pseudo_seq_plus"] = expand("{path}/{run}_trimmed.fq", path = GilbertLab, run = ["SRR1327188", "SRR1327189"])
+sample_name_to_data["RBFOX2_iCLIP"] = ["{path}/SRR3147675_trimmed.fq".format(path = YeoLab)]
+
+data = []
+for data_vec in sample_name_to_data.values():
+	data.extend(data_vec)
+
 ## Import Snakemake modules
 
 include: "scripts/Snakefile"
@@ -58,6 +74,7 @@ include: "ground_truth/Snakefile"
 include: "data/Snakefile"
 
 rule all:
-	input: 
+	input: data
+
 
 

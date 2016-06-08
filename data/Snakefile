@@ -1,29 +1,112 @@
+rule download_sra:
+	output: "{path}/{run,SRR\d+}.sra"
+	run:
+		url = "ftp://ftp-trace.ncbi.nih.gov/sra/sra-instant/reads/ByRun/sra/SRR/{0}/{1}/{1}.sra".format(wildcards.run[:6], wildcards.run)
+		shell("wget -O {output} {url}")
+
+rule dump_to_FASTQ:
+	input: "{path}/{run}.sra", fastq_dump
+	output: "{path}/{run,SRR\d+}.fastq"
+	shell: "{fastq_dump} --split-spot -O {wildcards.path} {input[0]}"
+
+rule dump_to_FASTQ_100M:
+	input: 
+		"{path}/{{run}}.sra".format(path = ChangLab), 
+		fastq_dump
+	output: 
+		"{path}/{{run,SRR\d+}}.fastq".format(path = ChangLab)
+	shell: 
+		"{fastq_dump} --split-spot -N 100000000 -O {ChangLab} {input[0]}"
+
+ruleorder: dump_to_FASTQ_100M > dump_to_FASTQ
 
 
+rule remove_adaptor_AssmannLab:
+	input:
+		"{path}/{{run}}.fastq".format(path = AssmannLab),
+		Cutadapt
+	output:
+		"{path}/{{run}}_trimmed.fq".format(path = AssmannLab)
+	log:
+		"{path}/{{run}}_trimmed.log".format(path = AssmannLab)
+	shell:
+		"{Cutadapt} -u 3 -a GATCGGAAGAGCACACGTCTGAACTCCAGTCAC -m 21 -o {output} {input[0]} > {log}"
 
-# rule remove_adaptor:
-#      input:
-#         TOOLS[0], 
-#         DATA_PATH + "/{accession}.fastq"
-#      output:
-#         DATA_PATH + "/{accession}_trimmed.fq",
-#         DATA_PATH + "/{accession}_discarded.fq"
-#      run:
-#         shell("{input[0]}/bin/cutadapt -u 3 -a GATCGGAAGAGCACACGTCTGAACTCCAGTCAC -m 21 -o {output[0]} --too-short-output={output[1]} {input[1]}")
 
-# rule pool_minus:
-#      input:
-#         DATA_PATH + "/SRR933551_trimmed.fq",
-#         DATA_PATH + "/SRR933557_trimmed.fq"
-#      output:
-#         REAL_DATA[0]
-#      shell: "cat {input[0]} {input[1]} > {output}"
+rule remove_3_prime_adaptor_McmanusLab:
+	input:
+		"{path}/{{run}}.fastq".format(path = McmanusLab),
+		Cutadapt
+	output:
+		"{path}/{{run}}_trimmed.fq".format(path = McmanusLab)
+	log:
+		"{path}/{{run}}_trimmed.log".format(path = McmanusLab)
+	shell:
+		"{Cutadapt} -a CTGTAGGCACCATCAAT -m 25 -o {output} {input[0]} > {log}"
 
-# rule pool_plus:
-#      input:
-#         DATA_PATH + "/SRR933552_trimmed.fq",
-#         DATA_PATH + "/SRR933556_trimmed.fq"
-#      output:
-#         REAL_DATA[1]
-#      shell: "cat {input[0]} {input[1]} > {output}"
+rule remove_5_prime_adaptor_McmanusLab:
+	input:
+		"{path}/{{run}}_trimmed.fq".format(path = McmanusLab),
+		Cutadapt
+	output:
+		expand("{path}/{{run}}_{category}.fq", path = McmanusLab, category = ["passed", "nodrop"])
+	log:
+		"{path}/{{run}}_passed.log".format(path = McmanusLab)
+	shell:
+		"{Cutadapt} -g ^ATCGTAGGCACCTGAAA --untrimmed-output {output[0]} -o {output[1]} {input[0]} > {log}"
 
+rule align_reads_for_trimming_mismatches_McmanusLab:
+	input:
+		"{path}/{{run}}_passed.fq".format(path = McmanusLab),
+		yeast_filt + ".done", Bowtie, Samtools
+	output:
+		"{path}/{{run}}_for_trimming_mismatches.bam".format(path = McmanusLab)
+	log:
+		"{path}/{{run}}_for_trimming_mismatches.log".format(path = McmanusLab)
+	threads: 10
+	shell:
+		"{Bowtie} --norc --best --chunkmbs 500 -p {threads} -S {yeast_filt} {input[0]} 2> {log} | {Samtools} view -S -b -o {output} -"
+
+rule trim_mismatches_McmanusLab:
+	input:
+		"{path}/{{run}}_for_trimming_mismatches.bam".format(path = McmanusLab)
+	output:
+		"{path}/{{run}}_corrected.fq".format(path = McmanusLab)
+	shell:
+		"{script_path}/trimMismatch {input} {output}"
+
+
+rule remove_adaptor_ChangLab:
+	input:
+		"{path}/{{run}}.fastq".format(path = ChangLab),
+		Cutadapt
+	output:
+		"{path}/{{run}}_trimmed.fq".format(path = ChangLab)
+	log:
+		"{path}/{{run}}_trimmed.log".format(path = ChangLab)
+	shell:
+		"{Cutadapt} -a AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAGACCGATCTCGTATGCCGTCTTCTGCTTG -m 33 -o {output} {input[0]} > {log}"
+
+
+rule remove_adaptor_GilbertLab:
+	input:
+		"{path}/{{run}}.fastq".format(path = GilbertLab),
+		Cutadapt
+	output:
+		"{path}/{{run}}_trimmed.fq".format(path = GilbertLab)
+	log:
+		"{path}/{{run}}_trimmed.log".format(path = GilbertLab)
+	shell:
+		"{Cutadapt} -a TGGAATTCTCGGGTGCCAAGG -m 18 -o {output} {input[0]} > {log}"
+
+
+rule remove_adaptor_YeoLab:
+	input:
+		"{path}/{{run}}.fastq".format(path = YeoLab),
+		Cutadapt
+	output:
+		"{path}/{{run}}_trimmed.fq".format(path = YeoLab)
+	log:
+		"{path}/{{run}}_trimmed.log".format(path = YeoLab)
+	shell:
+		"{Cutadapt} -a AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAGACCGATCTCGTATGCCGTCTTCTGCTTG -m 27 -o {output} {input[0]} > {log}"
