@@ -54,12 +54,12 @@ sample_name_to_data["structure_seq_minus"] = expand("{path}/{run}_trimmed.fq", p
 sample_name_to_data["structure_seq_plus"] = expand("{path}/{run}_trimmed.fq", path = AssmannLab, run = ["SRR933552", "SRR933556"])
 sample_name_to_data["mod_seq_minus"] = expand("{path}/{run}_corrected.fq", path = McmanusLab, run = ["SRR955862", "SRR955865"])
 sample_name_to_data["mod_seq_plus"] = expand("{path}/{run}_corrected.fq", path = McmanusLab, run = ["SRR955864", "SRR955871"])
-sample_name_to_data["icSHAPE_dmso"] = ["{path}/SRR1534953_trimmed.fq".format(path = ChangLab)]
-sample_name_to_data["icSHAPE_invitro"] = ["{path}/SRR1534955_trimmed.fq".format(path = ChangLab)]
-sample_name_to_data["icSHAPE_invivo"] = ["{path}/SRR1534957_trimmed.fq".format(path = ChangLab)]
+sample_name_to_data["icSHAPE_dmso"] = ["{path}/SRR1534953_cleaned.fq".format(path = ChangLab)]
+sample_name_to_data["icSHAPE_invitro"] = ["{path}/SRR1534955_cleaned.fq".format(path = ChangLab)]
+sample_name_to_data["icSHAPE_invivo"] = ["{path}/SRR1534957_cleaned.fq".format(path = ChangLab)]
 sample_name_to_data["pseudo_seq_minus"] = expand("{path}/{run}_trimmed.fq", path = GilbertLab, run = ["SRR1327186", "SRR1327187"])
 sample_name_to_data["pseudo_seq_plus"] = expand("{path}/{run}_trimmed.fq", path = GilbertLab, run = ["SRR1327188", "SRR1327189"])
-sample_name_to_data["RBFOX2_iCLIP"] = ["{path}/SRR3147675_trimmed.fq".format(path = YeoLab)]
+sample_name_to_data["RBFOX2_iCLIP"] = ["{path}/SRR3147675_cleaned.fq".format(path = YeoLab)]
 
 data = []
 for data_vec in sample_name_to_data.values():

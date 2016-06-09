@@ -1,0 +1,39 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+import re
+
+if len(argv) != 4:
+    print("Usage: remove_dup input.fastq barcode_len output.fastq")
+    exit(-1)
+
+seen = set()
+
+rgx = re.compile("(?<=length=)\d+")
+barcode_len = int(argv[2])
+
+ntot = 0
+npass = 0
+
+with open(argv[1]) as fin:
+    with open(argv[3], "w") as fout:
+        for tag in fin:
+            seq = next(fin)
+            tmp = next(fin)
+            qual = next(fin)
+
+            ntot += 1
+
+            if seq not in seen:
+                seen.add(seq)
+                trimmed_len = str(len(seq) - 1 - barcode_len)
+                fout.write(rgx.sub(trimmed_len, tag))
+                fout.write(seq[barcode_len:])
+                fout.write(rgx.sub(trimmed_len, tmp))
+                fout.write(qual[barcode_len:])
+                npass += 1
+                
+            if ntot % 1000000 == 0:
+                print("FIN {}".format(ntot))
+
+print("File = {}, N_pass = {}, N_tot = {}, Ratio = {:.2f}%".format(argv[1], npass, ntot, npass * 100.0 / ntot))

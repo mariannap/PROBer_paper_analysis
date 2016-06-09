@@ -87,6 +87,14 @@ rule remove_adaptor_ChangLab:
 	shell:
 		"{Cutadapt} -a AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAGACCGATCTCGTATGCCGTCTTCTGCTTG -m 33 -o {output} {input[0]} > {log}"
 
+rule remove_PCR_duplicate_ChangLab:
+	input:
+		"{path}/{{run}}_trimmed.fq".format(path = ChangLab)
+	output:
+		"{path}/{{run}}_cleaned.fq".format(path = ChangLab)
+	shell:
+		"{script_path}/remove_dup {input} 13 {output}"
+
 
 rule remove_adaptor_GilbertLab:
 	input:
@@ -110,3 +118,11 @@ rule remove_adaptor_YeoLab:
 		"{path}/{{run}}_trimmed.log".format(path = YeoLab)
 	shell:
 		"{Cutadapt} -a AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAGACCGATCTCGTATGCCGTCTTCTGCTTG -m 27 -o {output} {input[0]} > {log}"
+
+rule remove_PCR_duplicate_YeoLab:
+	input:
+		"{path}/{{run}}_trimmed.fq".format(path = YeoLab)
+	output:
+		"{path}/{{run}}_cleaned.fq".format(path = YeoLab)
+	shell:
+		"{script_path}/remove_dup {input} 9 {output}"
