@@ -59,11 +59,15 @@ sample_name_to_data["icSHAPE_invitro"] = ["{path}/SRR1534955_cleaned.fq".format(
 sample_name_to_data["icSHAPE_invivo"] = ["{path}/SRR1534957_cleaned.fq".format(path = ChangLab)]
 sample_name_to_data["pseudo_seq_minus"] = expand("{path}/{run}_trimmed.fq", path = GilbertLab, run = ["SRR1327186", "SRR1327187"])
 sample_name_to_data["pseudo_seq_plus"] = expand("{path}/{run}_trimmed.fq", path = GilbertLab, run = ["SRR1327188", "SRR1327189"])
-sample_name_to_data["RBFOX2_iCLIP"] = ["{path}/SRR3147675_cleaned.fq".format(path = YeoLab)]
 
-data = []
-for data_vec in sample_name_to_data.values():
-	data.extend(data_vec)
+# sample_name_to_data["RBFOX2_iCLIP"] = ["{path}/SRR3147675_cleaned.fq".format(path = YeoLab)]
+# data = []
+# for data_vec in sample_name_to_data.values():
+# 	data.extend(data_vec)
+
+
+### exp
+exp_path = "exp"
 
 ## Import Snakemake modules
 
@@ -72,9 +76,7 @@ include: "tools/Snakefile"
 include: "ground_truth/Snakefile"
 # include: "references/Snakefile"
 include: "data/Snakefile"
+include: "exp/Snakefile"
 
 rule all:
 	input: data
-
-
-

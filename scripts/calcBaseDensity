@@ -25,7 +25,7 @@ def update(alignments):
 ### Designed only for reproducing PROBer paper
 
 if len(argv) < 4:
-    print("Usage: python calcBaseDensity input.bam output.txt [all | name1 name2 ...]")
+    print("Usage: calcBaseDensity input.bam output.txt [all | name1 name2 ...]")
     exit(-1)
 
 sam_in = pysam.AlignmentFile(argv[1], "rb")

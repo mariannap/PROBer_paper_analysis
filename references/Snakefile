@@ -7,7 +7,7 @@ rule build_PROBer_and_Bowtie_indices:
         expand("{{ref_name}}.{suffix}", suffix = ["fa", "t2g"]),
         PROBer, Bowtie
     output:
-        touch("{ref_name}.done")
+        touch("{ref_name}")
     shell:
         "{PROBer} prepare --transcript-to-gene-map {input[1]} --bowtie --bowtie-path {bowtie_path} {input[0]} {wildcards.ref_name}"
 
@@ -18,7 +18,7 @@ rule build_RSEM_indices:
     params:
         ref_rsem = "{ref_name}_rsem"
     output:
-        touch("{ref_name}_rsem.done")
+        touch("{ref_name}_rsem")
     shell:
         "sed -r 's/([^\\t]+)\\t([^\\t]+)/\\2\\t\\1/' {input[1]} > {params.ref_rsem}.g2t && "
         "{RSEM_prepare} --transcript-to-gene-map {params.ref_rsem}.g2t {input[0]} {params.ref_rsem}"
@@ -59,7 +59,7 @@ rule extract_arabidopsis_transcripts:
 
 rule calculate_mappability_for_arabidopsis_filt:
     input:
-        arabidopsis_filt + ".done",
+        arabidopsis_filt + "",
         "{path}/calcMappability".format(path = script_path)
     output:
         arabidopsis_filt + ".mappability"
@@ -145,6 +145,6 @@ rule build_Bowtie_indices_for_iCLIP_analyses:
         rules.download_human_genome.output,
         PROBer, Bowtie
     output:
-        touch(human_ref + ".done")
+        touch(human_ref)
     shell:
         "{PROBer} prepare --genome --bowtie --bowtie-path {bowtie_path} {input[0]} {human_ref}"

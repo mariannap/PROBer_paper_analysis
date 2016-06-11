@@ -5,7 +5,7 @@ import math
 import numpy
 
 if len(argv) != 4:
-    print("Usage: python calcStructureFold minus.counts plus.counts output.txt")
+    print("Usage: calcStructureFold minus.counts plus.counts output.txt")
     exit(-1)
 
 def convert(arr):

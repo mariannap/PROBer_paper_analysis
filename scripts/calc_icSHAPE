@@ -50,7 +50,7 @@ def calcScore(signal, control, density):
     return scores
 
 if len(argv) != 5:
-    print("Usage: python calcSpitale minus.counts plus.counts minus.density output.txt")
+    print("Usage: calc_icSHAPE minus.counts plus.counts minus.density output.txt")
     exit(-1)
 
 fm = open(argv[1])

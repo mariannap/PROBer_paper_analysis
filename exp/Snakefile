@@ -1,2 +1,195 @@
+def get_ref(wildcards):
+	ref_name = ""
+	if wildcards.name.startswith("structure_seq"):
+		ref_name = arabidopsis_filt
+	elif wildcards.name.startswith("mod_seq") or wildcards.name.startswith("pseudo_seq"):
+		ref_name = yeast_filt
+	elif wildcards.name.startswith("icSHAPE"):
+		ref_name = mouse_filt
+	else:
+		assert False
 
-###
+	return ref_name
+
+def get_data(wildcards):
+	return ",".join(sample_name_to_data[wildcards.name])
+
+def get_bowtie_params(wildcards):
+	if wildcards.name.startswith("structure_seq"):
+		return "-v 3"
+	return "--chunkmbs 500"
+
+
+rule bowtie_alignment_all:
+	input: get_ref, get_data, Bowtie, Samtools
+	params: get_bowtie_params
+	output:
+		"{path}/{{name,\w+}}.bam".format(path = exp_path)
+	log:
+		"{path}/{{name}}.log".format(path = exp_path)
+	threads: 20
+	shell:
+		"{Bowtie} --norc {params} -a -m 200 -p {threads} -S {input[0]} {input[1]} 2> {log} | {Samtools} view -S -b -o {output} -"
+
+rule bowtie_alignment_best_strata:
+	input: get_ref, get_data, Bowtie, Samtools
+	params: get_bowtie_params
+	output:
+		"{path}/{{name,\w+}}_best_strata.bam".format(path = exp_path)
+	log:
+		"{path}/{{name}}.log".format(path = exp_path)
+	threads: 20
+	shell:
+		"{Bowtie} --norc {params} --best --strata -p {threads} -S {input[0]} {input[1]} 2> {log} | {Samtools} view -S -b -o {output} -"
+
+
+rule bowtie_alignment_best:
+	input: get_ref, get_data, Bowtie, Samtools
+	params: get_bowtie_params
+	output:
+		"{path}/{{name,\w+}}_best.bam".format(path = exp_path)
+	log:
+		"{path}/{{name}}.log".format(path = exp_path)
+	threads: 20
+	shell:
+		"{Bowtie} --norc {params} --best -p {threads} -S {input[0]} {input[1]} 2> {log} | {Samtools} view -S -b -o {output} -"
+
+ruleorder: bowtie_alignment_best > bowtie_alingment_best_strata > bowtie_alignment_all
+
+
+def get_PROBer_params(wildcards):
+	params = ""
+	if wildcards.name.startswith("structure_seq"):
+		params = "--size-selection-min 21 --size-selection-max 526 --read-length 37"
+	elif wildcards.name.startswith("mod_seq"):
+		params = "--primer-length 0 --size-selection-min 23 --size-selection-max 220 --read-length 50"
+	elif wildcards.name.startswith("pseudo_seq"):
+		params = "--primer-length 0 --size-selection-min 18 --size-selection-max 130 --read-length 41"
+	else:
+		assert False
+
+	return params
+
+
+rule run_PROBer:
+	input:
+		get_ref,
+		expand("{path}/{{name}}_{channel}.bam", path = exp_path, channel = ["plus", "minus"]),
+		PROBer
+	params: get_PROBer_params
+	output:
+		expand("{path}/{{name}}.{suffix}", path = exp_path, suffix = ["beta", "gamma", "expr"])
+	threads: 40
+	shell:
+		"{PROBer} estimate -p {threads} {params} {input[0]} {exp_path}/{wildcards.name} --alignments {input[1]} {input[2]}"
+
+rule run_PROBer_icSHAPE:
+	input:
+		mouse_filt,
+		expand("{path}/icSHAPE_{{channel}}.bam", path = exp_path),
+		PROBer
+	params:
+		"{path}/icSHAPE_{{channel}}".format(path = exp_path)
+	output:
+		expand("{path}/icSHAPE_{{channel}}.{suffix}", path = exp_path, suffix = ["beta", "gamma", "expr"])
+	threads: 40
+	shell:
+		"{PROBer} estimate -p {threads} --primer-length 0 --size-selection-min 20 --size-selection-max 120 --read-length 87 {input[0]} {params} --alignments {input[1]}"
+
+ruleorder: run_PROBer_icSHAPE > run_PROBer
+
+
+def get_score_input(wildcards):
+	name = wildcards.experiment
+	channels = ["minus", "plus"]
+	if name == "icSHAPE_invitro":
+		name = "icSHAPE"
+		channels = ["dmso", "invitro"]
+	elif name == "icSHAPE_invivo":
+		name = "icSHAPE"
+		channels = ["dmso", "invivo"]
+
+	input_list = expand("{path}/{name}_{channel}_{method}.counts", 
+						path = exp_path, name = name, channel = channels, method = wildcards.method)
+	if wildcards.method == "icSHAPE":
+		input_list.append("{path}/{name}_{channel}_icSHAPE.density".format(
+			path = exp_path, name = name, channel = channels[0]))
+
+	return input_list
+
+
+rule extract_count_vector_StructureFold:
+	input:
+		"{path}/{{name}}_best_strata.bam".format(path = exp_path),
+		get_ref
+	output:
+		"{path}/{{name}}_StructureFold.counts".format(path = exp_path)
+	shell:
+		"{script_path}/extractCountVectors {input[0]} {input[1]}.grp {output} all"
+
+rule calculate_StructureFold_score:
+	input: get_score_input
+	output:
+		"{path}/{{experiment}}_{{method,StructureFold}}.scores".format(path = exp_path)
+	shell:
+		"{script_path}/calcStructureFold {input} {output}"
+
+rule extract_count_vector_Modseq:
+	input:
+		"{path}/{{sample}}_best.bam".format(path = exp_path)
+	output:
+		"{path}/{{sample}}_Modseq.counts".format(path = exp_path)
+	shell:
+		"{script_path}/extractCountVectors {input} None {output} all"
+
+rule calculate_Modseq_score:
+	 input: get_score_input
+	 output:
+		"{path}/{{experiment}}_{{method,Modseq}}.scores".format(path = exp_path)
+	 shell:
+		"{script_path}/calcModseq {input} {output}"
+
+rule extract_count_vector_icSHAPE_or_Pseudoseq:
+	input:
+		"{path}/{{sample}}_best_strata.bam".format(path = exp_path)
+	output:
+		"{path}/{{sample}}_{{method,(icSHAPE|Pseudoseq)}}.counts".format(path = exp_path)
+	shell:
+		"{script_path}/extractCountVectors {input} None {output} all"
+
+rule calculate_base_density_icSHAPE:
+	input:
+		"{path}/{{sample}}_best_strata.bam".format(path = exp_path)
+	output:
+		"{path}/{{sample}}_icSHAPE.density".format(path = exp_path)
+	shell:
+		"{script_path}/calcBaseDensity {input} {output} all"
+
+rule calculate_icSHAPE_score:
+	input: get_score_input
+	output:
+		"{path}/{{experiment}}_{{method,icSHAPE}}.scores".format(path = exp_path)
+	shell:
+		"{script_path}/calc_icSHAPE {input} {output}"
+
+rule calculate_Pseudoseq_score:
+	input: get_score_input
+	output:
+		"{path}/{{experiment}}_{{method,Pseudoseq}}.scores".format(path = exp_path)
+	shell:
+		"{script_path}/calcPseudoseq {input} {output}"
+
+
+
+rule bowtie_align_to_genome:
+	input: 
+		human_ref,
+		"{path}/SRR3147675_cleaned.fq".format(path = exp_path),
+		Bowtie, Samtools
+	output:
+		"{path}/RBFOX2_iCLIP.bam".format(path = exp_path)
+	log:
+		"{path}/RBFOX2_iCLIP.log".format(path = exp_path)
+	threads: 20
+	shell:
+		"{Bowtie} -a -m 100 --chunkmbs 1024 -p {threads} -S {input[0]} {input[1]} 2> {log} | {Samtools} view -S -b -o {output} -"
