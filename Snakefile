@@ -12,9 +12,11 @@ fastq_dump, Cutadapt, Samtools, Bowtie = expand("{path}/{program}", path = tool_
 	program = ["sratoolkit.2.6.3-ubuntu64/bin/fastq-dump", "cutadapt-1.10/bin/cutadapt", "samtools-1.3.1/samtools", "bowtie-1.1.2/bowtie"])
 bowtie_path = tool_path + "/bowtie-1.1.2"
 
-RSEM_prepare, RSEM_calculate = expand("{path}/RSEM-1.2.31/{cmd}", path = tool_path, cmd = ["rsem-prepare-reference", "rsem-calculate-expression"])
+rsem_path = tool_path + "/RSEM-1.2.31"
+RSEM_prepare, RSEM_calculate = expand("{path}/{cmd}", path = rsem_path, cmd = ["rsem-prepare-reference", "rsem-calculate-expression"])
 
 PROBer, PROBer_single = expand("{path}/PROBer-0.2.0/build/src/{cmd}", path = tool_path, cmd = ["PROBer", "PROBer-single-batch-estimate"])
+PROBer_full_model = "{path}/PROBer_full_model/build/src/PROBer".format(path = tool_path)
 
 # tools = [fastq_dump, Cutadapt, Samtools, Bowtie, RSEM_prepare, RSEM_calculate, PROBer, PROBer_single]
 
@@ -69,6 +71,12 @@ sample_name_to_data["pseudo_seq_plus"] = expand("{path}/{run}_trimmed.fq", path 
 ### exp
 exp_path = "exp"
 
+### results
+result_path = "results"
+
+### simulation
+sim_path = "simulation"
+
 ## Import Snakemake modules
 
 include: "scripts/Snakefile"
@@ -77,6 +85,9 @@ include: "ground_truth/Snakefile"
 # include: "references/Snakefile"
 include: "data/Snakefile"
 include: "exp/Snakefile"
+include: "simulation/Snakefile"
 
 rule all:
-	input: data
+	input: expand("{path}/structure_seq_sim{digit}_{name}_melt.txt",
+			path = exp_path, digit = ['1', '2'], name = ["vs_full", "vs_pipeline", "main"])
+

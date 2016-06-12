@@ -1,0 +1,170 @@
+#!/usr/bin/env python
+
+try:
+    xrange
+except NameError:
+    xrange = range
+
+from sys import argv, exit
+import scipy.stats
+import numpy
+import math
+
+class Transcript:
+    def __init__(self, name, length, TPM):
+        self.name = name
+        self.length = length - min_frag
+        self.TPM = TPM
+        self.mappability = -1.0
+        self.cors = []
+
+def loadTPM(gtexpr_file):
+    fin = open(gtexpr_file)
+    line = fin.readline()
+    trans = []
+    for line in fin:
+        fields = line[:-1].split('\t')
+        trans.append(Transcript(fields[0], int(fields[1]), float(fields[5])))
+    fin.close()
+    return trans
+
+def loadMappability(mappability_file, trans):
+    fin = open(mappability_file)
+    id = 0
+    for line in fin:
+        tmplist = line[:-1].split('\t')
+        assert tmplist[0] == trans[id].name
+        trans[id].mappability = float(tmplist[1])
+        id += 1
+    fin.close()
+
+def calcPearson(a, b):
+    res = scipy.stats.pearsonr(a, b)[0]
+    if math.isnan(res):
+        res = 0.0
+    return res
+
+def calcSpearman(a, b):
+    res = scipy.stats.spearmanr(a, b)[0]
+    if math.isnan(res):
+        res = 0.0
+    return res
+
+def calcPopLvRes(a):
+    means = numpy.mean(a, axis = 0).tolist()
+    stds = numpy.std(a, axis = 0).tolist()
+
+    n = len(a)
+    sqtn = math.sqrt(n)
+    alpha = scipy.stats.t.interval(0.95, n - 1)[1]
+
+    cis = [x / sqtn * alpha for x in stds]
+
+    medians = numpy.median(a, axis = 0).tolist()
+
+    if output_mode == "display":
+        return "[{:.2f} -- {:.2f} +/- {:.2f}, {:.2f} -- {:.2f} +/- {:.2f}]".format(medians[0], means[0], cis[0], medians[1], means[1], cis[1])
+    else:
+        return "{:.2f}\t{:.2f}\t{:.2f}".format(medians[corr_type], means[corr_type], cis[corr_type])
+
+def printResults(output_name):
+    """Print out results"""
+    fout = open("{}.txt".format(output_name), "w")
+
+    fmelt = open("{}_melt.txt".format(output_name), "w")
+    fmelt.write("Transcript_id\tLength\tTPM\tMappability\tRange")
+    for j in xrange(n - 1):
+        fmelt.write("\t{}".format(files[j + 1]))
+    fmelt.write("\n")
+
+    intervals = [(10000.0, 1000000.0), (1000.0, 10000.0), (100.0, 1000.0), (49.9, 100.0)]
+    cnt = 0
+    for tp in intervals:
+        subtrans = [x for x in trans if x.TPM >= 50.0 and x.TPM > tp[0] and x.TPM <= tp[1] and x.length + min_frag >= 100 and x.mappability > 0.0]
+
+        outstr = ""
+
+        if len(subtrans) > 0:
+            for j in xrange(n - 1):
+                if j > 0:
+                    outstr += "\t"
+                outstr += "{}".format(calcPopLvRes([x.cors[j] for x in subtrans]))
+            fout.write(outstr + "\n")
+
+            for x in subtrans:
+                fmelt.write("{}\t{}\t{:.2f}\t{:.2f}\t{}".format(x.name, x.length + min_frag, x.TPM, x.mappability, cnt))
+                for j in xrange(n - 1):
+                    if output_mode == "display":
+                        fmelt.write("\t{:.2f}/{:.2f}".format(x.cors[j][0], x.cors[j][1]))
+                    else:
+                        fmelt.write("\t{:.2f}".format(x.cors[j][corr_type]))
+                fmelt.write("\n")
+        cnt += 1
+
+    fout.close()
+    fmelt.close()
+
+if len(argv) < 10:
+    print("Usage: analyzeResAC output_name output_mode('display' or 'plot') corr_type('pearson' or 'spearman') min_frag seq.fa mappability_file ground_truth.expr ground_truth.beta a.beta [*.beta/.scores]")
+    exit(-1)
+
+output_mode = argv[2]
+corr_type = 0 if argv[3] == "pearson" else 1
+min_frag = int(argv[4])
+trans = loadTPM(argv[7])
+size = len(trans)
+print("loadTPM done!")
+
+loadMappability(argv[6], trans)
+print("loadMappability done!")
+
+fseq = open(argv[5])
+
+files = []
+for i in xrange(8, len(argv)):
+    files.append(argv[i])
+n = len(files)
+
+fdes = []
+opts = []
+for file in files:
+    fdes.append(open(file))
+    if file[-5:] == ".beta" or file[-6:] == ".gamma":
+        opts.append(0)
+        fdes[-1].readline()
+    else:
+        opts.append(1)
+
+lines = [""] * n
+vecs = [[]] * n
+for i in xrange(size):
+    fseq.readline()
+    myseq = fseq.readline()[:-1]
+
+    for j in xrange(n):
+        lines[j] = fdes[j].readline()
+
+    if trans[i].TPM >= 50.0 and trans[i].length + min_frag >= 100 and trans[i].mappability > 0.0:
+        for j in xrange(n):
+            if opts[j] == 0:
+                vecs[j] = [float(x) for x in lines[j][:-1].split()[2:trans[i].length + 2]]
+            else:
+                vecs[j] = [float(x) for x in lines[j][:-1].split()[:trans[i].length]]
+
+        for j in xrange(n):
+            mylen = len(vecs[j])
+            vecs[j] = [vecs[j][k] for k in xrange(mylen) if (myseq[k] == 'A' or myseq[k] == 'C')]
+
+        for j in xrange(1, n):
+            trans[i].cors.append([calcPearson(vecs[0], vecs[j]), calcSpearman(vecs[0], vecs[j])])
+
+    if i % 1000 == 0:
+        print("{} FIN!".format(i))
+
+fseq.close()                                 
+for fd in fdes:
+    fd.close()
+
+print("Processing done!")
+ 
+printResults(argv[1])

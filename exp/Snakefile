@@ -1,69 +1,81 @@
+import re
+
+# Shared
+
 def get_ref(wildcards):
 	ref_name = ""
-	if wildcards.name.startswith("structure_seq"):
+	name = wildcards.sample if hasattr(wildcards, "sample") else wildcards.experiment
+
+	if name.startswith("structure_seq_spike"):
+		ref_name = arabidopsis_spike
+	elif name.startswith("structure_seq"):
 		ref_name = arabidopsis_filt
-	elif wildcards.name.startswith("mod_seq") or wildcards.name.startswith("pseudo_seq"):
+	elif name.startswith("mod_seq") or name.startswith("pseudo_seq"):
 		ref_name = yeast_filt
-	elif wildcards.name.startswith("icSHAPE"):
+	elif name.startswith("icSHAPE"):
 		ref_name = mouse_filt
 	else:
 		assert False
 
 	return ref_name
 
-def get_data(wildcards):
-	return ",".join(sample_name_to_data[wildcards.name])
+def get_data_as_input(wildcards):
+	if re.search("(sim|spike)", wildcards.sample):
+		return ["{path}/{sample}.fq".format(path = sim_path, sample = wildcards.sample)]
+	return sample_name_to_data[wildcards.sample]
+
+def get_data_as_param(wildcards):
+	return ",".join(get_data_as_input(wildcards))
 
 def get_bowtie_params(wildcards):
-	if wildcards.name.startswith("structure_seq"):
+	if wildcards.sample.startswith("structure_seq"):
 		return "-v 3"
 	return "--chunkmbs 500"
 
 
 rule bowtie_alignment_all:
-	input: get_ref, get_data, Bowtie, Samtools
-	params: get_bowtie_params
+	input: get_ref, get_data_as_input, Bowtie, Samtools
+	params: bowtie = get_bowtie_params, data = get_data_as_param
 	output:
-		"{path}/{{name,\w+}}.bam".format(path = exp_path)
+		"{path}/{{sample}}.bam".format(path = exp_path)
 	log:
-		"{path}/{{name}}.log".format(path = exp_path)
+		"{path}/{{sample}}.log".format(path = exp_path)
 	threads: 20
 	shell:
-		"{Bowtie} --norc {params} -a -m 200 -p {threads} -S {input[0]} {input[1]} 2> {log} | {Samtools} view -S -b -o {output} -"
+		"{Bowtie} --norc {params.bowtie} -a -m 200 -p {threads} -S {input[0]} {params.data} 2> {log} | {Samtools} view -S -b -o {output} -"
 
 rule bowtie_alignment_best_strata:
-	input: get_ref, get_data, Bowtie, Samtools
-	params: get_bowtie_params
+	input: get_ref, get_data_as_input, Bowtie, Samtools
+	params: bowtie = get_bowtie_params, data = get_data_as_param
 	output:
-		"{path}/{{name,\w+}}_best_strata.bam".format(path = exp_path)
+		"{path}/{{sample}}_best_strata.bam".format(path = exp_path)
 	log:
-		"{path}/{{name}}.log".format(path = exp_path)
+		"{path}/{{sample}}.log".format(path = exp_path)
 	threads: 20
 	shell:
-		"{Bowtie} --norc {params} --best --strata -p {threads} -S {input[0]} {input[1]} 2> {log} | {Samtools} view -S -b -o {output} -"
-
+		"{Bowtie} --norc {params.bowtie} --best --strata -p {threads} -S {input[0]} {params.data} 2> {log} | {Samtools} view -S -b -o {output} -"
 
 rule bowtie_alignment_best:
-	input: get_ref, get_data, Bowtie, Samtools
-	params: get_bowtie_params
+	input: get_ref, get_data_as_input, Bowtie, Samtools
+	params: bowtie = get_bowtie_params, data = get_data_as_param
 	output:
-		"{path}/{{name,\w+}}_best.bam".format(path = exp_path)
+		"{path}/{{sample}}_best.bam".format(path = exp_path)
 	log:
-		"{path}/{{name}}.log".format(path = exp_path)
+		"{path}/{{sample}}.log".format(path = exp_path)
 	threads: 20
 	shell:
-		"{Bowtie} --norc {params} --best -p {threads} -S {input[0]} {input[1]} 2> {log} | {Samtools} view -S -b -o {output} -"
+		"{Bowtie} --norc {params.bowtie} --best -p {threads} -S {input[0]} {params.data} 2> {log} | {Samtools} view -S -b -o {output} -"
 
-ruleorder: bowtie_alignment_best > bowtie_alingment_best_strata > bowtie_alignment_all
+ruleorder: sort_bam_by_name > bowtie_alignment_best > bowtie_alignment_best_strata > bowtie_alignment_all
 
 
 def get_PROBer_params(wildcards):
 	params = ""
-	if wildcards.name.startswith("structure_seq"):
+	if wildcards.experiment.startswith("structure_seq"):
 		params = "--size-selection-min 21 --size-selection-max 526 --read-length 37"
-	elif wildcards.name.startswith("mod_seq"):
+	elif wildcards.experiment.startswith("mod_seq"):
 		params = "--primer-length 0 --size-selection-min 23 --size-selection-max 220 --read-length 50"
-	elif wildcards.name.startswith("pseudo_seq"):
+	elif wildcards.experiment.startswith("pseudo_seq"):
 		params = "--primer-length 0 --size-selection-min 18 --size-selection-max 130 --read-length 41"
 	else:
 		assert False
@@ -74,14 +86,14 @@ def get_PROBer_params(wildcards):
 rule run_PROBer:
 	input:
 		get_ref,
-		expand("{path}/{{name}}_{channel}.bam", path = exp_path, channel = ["plus", "minus"]),
+		expand("{path}/{{experiment}}_{channel}.bam", path = exp_path, channel = ["plus", "minus"]),
 		PROBer
 	params: get_PROBer_params
 	output:
-		expand("{path}/{{name}}.{suffix}", path = exp_path, suffix = ["beta", "gamma", "expr"])
-	threads: 40
+		expand("{path}/{{experiment}}_PROBer.{suffix}", path = exp_path, suffix = ["beta", "gamma", "expr"])
+	threads: 20
 	shell:
-		"{PROBer} estimate -p {threads} {params} {input[0]} {exp_path}/{wildcards.name} --alignments {input[1]} {input[2]}"
+		"{PROBer} estimate -p {threads} {params} {input[0]} {exp_path}/{wildcards.experiment}_PROBer --alignments {input[1]} {input[2]}"
 
 rule run_PROBer_icSHAPE:
 	input:
@@ -89,10 +101,10 @@ rule run_PROBer_icSHAPE:
 		expand("{path}/icSHAPE_{{channel}}.bam", path = exp_path),
 		PROBer
 	params:
-		"{path}/icSHAPE_{{channel}}".format(path = exp_path)
+		"{path}/icSHAPE_{{channel}}_PROBer".format(path = exp_path)
 	output:
-		expand("{path}/icSHAPE_{{channel}}.{suffix}", path = exp_path, suffix = ["beta", "gamma", "expr"])
-	threads: 40
+		expand("{path}/icSHAPE_{{channel}}_PROBer.{suffix}", path = exp_path, suffix = ["beta", "gamma", "expr"])
+	threads: 20
 	shell:
 		"{PROBer} estimate -p {threads} --primer-length 0 --size-selection-min 20 --size-selection-max 120 --read-length 87 {input[0]} {params} --alignments {input[1]}"
 
@@ -120,10 +132,10 @@ def get_score_input(wildcards):
 
 rule extract_count_vector_StructureFold:
 	input:
-		"{path}/{{name}}_best_strata.bam".format(path = exp_path),
+		"{path}/{{sample}}_best_strata.bam".format(path = exp_path),
 		get_ref
 	output:
-		"{path}/{{name}}_StructureFold.counts".format(path = exp_path)
+		"{path}/{{sample}}_StructureFold.counts".format(path = exp_path)
 	shell:
 		"{script_path}/extractCountVectors {input[0]} {input[1]}.grp {output} all"
 
@@ -143,10 +155,10 @@ rule extract_count_vector_Modseq:
 		"{script_path}/extractCountVectors {input} None {output} all"
 
 rule calculate_Modseq_score:
-	 input: get_score_input
-	 output:
+	input: get_score_input
+	output:
 		"{path}/{{experiment}}_{{method,Modseq}}.scores".format(path = exp_path)
-	 shell:
+	shell:
 		"{script_path}/calcModseq {input} {output}"
 
 rule extract_count_vector_icSHAPE_or_Pseudoseq:
@@ -179,6 +191,77 @@ rule calculate_Pseudoseq_score:
 	shell:
 		"{script_path}/calcPseudoseq {input} {output}"
 
+
+# RNA structure analysis
+
+
+rule sort_bam_by_name: # Sort Bowtie alignments by name to avoid slightly different downstream analysis results
+	input:
+		"{path}/structure_seq_{{channel}}.bam".format(path = exp_path),
+		RSEM_calculate
+	output:
+		"{path}/structure_seq_sorted_{{channel,(minus|plus)}}.bam".format(path = exp_path)
+	threads: 20
+	shell:
+		"{rsem_path}/samtools-1.3/samtools sort -n -@ {threads} -o {output} {input[0]}"
+
+rule run_PROBer_full_model:
+	input:
+		arabidopsis_filt,
+		expand("{path}/structure_seq_sim{{digit}}_{channel}.bam", path = exp_path, channel = ["minus", "plus"]),
+		PROBer_full_model
+	params:
+		"{path}/structure_seq_sim{{digit}}".format(path = exp_path)
+	output:
+		expand("{path}/structure_seq_sim{{digit,\d}}_full.{suffix}", path = exp_path, suffix = ["beta", "gamma", "expr"])
+	threads: 20
+	shell:
+		"{PROBer_full_model} estimate -p {threads} --size-selection-min 21 --size-selection-max 526 --read-length 37 {input[0]} {params} --alignments {input[1]} {input[2]}"
+
+rule run_RSEM_PROBer_star_pipeline:
+	input:
+		arabidopsis_filt,
+		expand("{path}/structure_seq_sim{{digit}}_{channel}.bam", path = exp_path, channel = ["minus", "plus"]),
+		"{path}/input_list_boxplot.txt".format(path = sim_path),
+		PROBer_single, RSEM_calculate
+	params: "{path}/structure_seq_sim{{digit}}_pipeline".format(exp_path)
+	output: 
+		expand("{path}/structure_seq_sim{{digit,\d}}_pipeline.{suffix}", path = exp_path, suffix = ["beta", "gamma"])
+	threads: 20
+	shell:
+		"{PROBer_single} -p {threads} --input-list {input[3]} --RSEM-path {rsem_path} {input[0]} {params} --alignments {input[1]} {input[2]}"
+
+rule produce_simulation_results:
+	input:
+		arabidopsis_filt,
+		arabidopsis_filt + ".mappability",
+		expand("{path}/ground_truth.{suffix}", path = sim_path, suffix = ["expr", "beta"]),
+		expand("{path}/structure_seq_sim{{digit}}_{program}.beta", path = exp_path, program = ["PROBer", "full", "pipeline"]),
+		expand("{path}/structure_seq_sim{{digit}}_{method}.scores", path = exp_path,
+			method = ["StructureFold", "Modseq", "icSHAPE"])
+	params: "{path}/structure_seq_sim{{digit}}".format(path = exp_path)
+	output:
+		expand("{path}/structure_seq_sim{{digit}}_{name}_melt.txt",
+			path = exp_path, name = ["vs_full", "vs_pipeline", "main"])
+	shell:
+		"{script_path}/analyzeResAC {params}_vs_full plot pearson 36 {input[0]}.transcripts.fa {input[1]} {input[2]} {input[3]} {input[4]} {input[5]} & "
+		"{script_path}/analyzeResAC {params}_vs_pipeline plot pearson 36 {input[0]}.transcripts.fa {input[1]} {input[2]} {input[3]} {input[4]} {input[6]} & "
+		"{script_path}/analyzeResAC {params}_main plot pearson 36 {input[0]}.transcripts.fa {input[1]} {input[2]} {input[3]} {input[4]} {input[7]} {input[8]} {input[9]}"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# iCLIP
 
 
 rule bowtie_align_to_genome:
