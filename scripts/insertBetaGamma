@@ -1,0 +1,30 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+
+try:
+    xrange
+except NameError:
+    xrange = range
+
+if len(argv) < 4:
+    print("Usage: python insertBetaGamma input_file output_file insert_file_1 [insert_file_2 ...]")
+    exit(-1)
+
+fin = open(argv[1])
+fout = open(argv[2], "w")
+
+n = int(fin.readline().strip())
+n += len(argv) - 3
+fout.write(str(n) + "\n")
+
+for i in xrange(3, len(argv)):
+    finn = open(argv[i])
+    fout.write(finn.read())
+    finn.close()
+
+fout.write(fin.read())
+
+fin.close()
+fout.close()
+

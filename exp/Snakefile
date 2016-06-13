@@ -207,6 +207,9 @@ rule sort_bam_by_name: # Sort Bowtie alignments by name to avoid slightly differ
 	shell:
 		"{rsem_path}/samtools-1.3/samtools sort -n -@ {threads} -o {output} {input[0]}"
 
+
+## simuation results
+
 rule run_PROBer_full_model:
 	input:
 		arabidopsis_filt,
@@ -222,7 +225,7 @@ rule run_PROBer_full_model:
 
 rule run_RSEM_PROBer_star_pipeline:
 	input:
-		arabidopsis_filt,
+		arabidopsis_filt_rsem,
 		expand("{path}/structure_seq_sim{{digit}}_{channel}.bam", path = exp_path, channel = ["minus", "plus"]),
 		"{path}/input_list_boxplot.txt".format(path = sim_path),
 		PROBer_single, RSEM_calculate
@@ -259,6 +262,17 @@ rule produce_boxplot_pdf:
 		"{script_path}/genBoxPlot {input} {output}"
 
 
+## digital spike-in results
+
+rule produce_digital_spike_in_results:
+	input:
+		"{path}/ground_truth_spikes.beta".format(path = sim_path),
+		expand("{path}/structure_seq_spikes_{TPM}_{method_suffix}", path = exp_path, TPM = ["1e2", "1e3", "1e4", "1e5"],
+			method_suffix = ["PROBer.beta", "StructureFold.scores", "Modseq.scores", "icSHAPE.scores"])
+	output:
+		"{path}/digital_spike_in.txt".format(path = result_path)
+	shell:
+		"{script_path}/analyzeSpikes {input[0]} {exp_path}/structure_seq_spikes 36 {output}"
 
 
 

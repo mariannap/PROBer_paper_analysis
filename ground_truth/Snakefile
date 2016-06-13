@@ -61,7 +61,7 @@ rule unzip_SHAPE_data:
 	input: 
 		expand("{path}/SHAPE_data.zip", path = gt_path)
 	output: 
-		expand("{path}/{name}.adducts", path = gt_path, name = ["RNaseP_WT", "pT181_long", "pT181_short"]),
+		expand("{path}/{name}.adducts", path = gt_path, name = spike_ins),
 		expand("{path}/{file}", path = gt_path, file = ["SHAPE.t2g", "spikes_info.txt"])
 	shell:
 		"unzip {input} -d {gt_path} && touch {output}"

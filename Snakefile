@@ -22,6 +22,7 @@ PROBer_full_model = "{path}/PROBer_full_model/build/src/PROBer".format(path = to
 
 ### ground truth
 gt_path = "ground_truth"
+spike_ins = ["RNaseP_WT", "pT181_long", "pT181_short"]
 
 # ground_truths = expand("{path}/{organism}_{rRNA}.{suffix}", path = gt_path, organism = ["arabidopsis", "yeast"], rRNA = ["18S", "25S"], suffix = ["structure", "isac"])
 # ground_truths.extend(expand("{path}/mouse_{rRNA}.{suffix}", path = gt_path, rRNA = ["18S", "12S_Mt"], suffix = "structure"))
@@ -37,6 +38,7 @@ ref_arabidopsis, ref_yeast, ref_mouse, ref_human = expand("{path}/{organism}", p
 makedirs([ref_arabidopsis, ref_yeast, ref_mouse, ref_human])
 
 arabidopsis_filt = "{path}/arabidopsis_filt".format(path = ref_arabidopsis)
+arabidopsis_filt_rsem = arabidopsis_filt + "_rsem"
 arabidopsis_spike = "{path}/arabidopsis_spike".format(path = ref_arabidopsis)
 yeast_filt = "{path}/yeast_filt".format(path = ref_yeast)
 mouse_filt = "{path}/mouse_filt".format(path = ref_mouse)
@@ -71,11 +73,13 @@ sample_name_to_data["pseudo_seq_plus"] = expand("{path}/{run}_trimmed.fq", path 
 ### exp
 exp_path = "exp"
 
-### results
-result_path = "results"
-
 ### simulation
 sim_path = "simulation"
+
+### results
+result_path = "results"
+results = expand("{path}/structure_seq_sim{digit}_{name}_boxplot.pdf", path = result_path, digit = ['1', '2'], name = ["vs_full", "vs_pipeline", "main"])
+# results.append("{path}/digital_spike_in.txt".format(path = result_path))
 
 ## Import Snakemake modules
 
@@ -88,6 +92,6 @@ include: "exp/Snakefile"
 include: "simulation/Snakefile"
 
 rule all:
-	input:
-		expand("{path}/structure_seq_sim{digit}_{name}_melt.txt", path = exp_path, digit = ['1', '2'], name = ["vs_full", "vs_pipeline", "main"])
+	input: "{path}/digital_spike_in.txt".format(path = result_path)
+		
 

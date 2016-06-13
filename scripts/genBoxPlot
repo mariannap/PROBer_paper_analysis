@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 
 argv = commandArgs(TRUE)
-if (length(argv) != 3) {
+if (length(argv) != 2) {
     cat("Usage: genBoxPlot input_data.txt output_name.pdf\n")
     q(status = 1)
 }
@@ -36,14 +36,14 @@ if (grepl("main", argv[1])) {
 	mtext("Pearson correlation coefficient", side = 2, line = 3, cex = 1.5)
 	dev.off()		
 } else if (grepl("vs_full", argv[1])) {
-	cols = c("red", "blue")
+	cols = c("red", "dodgerblue")
 	boxcols = rep(cols, 4)
 	methods = c("PROBer", "Full model")
 	
-	pdf(output_file)
+	pdf(output_file, height = 6)
 	par(mar = c(5, 5, 0, 0) + 0.1)
 	boxplot(corr ~ method * Range, data = data_long, col = boxcols, outcol = boxcols, at = c(1:2, 5:6, 9:10, 13:14), names = rep("", 8), pch = 20, boxwex = 0.5, xlim = c(1, 17))
-	legend("topright", fill = cols, legend = methods)
+	legend("bottomright", fill = cols, legend = methods)
 	mtext(intervals, side = 1, line = 1.5, at = c(1.5, 5.5, 9.5, 13.5), cex = 1.2)
 	mtext("Transcripts per million range", side = 1, line = 3.5, cex = 1.5)
 	mtext("Pearson correlation coefficient", side = 2, line = 3, cex = 1.5)
@@ -51,14 +51,14 @@ if (grepl("main", argv[1])) {
 } else {
 	stopifnot(grepl("vs_pipeline", argv[1]))
 
-	cols = c("red", "blue")
+	cols = c("red", "dodgerblue")
 	boxcols = rep(cols, 4)
 	methods = c("PROBer", "RSEM + PROBer*")
 	
-	pdf(output_file)
+	pdf(output_file, height = 6)
 	par(mar = c(5, 5, 0, 0) + 0.1)
 	boxplot(corr ~ method * Range, data = data_long, col = boxcols, outcol = boxcols, at = c(1:2, 5:6, 9:10, 13:14), names = rep("", 8), pch = 20, boxwex = 0.5, xlim = c(1, 17))
-	legend("topright", fill = cols, legend = methods)
+	legend("bottomright", fill = cols, legend = methods)
 	mtext(intervals, side = 1, line = 1.5, at = c(1.5, 5.5, 9.5, 13.5), cex = 1.2)
 	mtext("Transcripts per million range", side = 1, line = 3.5, cex = 1.5)
 	mtext("Pearson correlation coefficient", side = 2, line = 3, cex = 1.5)
