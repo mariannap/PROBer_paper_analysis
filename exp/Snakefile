@@ -50,10 +50,10 @@ rule bowtie_alignment_best_strata:
 	output:
 		"{path}/{{sample}}_best_strata.bam".format(path = exp_path)
 	log:
-		"{path}/{{sample}}.log".format(path = exp_path)
+		"{path}/{{sample}}_best_strata.log".format(path = exp_path)
 	threads: 20
 	shell:
-		"{Bowtie} --norc {params.bowtie} --best --strata -p {threads} -S {input[0]} {params.data} 2> {log} | {Samtools} view -S -b -o {output} -"
+		"{Bowtie} --norc {params.bowtie} -a --best --strata -p {threads} -S {input[0]} {params.data} 2> {log} | {Samtools} view -S -b -o {output} -"
 
 rule bowtie_alignment_best:
 	input: get_ref, get_data_as_input, Bowtie, Samtools
@@ -61,7 +61,7 @@ rule bowtie_alignment_best:
 	output:
 		"{path}/{{sample}}_best.bam".format(path = exp_path)
 	log:
-		"{path}/{{sample}}.log".format(path = exp_path)
+		"{path}/{{sample}}_best.log".format(path = exp_path)
 	threads: 20
 	shell:
 		"{Bowtie} --norc {params.bowtie} --best -p {threads} -S {input[0]} {params.data} 2> {log} | {Samtools} view -S -b -o {output} -"
@@ -90,7 +90,9 @@ rule run_PROBer:
 		PROBer
 	params: get_PROBer_params
 	output:
-		expand("{path}/{{experiment}}_PROBer.{suffix}", path = exp_path, suffix = ["beta", "gamma", "expr"])
+		expand("{path}/{{experiment}}_PROBer.{suffix}", path = exp_path, suffix = ["beta", "gamma", "expr"]),
+		expand("{path}/{{experiment}}_PROBer.stat/{{experiment}}_PROBer_{channel}.{suffix}",
+			path = exp_path, channel = ["minus", "plus"], suffix = ["read_model", "theta"])
 	threads: 20
 	shell:
 		"{PROBer} estimate -p {threads} {params} {input[0]} {exp_path}/{wildcards.experiment}_PROBer --alignments {input[1]} {input[2]}"
@@ -211,7 +213,7 @@ rule run_PROBer_full_model:
 		expand("{path}/structure_seq_sim{{digit}}_{channel}.bam", path = exp_path, channel = ["minus", "plus"]),
 		PROBer_full_model
 	params:
-		"{path}/structure_seq_sim{{digit}}".format(path = exp_path)
+		"{path}/structure_seq_sim{{digit}}_full".format(path = exp_path)
 	output:
 		expand("{path}/structure_seq_sim{{digit,\d}}_full.{suffix}", path = exp_path, suffix = ["beta", "gamma", "expr"])
 	threads: 20
@@ -224,7 +226,7 @@ rule run_RSEM_PROBer_star_pipeline:
 		expand("{path}/structure_seq_sim{{digit}}_{channel}.bam", path = exp_path, channel = ["minus", "plus"]),
 		"{path}/input_list_boxplot.txt".format(path = sim_path),
 		PROBer_single, RSEM_calculate
-	params: "{path}/structure_seq_sim{{digit}}_pipeline".format(exp_path)
+	params: "{path}/structure_seq_sim{{digit}}_pipeline".format(path = exp_path)
 	output: 
 		expand("{path}/structure_seq_sim{{digit,\d}}_pipeline.{suffix}", path = exp_path, suffix = ["beta", "gamma"])
 	threads: 20
@@ -241,14 +243,20 @@ rule produce_simulation_results:
 			method = ["StructureFold", "Modseq", "icSHAPE"])
 	params: "{path}/structure_seq_sim{{digit}}".format(path = exp_path)
 	output:
-		expand("{path}/structure_seq_sim{{digit}}_{name}_melt.txt",
+		expand("{path}/structure_seq_sim{{digit,\d}}_{name}_melt.txt",
 			path = exp_path, name = ["vs_full", "vs_pipeline", "main"])
 	shell:
-		"{script_path}/analyzeResAC {params}_vs_full plot pearson 36 {input[0]}.transcripts.fa {input[1]} {input[2]} {input[3]} {input[4]} {input[5]} & "
-		"{script_path}/analyzeResAC {params}_vs_pipeline plot pearson 36 {input[0]}.transcripts.fa {input[1]} {input[2]} {input[3]} {input[4]} {input[6]} & "
+		"{script_path}/analyzeResAC {params}_vs_full plot pearson 36 {input[0]}.transcripts.fa {input[1]} {input[2]} {input[3]} {input[4]} {input[5]} && "
+		"{script_path}/analyzeResAC {params}_vs_pipeline plot pearson 36 {input[0]}.transcripts.fa {input[1]} {input[2]} {input[3]} {input[4]} {input[6]} && "
 		"{script_path}/analyzeResAC {params}_main plot pearson 36 {input[0]}.transcripts.fa {input[1]} {input[2]} {input[3]} {input[4]} {input[7]} {input[8]} {input[9]}"
 
-
+rule produce_boxplot_pdf:
+	input:
+		"{path}/structure_seq_sim{{digit}}_{{name}}_melt.txt".format(path = exp_path)
+	output:
+		"{path}/structure_seq_sim{{digit,\d}}_{{name}}_boxplot.pdf".format(path = result_path)
+	shell:
+		"{script_path}/genBoxPlot {input} {output}"
 
 
 

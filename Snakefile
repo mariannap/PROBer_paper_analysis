@@ -88,6 +88,6 @@ include: "exp/Snakefile"
 include: "simulation/Snakefile"
 
 rule all:
-	input: expand("{path}/structure_seq_sim{digit}_{name}_melt.txt",
-			path = exp_path, digit = ['1', '2'], name = ["vs_full", "vs_pipeline", "main"])
+	input:
+		expand("{path}/structure_seq_sim{digit}_{name}_melt.txt", path = exp_path, digit = ['1', '2'], name = ["vs_full", "vs_pipeline", "main"])
 

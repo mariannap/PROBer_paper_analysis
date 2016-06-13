@@ -2,8 +2,8 @@ import random
 
 rule build_simulation:
 	input:
-		expand("{path}/structure_seq_sorted.{suffix}", path = exp_path, suffix = ["beta", "gamma", "expr"]),
-		expand("{path}/structure_seq_sorted.stat/structure_seq_{channel}.{suffix}", 
+		expand("{path}/structure_seq_sorted_PROBer.{suffix}", path = exp_path, suffix = ["beta", "gamma", "expr"]),
+		expand("{path}/structure_seq_sorted_PROBer.stat/structure_seq_sorted_PROBer_{channel}.{suffix}", 
 			path = exp_path, channel = ["minus", "plus"], suffix = ["read_model", "theta"])
 	output:
 		expand("{path}/ground_truth.{suffix}", path = sim_path, suffix = ["beta", "gamma", "expr"]),
@@ -35,7 +35,7 @@ rule simulate:
 	params: seeds = get_seeds, output_name = "{path}/structure_seq_sim{{number}}".format(path = sim_path)
 	output: expand("{path}/structure_seq_sim{{number,\d}}_{channel}.fq", path = sim_path, channel = ["minus", "plus"])
 	shell:
-		"{PROBer} simulate --seed {params.seeds[0]} {input[0]} {input[1]} {input[2]} minus 30000000 {params.output_name} &"
+		"{PROBer} simulate --seed {params.seeds[0]} {input[0]} {input[1]} {input[2]} minus 30000000 {params.output_name} && "
 		"{PROBer} simulate --seed {params.seeds[1]} {input[0]} {input[1]} {input[2]} plus 30000000 {params.output_name}"
 
 rule generate_input_list_for_boxplot:
