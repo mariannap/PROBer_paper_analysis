@@ -208,6 +208,54 @@ rule sort_bam_by_name: # Sort Bowtie alignments by name to avoid slightly differ
 		"{rsem_path}/samtools-1.3/samtools sort -n -@ {threads} -o {output} {input[0]}"
 
 
+## Collect mapping statistics
+
+rule extract_mapping_statistics:
+     input:
+        "{}/{}_{{channel}}.bam".format(EXP_PATH, REAL),
+        "{}/rRNA_list.txt".format(ANNO_PATH)
+     output:
+        "{}/{}_{{channel}}.stats.txt".format(EXP_PATH, REAL)
+     shell:
+        "{RESULTS_PATH}/scripts/collectAlignStat {input[0]} {input[1]} > {output}"
+
+rule generate_mapping_statistics_table:
+     input:
+        expand("{path}/{name}_{channel}.stats.txt", path = EXP_PATH, name = REAL, channel = CHANNELS)
+     output:
+        "{}/mapping_statistics_table.txt".format(RESULTS_PATH)
+     shell:
+        "{RESULTS_PATH}/scripts/generate_mapping_statistics_table {input} {output}"
+        
+#### Evaluate running time and memory usage
+
+rule time_and_memory:
+     input:
+        TOOLS[2], TOOLS[5],
+        REAL_DATA,
+        REF_FILT
+     output:
+        expand("{path}/{name}.{suffix}", path = EXP_PATH, name = REAL, suffix = PROBER_SUFF),
+        expand("{path}/{name}.stat/{name}_{channel}.{suffix}", path = EXP_PATH, name = REAL, channel = CHANNELS, suffix = PROBER_STAT),
+        expand("{path}/{name}_{channel}.bam", path = EXP_PATH, name = REAL, channel = CHANNELS),
+        expand("{path}/{name}.{suffix}", path = EXP_PATH, name = REAL, suffix = ["time", "bam.time", "mem"])
+     threads: 40
+     shell:
+        "{PROBER} estimate --time --memory --bowtie --bowtie-path {input[0]} -p {threads} --output-bam --read-length 37 --size-selection-min 21 --size-selection-max 526 "
+        "{REF_FILT_NAME} {EXP_PATH}/{REAL} --reads {input[2]} {input[3]}"
+
+rule generate_time_and_memory_table:
+     input:
+        expand("{path}/{name}.{suffix}", path = EXP_PATH, name = REAL, suffix = ["time", "bam.time", "mem"])
+     output:
+        "{}/time_and_memory_table.txt".format(RESULTS_PATH)
+     shell:
+        "{RESULTS_PATH}/scripts/generate_time_memory_table {EXP_PATH}/{REAL} {RESULTS[1]}"
+
+#### Collect mapping statistics
+
+
+
 ## simuation results
 
 rule run_PROBer_full_model:
@@ -292,6 +340,7 @@ rule run_RSEM_for_scatter_plots:
 rule produce_expression_scatter_plots:
 	input:
 		"{path}/ground_truth.expr".format(path = sim_path),
+		"{path}/structure_seq_sim1_PROBer.expr".format(path = exp_path),
 		expand("{path}/structure_seq_sim1_pipeline_{channel}.isoforms.results", path = exp_path, channel = ["minus", "plus"]),
 		rules.run_RSEM_for_scatter_plots.output
 	output:
