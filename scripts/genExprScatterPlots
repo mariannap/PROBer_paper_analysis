@@ -2,7 +2,7 @@
 
 argv = commandArgs(TRUE)
 if (length(argv) != 6) {
-   cat("Usage: genExprScatterPlots ground_truth.expr dms_sim_SE.expr dms_sim_SE_RSEM_minus.isoforms.results dms_sim_SE_RSEM_plus.isoforms.results rsem_sim_result.isoforms.results output.pdf\n")   
+   cat("Usage: genExprScatterPlots ground_truth.expr structure_seq_sim1_PROBer.expr structure_seq_sim1_pipeline_minus.isoforms.results structure_seq_sim1_pipeline_plus.isoforms.results structure_seq_simrsem_RSEM.isoforms.results output.pdf\n")   
    q(status = 1)
 }
 

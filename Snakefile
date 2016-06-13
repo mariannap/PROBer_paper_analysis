@@ -13,7 +13,8 @@ fastq_dump, Cutadapt, Samtools, Bowtie = expand("{path}/{program}", path = tool_
 bowtie_path = tool_path + "/bowtie-1.1.2"
 
 rsem_path = tool_path + "/RSEM-1.2.31"
-RSEM_prepare, RSEM_calculate = expand("{path}/{cmd}", path = rsem_path, cmd = ["rsem-prepare-reference", "rsem-calculate-expression"])
+RSEM_prepare, RSEM_simulate, RSEM_calculate = expand("{path}/{cmd}", path = rsem_path, 
+	cmd = ["rsem-prepare-reference", "rsem-simulate-reads", "rsem-calculate-expression"])
 
 PROBer, PROBer_single = expand("{path}/PROBer-0.2.0/build/src/{cmd}", path = tool_path, cmd = ["PROBer", "PROBer-single-batch-estimate"])
 PROBer_full_model = "{path}/PROBer_full_model/build/src/PROBer".format(path = tool_path)
@@ -79,7 +80,8 @@ sim_path = "simulation"
 ### results
 result_path = "results"
 results = expand("{path}/structure_seq_sim{digit}_{name}_boxplot.pdf", path = result_path, digit = ['1', '2'], name = ["vs_full", "vs_pipeline", "main"])
-# results.append("{path}/digital_spike_in.txt".format(path = result_path))
+results.append("{path}/digital_spike_in.txt".format(path = result_path))
+results.append("{path}/scatters.pdf".format(path = result_path))
 
 ## Import Snakemake modules
 
@@ -92,6 +94,7 @@ include: "exp/Snakefile"
 include: "simulation/Snakefile"
 
 rule all:
-	input: "{path}/digital_spike_in.txt".format(path = result_path)
+	input: results
+	
 		
 

@@ -33,7 +33,7 @@ rule build_bowtie:
 
 rule build_rsem:
 	input: "{name}.tar.gz"
-	output: touch(expand("{{name}}/{cmd}", cmd = ["rsem-prepare-reference", "rsem-calculate-expression"]))
+	output: touch(expand("{{name}}/{cmd}", cmd = ["rsem-prepare-reference", "rsem-simulate-reads", "rsem-calculate-expression"]))
 	shell:
 		"tar -C {tool_path} -xzf {input} && "
 		"cd {wildcards.name} && make"

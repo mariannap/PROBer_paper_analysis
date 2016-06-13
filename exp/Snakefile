@@ -275,7 +275,29 @@ rule produce_digital_spike_in_results:
 		"{script_path}/analyzeSpikes {input[0]} {exp_path}/structure_seq_spikes 36 {output}"
 
 
+## expression results
 
+rule run_RSEM_for_scatter_plots:
+	input:
+		arabidopsis_filt_rsem,
+		"{path}/structure_seq_simrsem.bam".format(path = exp_path),
+		RSEM_calculate
+	params: "{path}/structure_seq_simrsem_RSEM".format(path = exp_path)
+	output: 
+		"{path}/structure_seq_simrsem_RSEM.isoforms.results".format(path = exp_path)
+	threads: 20
+	shell:
+		"{RSEM_calculate} -p {threads} --alignments --strand-specific --no-bam-output {input[1]} {input[0]} {params}"
+
+rule produce_expression_scatter_plots:
+	input:
+		"{path}/ground_truth.expr".format(path = sim_path),
+		expand("{path}/structure_seq_sim1_pipeline_{channel}.isoforms.results", path = exp_path, channel = ["minus", "plus"]),
+		rules.run_RSEM_for_scatter_plots.output
+	output:
+		"{path}/scatters.pdf".format(path = result_path)
+	shell:
+		"{script_path}/genExprScatterPlots {input} {output}"
 
 
 
