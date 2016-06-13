@@ -1,0 +1,71 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+import pysam
+
+if len(argv) != 3:
+	print("Usage: collectAlignStat input.bam rRNA_list\n  Only used for SE reads and Bowtie alignments.")
+	exit(-1)
+
+def build_rRNA_set(inpF, names):
+	rRNAs = set()
+	with open(inpF) as fin:
+		for line in fin:
+			name = line.strip().split('\t')[0]
+			rRNAs.add(names.index(name))
+
+	return rRNAs
+
+def updateStat(cname, ctype, nalign, cisr):
+	if cname == "":
+		return
+
+	global N0, N2, N11, N12, N11r, N12r
+
+	if ctype == 0:
+		N0 += 1
+	elif ctype == 2:
+		N2 += 1
+	elif nalign == 1: #>= 0:
+		N11 += 1
+		if cisr:
+			N11r += 1
+	else:
+		N12 += 1
+		if cisr:
+			N12r += 1
+
+
+cname = ""
+ctype = ttype = 0 # 0, unmapped, 1, alignable, 2, filtered
+cisr = isr = False # if the current alignment line suggests a rRNA alignment
+nalign = 0
+
+N0 = N2 = 0
+N11 = N12 = N11r = N12r = 0
+
+sam_in = pysam.AlignmentFile(argv[1], "rb")
+rRNAs = build_rRNA_set(argv[2], sam_in.references)
+
+for aread in sam_in:
+	if aread.is_unmapped:
+		ttype = 2 if aread.has_tag("XM") and aread.get_tag("XM") > 0 else 0
+	else:
+		ttype = 1
+		isr = aread.tid in rRNAs
+
+	if cname != aread.qname:
+		updateStat(cname, ctype, nalign, cisr)
+		cname = aread.qname
+		ctype = ttype
+		nalign = 1
+		cisr = isr
+	else:
+		assert ttype == 1 and ctype == 1
+		nalign += 1
+		cisr = cisr or isr
+
+updateStat(cname, ctype, nalign, cisr)
+
+print("{:,}\t{:,}\t{:,}\t{:,}".format(N11, N12, N0, N2))
+print("{:,}\t{:,}\t{:,}\t{:,}".format(N11 - N11r, N12 - N12r, N0, N2))

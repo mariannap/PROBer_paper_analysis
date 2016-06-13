@@ -211,49 +211,49 @@ rule sort_bam_by_name: # Sort Bowtie alignments by name to avoid slightly differ
 ## Collect mapping statistics
 
 rule extract_mapping_statistics:
-     input:
-        "{}/{}_{{channel}}.bam".format(EXP_PATH, REAL),
-        "{}/rRNA_list.txt".format(ANNO_PATH)
-     output:
-        "{}/{}_{{channel}}.stats.txt".format(EXP_PATH, REAL)
-     shell:
-        "{RESULTS_PATH}/scripts/collectAlignStat {input[0]} {input[1]} > {output}"
+	input:
+		"{path}/structure_seq_sorted_{{channel}}.bam".format(path = exp_path),
+		"{path}/rRNA_list.txt".format(path = gt_path)
+	output:
+		"{path}/structure_seq_sorted_{{channel}}.stats.txt".format(path = exp_path)
+	shell:
+		"{script_path}/collectAlignStat {input[0]} {input[1]} > {output}"
 
 rule generate_mapping_statistics_table:
-     input:
-        expand("{path}/{name}_{channel}.stats.txt", path = EXP_PATH, name = REAL, channel = CHANNELS)
-     output:
-        "{}/mapping_statistics_table.txt".format(RESULTS_PATH)
-     shell:
-        "{RESULTS_PATH}/scripts/generate_mapping_statistics_table {input} {output}"
-        
-#### Evaluate running time and memory usage
+	input:
+		expand("{path}/structure_seq_sorted_{channel}.stats.txt", path = exp_path, channel = ["minus", "plus"])
+	output:
+		"{path}/mapping_statistics_table.txt".format(path = result_path)
+	shell:
+		"{script_path}/generate_mapping_statistics_table {input} {output}"
+
+
+## Evaluate running time and memory usage
+
+minus_reads = sample_name_to_data["structure_seq_minus"]
+plus_reads = sample_name_to_data["structure_seq_plus"]
 
 rule time_and_memory:
-     input:
-        TOOLS[2], TOOLS[5],
-        REAL_DATA,
-        REF_FILT
-     output:
-        expand("{path}/{name}.{suffix}", path = EXP_PATH, name = REAL, suffix = PROBER_SUFF),
-        expand("{path}/{name}.stat/{name}_{channel}.{suffix}", path = EXP_PATH, name = REAL, channel = CHANNELS, suffix = PROBER_STAT),
-        expand("{path}/{name}_{channel}.bam", path = EXP_PATH, name = REAL, channel = CHANNELS),
-        expand("{path}/{name}.{suffix}", path = EXP_PATH, name = REAL, suffix = ["time", "bam.time", "mem"])
-     threads: 40
-     shell:
-        "{PROBER} estimate --time --memory --bowtie --bowtie-path {input[0]} -p {threads} --output-bam --read-length 37 --size-selection-min 21 --size-selection-max 526 "
-        "{REF_FILT_NAME} {EXP_PATH}/{REAL} --reads {input[2]} {input[3]}"
+	input:
+		arabidopsis_filt,
+		plus_reads,
+		minus_reads,
+		PROBer, Bowtie
+	output:
+		expand("{path}/structure_seq_PROBer.{suffix}", path = exp_path, suffix = ["time", "bam.time", "mem"])
+	threads: 20
+	shell:
+		"{PROBer} estimate --time --memory --for-paper --bowtie --bowtie-path {bowtie_path} -p {threads} --output-bam"
+		" --read-length 37 --size-selection-min 21 --size-selection-max 526"
+		" {input[0]} {exp_path}/structure_seq_PROBer --reads {input[1]},{input[2]} {input[3]},{input[4]}"
 
 rule generate_time_and_memory_table:
-     input:
-        expand("{path}/{name}.{suffix}", path = EXP_PATH, name = REAL, suffix = ["time", "bam.time", "mem"])
-     output:
-        "{}/time_and_memory_table.txt".format(RESULTS_PATH)
-     shell:
-        "{RESULTS_PATH}/scripts/generate_time_memory_table {EXP_PATH}/{REAL} {RESULTS[1]}"
-
-#### Collect mapping statistics
-
+	 input:
+	 	rules.time_and_memory.output
+	 output:
+		"{path}/time_and_memory_table.txt".format(path = result_path)
+	 shell:
+		"{script_path}/generate_time_memory_table {exp_path}/structure_seq_PROBer {output}"
 
 
 ## simuation results

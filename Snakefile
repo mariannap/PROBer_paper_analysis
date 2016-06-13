@@ -80,8 +80,7 @@ sim_path = "simulation"
 ### results
 result_path = "results"
 results = expand("{path}/structure_seq_sim{digit}_{name}_boxplot.pdf", path = result_path, digit = ['1', '2'], name = ["vs_full", "vs_pipeline", "main"])
-results.append("{path}/digital_spike_in.txt".format(path = result_path))
-results.append("{path}/scatters.pdf".format(path = result_path))
+results.extend(expand("{path}/{name}", path = result_path, name = ["digital_spike_in.txt", "scatters.pdf", "mapping_statistics_table.txt", "time_and_memory_table.txt"]))
 
 ## Import Snakemake modules
 
@@ -95,6 +94,6 @@ include: "simulation/Snakefile"
 
 rule all:
 	input: results
-	
+
 		
 
