@@ -75,3 +75,13 @@ rule process_SHAPE_data:
 		expand("{path}/{{shape_name}}.{suffix}", path = gt_path, suffix = ["fa", "gamma", "beta"])
 	shell:
 		"{script_path}/processSHAPEdata {input} {params.output_name}"
+
+rule generate_pseudoU_ground_truth:
+	output:
+		expand("{path}/{name}.truth", path = gt_path, name = ["18S", "25S", "5S", "58S", "LSR1"])
+	shell:
+		"{script_path}/gen_pseudoU_truth {output[0]} 1800 105 119 210 301 465 631 758 765 998 1180 1186 1289 1414 1190 && "
+		"{script_path}/gen_pseudoU_truth {output[1]} 3396 775 959 965 985 989 1003 1041 1051 1055 1109 1123 2128 2132 2190 2257 2259 2263 2265 2313 2339 2348 2350 2415 2734 2825 2864 2879 2922 2943 2974 && "
+		"{script_path}/gen_pseudoU_truth {output[2]} 121 49 && "
+		"{script_path}/gen_pseudoU_truth {output[3]} 158 72 && "
+		"{script_path}/gen_pseudoU_truth {output[4]} 1175 34 41 43"

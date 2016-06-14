@@ -1,0 +1,102 @@
+#!/usr/bin/env Rscript
+
+argv = commandArgs(TRUE)
+if (length(argv) != 4) {
+	cat("Usage: plot_PR_ROC ref.transcripts.fa ground_truth_path experiment_prefix output_name")
+	q(status = 1)
+}
+
+
+library("PRROC")
+
+seq_file = argv[1]
+seq_pos = c(36, 37, 38, 39, 5) # RDN18-1, RDN25-1, RDN5-1, RDN58-1, LSR1
+pos_25S = 37
+
+genPosList = function(pos, seq_file) {
+	my_seq = unlist(strsplit(scan(seq_file, what = "", skip = pos * 2 - 1, nlines = 1), split = ""))
+	pos_vec = which(my_seq == "T")
+	if (pos == pos_25S) { pos_vec = pos_vec[pos_vec >= 3] }
+	pos_vec
+}
+
+posList = lapply(seq_pos, genPosList, seq_file)
+
+
+truth_files = sprintf("%s/%s.truth", argv[2], c("18S", "25S", "5S", "58S", "LSR1"))
+
+collectTruth = function(id, truth_files, posList) {
+	truth = scan(truth_files[id], what = 0)
+	truth[posList[[id]]]
+}
+
+truth = unlist(lapply(1:5, collectTruth, truth_files, posList))
+
+files = sprintf("%s_%s", argv[3], c("PROBer.beta", "Pseudoseq.scores", "StructureFold.scores", "Modseq.scores", "icSHAPE.scores"))
+
+collectProber = function(id, prober_file, seq_pos, posList) {
+	prober = scan(prober_file, what = "", skip = seq_pos[id], nlines = 1)
+	prober = as.numeric(prober[3:length(prober)])
+	prober[posList[[id]]]
+}
+
+PROBer = unlist(lapply(1:5, collectProber, files[1], seq_pos, posList))
+
+collectScore = function(id, score_file, seq_pos, posList) {
+	score = scan(score_file, what = 0.0, skip = seq_pos[id] - 1, nlines = 1)
+	score[posList[[id]]]
+}
+
+Pseudoseq = unlist(lapply(1:5, collectScore, file[2], posList))
+StructureFold = unlist(lapply(1:5, collectScore, file[3], posList))
+Modseq = unlist(lapply(1:5, collectScore, file[4], posList))
+icSHAPE = unlist(lapply(1:5, collectScore, file[5], posList))
+
+pr_PROBer = pr.curve(PROBer, weights.class0 = truth, curve = T)
+pr_Pseudoseq = pr.curve(Pseudoseq, weights.class0 = truth, curve = T)
+pr_StructureFold = pr.curve(StructureFold, weights.class0 = truth, curve = T)
+pr_Modseq = pr.curve(Modseq, weights.class0 = truth, curve = T)
+pr_icSHAPE = pr.curve(icSHAPE, weights.class0 = truth, curve = T)
+
+pdf(sprintf("%s_PR.pdf", argv[4]))
+
+plot(pr_PROBer, lwd = 1, col = "red", auc.main = F)
+plot(pr_Pseudoseq, lwd = 1, col = "blue", add = T)
+plot(pr_StructureFold, lwd = 1, col = "green", add = T)
+plot(pr_Modseq, lwd = 1, col = "orange", add = T)
+plot(pr_icSHAPE, lwd = 1, col = "purple", add = T)
+
+legends = c(as.expression(bquote(paste("PROBer, AUC = ", .(sprintf("%.2f", pr_PROBer$auc.integral))))), 
+			as.expression(bquote(paste("Pseudo-seq, AUC = ", .(sprintf("%.2f", pr_Pseudoseq$auc.integral))))),
+			as.expression(bquote(paste("StructureFold, AUC = ", .(sprintf("%.2f", pr_StructureFold$auc.integral))))),
+			as.expression(bquote(paste("Mod-seq, AUC = ", .(sprintf("%.2f", pr_Modseq$auc.integral))))),
+			as.expression(bquote(paste("icSHAPE, AUC = ", .(sprintf("%.2f", pr_icSHAPE$auc.integral))))))
+						
+legend(x = 0.1, y = 0.6, legend=legends, lty=1, col=c("red", "blue", "green", "orange", "purple"))
+
+dev.off()
+
+
+roc_PROBer = roc.curve(PROBer, weights.class0 = truth, curve = T)
+roc_Pseudoseq = roc.curve(Pseudoseq, weights.class0 = truth, curve = T)
+roc_StructureFold = roc.curve(StructureFold, weights.class0 = truth, curve = T)
+roc_Modseq = roc.curve(Modseq, weights.class0 = truth, curve = T)
+roc_icSHAPE = roc.curve(icSHAPE, weights.class0 = truth, curve = T)
+
+pdf(sprintf("%s_ROC.pdf", argv[4]))
+
+plot(roc_PROBer, lwd = 1, col = "red", auc.main = F)
+plot(roc_Pseudoseq, lwd = 1, col = "blue", add = T)
+plot(roc_StructureFold, lwd = 1, col = "green", add = T)
+plot(roc_Modseq, lwd = 1, col = "orange", add = T)
+plot(roc_icSHAPE, lwd = 1, col = "purple", add = T)
+
+legends = c(as.expression(bquote(paste("PROBer, AUC = ", .(sprintf("%.2f", roc_PROBer$auc))))), 
+			as.expression(bquote(paste("Pseudo-seq, AUC = ", .(sprintf("%.2f", roc_Pseudoseq$auc))))),
+			as.expression(bquote(paste("StructureFold, AUC = ", .(sprintf("%.2f", roc_StructureFold$auc)))))
+			as.expression(bquote(paste("Mod-seq, AUC = ", .(sprintf("%.2f", roc_Modseq$auc))))),
+			as.expression(bquote(paste("icSHAPE, AUC = ", .(sprintf("%.2f", roc_icSHAPE$auc))))))
+
+legend("bottomright", legend=legends, lty=1, col=c("red", "blue", "green", "orange", "purple"))
+
+dev.off()

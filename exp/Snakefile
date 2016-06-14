@@ -338,7 +338,7 @@ rule run_RSEM_for_scatter_plots:
 	shell:
 		"{RSEM_calculate} -p {threads} --alignments --strand-specific --no-bam-output {input[1]} {input[0]} {params}"
 
-rule produce_expression_scatter_plots:
+rule generate_expression_scatter_plots:
 	input:
 		"{path}/ground_truth.expr".format(path = sim_path),
 		"{path}/structure_seq_sim1_PROBer.expr".format(path = exp_path),
@@ -351,8 +351,18 @@ rule produce_expression_scatter_plots:
 
 
 
+# Pseudo-seq experiments for Pseudouridine modification
 
-
+rule generate_pseudoU_PR_ROC_plots:
+	input:
+		yeast_filt,
+		expand("{path}/{name}.truth", path = gt_path, name = ["18S", "25S", "5S", "58S", "LSR1"]),
+		expand("{path}/pseudo_seq_{method_suffix}", path = exp_path,
+			method_suffix = ["PROBer.beta", "Pseudoseq.scores", "StructureFold.scores", "Modseq.scores", "icSHAPE.scores"])
+	output:
+		expand("{path}/pseudoU_{type}.pdf", path = result_path, type = ["PR", "ROC"])
+	shell:
+		"{script_path}/plot_PR_ROC {input[0]}.transcripts.fa {gt_path} {exp_path}/pseudo_seq {result_path}/pseudoU"
 
 
 # iCLIP
