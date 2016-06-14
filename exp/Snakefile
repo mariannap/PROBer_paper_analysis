@@ -247,12 +247,13 @@ rule time_and_memory:
 		" --read-length 37 --size-selection-min 21 --size-selection-max 526"
 		" {input[0]} {exp_path}/structure_seq_PROBer --reads {input[1]},{input[2]} {input[3]},{input[4]}"
 
+
 rule generate_time_and_memory_table:
-	 input:
+	input:
 	 	rules.time_and_memory.output
-	 output:
+	output:
 		"{path}/time_and_memory_table.txt".format(path = result_path)
-	 shell:
+	shell:
 		"{script_path}/generate_time_memory_table {exp_path}/structure_seq_PROBer {output}"
 
 
