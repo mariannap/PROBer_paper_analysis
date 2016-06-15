@@ -1,6 +1,6 @@
-from snakemake.remote.FTP import RemoteProvider as FTPRemoteProvider
-
-FTP = FTPRemoteProvider()
+# from snakemake.remote.FTP import RemoteProvider as FTPRemoteProvider
+# FTP = FTPRemoteProvider()
+## Snakemake's FTP service has a slow checking period before the workflow actually run, thus switch to use wget directly
 
 rule build_PROBer_and_Bowtie_indices:
     input:
@@ -24,20 +24,24 @@ rule build_RSEM_indices:
         "{RSEM_prepare} --transcript-to-gene-map {params.ref_rsem}.g2t {input[0]} {params.ref_rsem}"
 
 rule download_arabidopsis_genome:
-    input:
-        FTP.remote("ftp.arabidopsis.org/home/tair/Genes/TAIR10_genome_release/TAIR10_chromosome_files/TAIR10_chr_all.fas")
+    # input:
+    #     FTP.remote("ftp.arabidopsis.org/home/tair/Genes/TAIR10_genome_release/TAIR10_chromosome_files/TAIR10_chr_all.fas")
     output:
         "{path}/TAIR10_chr_all.fa".format(path = ref_arabidopsis)
     shell:
-        "{script_path}/replace_chromosome_name_for_TAIR10 {input} {output}"
+        # "{script_path}/replace_chromosome_name_for_TAIR10 {input} {output}"
+        "wget -O {ref_arabidopsis}/TAIR10_chr_all.fas ftp://ftp.arabidopsis.org/home/tair/Genes/TAIR10_genome_release/TAIR10_chromosome_files/TAIR10_chr_all.fas && "
+        "{script_path}/replace_chromosome_name_for_TAIR10 {ref_arabidopsis}/TAIR10_chr_all.fas {output}" 
 
 rule generate_arabidopsis_GTF:
-    input:
-        FTP.remote("ftp.arabidopsis.org/home/tair/Genes/TAIR10_genome_release/TAIR10_gff3/TAIR10_GFF3_genes.gff")
+    # input:
+    #     FTP.remote("ftp.arabidopsis.org/home/tair/Genes/TAIR10_genome_release/TAIR10_gff3/TAIR10_GFF3_genes.gff")
     output:
         "{path}/TAIR10_GTF_genes.gtf".format(path = ref_arabidopsis)
     shell:
-        "{script_path}/gff3_to_gtf {input} {output} mRNA,rRNA,ncRNA,snRNA,tRNA,miRNA,snoRNA"
+        # "{script_path}/gff3_to_gtf {input} {output} mRNA,rRNA,ncRNA,snRNA,tRNA,miRNA,snoRNA"
+        "wget -O {ref_arabidopsis}/TAIR10_GFF3_genes.gff ftp://ftp.arabidopsis.org/home/tair/Genes/TAIR10_genome_release/TAIR10_gff3/TAIR10_GFF3_genes.gff && "
+        "{script_path}/gff3_to_gtf {ref_arabidopsis}/TAIR10_GFF3_genes.gff {output} mRNA,rRNA,ncRNA,snRNA,tRNA,miRNA,snoRNA"
 
 rule generate_arabidopsis_remove_list:
     output:
@@ -87,32 +91,40 @@ rule generate_yeast_remove_list:
 
 rule extract_yeast_transcripts:
     input:
-        FTP.remote("ftp.ensembl.org/pub/release-84/fasta/saccharomyces_cerevisiae/dna/Saccharomyces_cerevisiae.R64-1-1.dna.toplevel.fa.gz"),
-        FTP.remote("ftp.ensembl.org/pub/release-84/gtf/saccharomyces_cerevisiae/Saccharomyces_cerevisiae.R64-1-1.84.gtf.gz"),
+        # FTP.remote("ftp.ensembl.org/pub/release-84/fasta/saccharomyces_cerevisiae/dna/Saccharomyces_cerevisiae.R64-1-1.dna.toplevel.fa.gz"),
+        # FTP.remote("ftp.ensembl.org/pub/release-84/gtf/saccharomyces_cerevisiae/Saccharomyces_cerevisiae.R64-1-1.84.gtf.gz"),
         rules.generate_yeast_remove_list.output
     output:
         expand("{path}/Saccharomyces_cerevisiae.R64-1-1.{suffix}", path = ref_yeast, suffix = ["dna.toplevel.fa", "84.gtf"]),
         expand("{ref_name}.{suffix}", ref_name = yeast_filt, suffix = ["fa", "t2g", "dup", "unextracted"])
     shell:
-        "gunzip -c {input[0]} > {output[0]} && "
-        "gunzip -c {input[1]} > {output[1]} && "
+        "wget -O {ref_yeast}/Saccharomyces_cerevisiae.R64-1-1.dna.toplevel.fa.gz ftp://ftp.ensembl.org/pub/release-84/fasta/saccharomyces_cerevisiae/dna/Saccharomyces_cerevisiae.R64-1-1.dna.toplevel.fa.gz && "
+        "wget -O {ref_yeast}/Saccharomyces_cerevisiae.R64-1-1.84.gtf.gz ftp://ftp.ensembl.org/pub/release-84/gtf/saccharomyces_cerevisiae/Saccharomyces_cerevisiae.R64-1-1.84.gtf.gz && "
+        # "gunzip -c {input[0]} > {output[0]} && "
+        # "gunzip -c {input[1]} > {output[1]} && "
+        "gunzip -c {ref_yeast}/Saccharomyces_cerevisiae.R64-1-1.dna.toplevel.fa.gz > {output[0]} && "
+        "gunzip -c {ref_yeast}/Saccharomyces_cerevisiae.R64-1-1.84.gtf.gz > {output[1]} && "
         "{script_path}/genome_to_transcript_set {output[0]} {output[1]} {input[2]} None {yeast_filt}"
 
 rule download_mouse_genome:
-    input:
-        FTP.remote("ftp.ensembl.org/pub/release-74/fasta/mus_musculus/dna/Mus_musculus.GRCm38.74.dna.toplevel.fa.gz")
+    # input:
+    #     FTP.remote("ftp.ensembl.org/pub/release-74/fasta/mus_musculus/dna/Mus_musculus.GRCm38.74.dna.primary_assembly.fa.gz")
     output:
-        "{path}/Mus_musculus.GRCm38.74.dna.toplevel.fa".format(path = ref_mouse)
+        "{path}/Mus_musculus.GRCm38.74.dna.primary_assembly.fa".format(path = ref_mouse)
     shell:
-        "gunzip -c {input} > {output}"
+        # "gunzip -c {input} > {output}"
+        "wget -O {ref_mouse}/Mus_musculus.GRCm38.74.dna.primary_assembly.fa.gz ftp://ftp.ensembl.org/pub/release-74/fasta/mus_musculus/dna/Mus_musculus.GRCm38.74.dna.primary_assembly.fa.gz && "
+        "gunzip -c {ref_mouse}/Mus_musculus.GRCm38.74.dna.primary_assembly.fa.gz > {output}"
 
 rule download_mouse_GTF:
-    input:
-        FTP.remote("ftp.ensembl.org/pub/release-74/gtf/mus_musculus/Mus_musculus.GRCm38.74.gtf.gz")
+    # input:
+    #     FTP.remote("ftp.ensembl.org/pub/release-74/gtf/mus_musculus/Mus_musculus.GRCm38.74.gtf.gz")
     output:
         "{path}/Mus_musculus.GRCm38.74.gtf".format(path = ref_mouse)
     shell:
-        "gunzip -c {input} > {output}"
+        # "gunzip -c {input} > {output}"
+        "wget -O {ref_mouse}/Mus_musculus.GRCm38.74.gtf.gz ftp://ftp.ensembl.org/pub/release-74/gtf/mus_musculus/Mus_musculus.GRCm38.74.gtf.gz && "
+        "gunzip -c {ref_mouse}/Mus_musculus.GRCm38.74.gtf.gz > {output}"
 
 rule generate_mouse_remove_list:
     input:
@@ -134,12 +146,14 @@ rule extract_mouse_transcripts:
         "{script_path}/genome_to_transcript_set {input} {mouse_filt}"
 
 rule download_human_genome:
-    input:
-        FTP.remote("ftp.ensembl.org/pub/release-83/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz")
+    # input:
+    #     FTP.remote("ftp.ensembl.org/pub/release-83/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz")
     output:
         "{path}/Homo_sapiens.GRCh38.dna.primary_assembly.fa".format(path = ref_human)
     shell:
-        "gunzip -c {input} > {output}"
+        # "gunzip -c {input} > {output}"
+        "wget -O {ref_human}/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz ftp://ftp.ensembl.org/pub/release-83/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz && "
+        "gunzip -c {ref_human}/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz > {output}"
 
 rule build_Bowtie_indices_for_iCLIP_analyses:
     input:

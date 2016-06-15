@@ -16,7 +16,7 @@ rule dump_to_FASTQ_100M:
 	output: 
 		"{path}/{{run,SRR\d+}}.fastq".format(path = ChangLab)
 	shell: 
-		"{fastq_dump} --split-spot -N 100000000 -O {ChangLab} {input[0]}"
+		"{fastq_dump} --split-spot -X 100000000 -O {ChangLab} {input[0]}"
 
 ruleorder: dump_to_FASTQ_100M > dump_to_FASTQ
 
