@@ -2,7 +2,7 @@
 
 argv = commandArgs(TRUE)
 if (length(argv) != 4) {
-	cat("Usage: plot_PR_ROC ref.transcripts.fa ground_truth_path experiment_prefix output_name")
+	cat("Usage: plot_PR_ROC ref.transcripts.fa ground_truth_path experiment_prefix output_name\n")
 	q(status = 1)
 }
 
@@ -47,10 +47,10 @@ collectScore = function(id, score_file, seq_pos, posList) {
 	score[posList[[id]]]
 }
 
-Pseudoseq = unlist(lapply(1:5, collectScore, file[2], posList))
-StructureFold = unlist(lapply(1:5, collectScore, file[3], posList))
-Modseq = unlist(lapply(1:5, collectScore, file[4], posList))
-icSHAPE = unlist(lapply(1:5, collectScore, file[5], posList))
+Pseudoseq = unlist(lapply(1:5, collectScore, files[2], seq_pos, posList))
+StructureFold = unlist(lapply(1:5, collectScore, files[3], seq_pos, posList))
+Modseq = unlist(lapply(1:5, collectScore, files[4], seq_pos, posList))
+icSHAPE = unlist(lapply(1:5, collectScore, files[5], seq_pos, posList))
 
 pr_PROBer = pr.curve(PROBer, weights.class0 = truth, curve = T)
 pr_Pseudoseq = pr.curve(Pseudoseq, weights.class0 = truth, curve = T)
@@ -93,7 +93,7 @@ plot(roc_icSHAPE, lwd = 1, col = "purple", add = T)
 
 legends = c(as.expression(bquote(paste("PROBer, AUC = ", .(sprintf("%.2f", roc_PROBer$auc))))), 
 			as.expression(bquote(paste("Pseudo-seq, AUC = ", .(sprintf("%.2f", roc_Pseudoseq$auc))))),
-			as.expression(bquote(paste("StructureFold, AUC = ", .(sprintf("%.2f", roc_StructureFold$auc)))))
+			as.expression(bquote(paste("StructureFold, AUC = ", .(sprintf("%.2f", roc_StructureFold$auc))))),
 			as.expression(bquote(paste("Mod-seq, AUC = ", .(sprintf("%.2f", roc_Modseq$auc))))),
 			as.expression(bquote(paste("icSHAPE, AUC = ", .(sprintf("%.2f", roc_icSHAPE$auc))))))
 

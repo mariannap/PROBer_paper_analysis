@@ -100,12 +100,12 @@ rule run_PROBer:
 rule run_PROBer_icSHAPE:
 	input:
 		mouse_filt,
-		expand("{path}/icSHAPE_{{channel}}.bam", path = exp_path),
+		expand("{path}/icSHAPE_{{condition}}.bam", path = exp_path),
 		PROBer
 	params:
-		"{path}/icSHAPE_{{channel}}_PROBer".format(path = exp_path)
+		"{path}/icSHAPE_{{condition}}_PROBer".format(path = exp_path)
 	output:
-		expand("{path}/icSHAPE_{{channel}}_PROBer.{suffix}", path = exp_path, suffix = ["beta", "gamma", "expr"])
+		expand("{path}/icSHAPE_{{condition}}_PROBer.{suffix}", path = exp_path, suffix = ["beta", "gamma", "expr"])
 	threads: 20
 	shell:
 		"{PROBer} estimate -p {threads} --primer-length 0 --size-selection-min 20 --size-selection-max 120 --read-length 87 {input[0]} {params} --alignments {input[1]}"
@@ -192,6 +192,8 @@ rule calculate_Pseudoseq_score:
 		"{path}/{{experiment}}_{{method,Pseudoseq}}.scores".format(path = exp_path)
 	shell:
 		"{script_path}/calcPseudoseq {input} {output}"
+
+
 
 
 # RNA structure analysis
@@ -349,9 +351,46 @@ rule generate_expression_scatter_plots:
 	shell:
 		"{script_path}/genExprScatterPlots {input} {output}"
 
+## ROC curves for a variaty of data sets
+
+### structure-seq data
+rule generate_structure_seq_ROC_plots:
+	input:
+		expand("{path}/arabidopsis_{name}.{suffix}", path = gt_path, name = ["18S", "25S"], suffix = ["structure", "isac"]),
+		expand("{path}/structure_seq_{method_suffix}", path = exp_path,
+			method_suffix = ["sorted_PROBer.beta", "StructureFold.scores", "Modseq.scores", "icSHAPE.scores"])
+	output:
+		expand("{path}/structure_seq_roc_{name}.pdf", path = result_path, name = ["18S", "25S"])
+	shell:
+		"{script_path}/plotROC {gt_path} 36 {exp_path}/structure_seq {result_path}/structure_seq_roc"
+
+### Mod-seq data
+rule generate_mod_seq_ROC_plots:
+	input:
+		expand("{path}/yeast_{name}.{suffix}", path = gt_path, name = ["18S", "25S"], suffix = ["structure", "isac"]),
+		expand("{path}/mod_seq_{method_suffix}", path = exp_path,
+			method_suffix = ["PROBer.beta", "Modseq.scores", "icSHAPE.scores"])
+	output:
+		expand("{path}/mod_seq_roc_{name}.pdf", path = result_path, name = ["18S", "25S"])
+	shell:
+		"{script_path}/plotROC {gt_path} 49 {exp_path}/mod_seq {result_path}/mod_seq_roc"
+
+### icSHAPE data
+rule generate_icSHAPE_ROC_plots:
+	input:
+		expand("{path}/mouse_{name}.{suffix}", path = gt_path, name = ["18S", "12S_Mt"], suffix = ["structure", "isac"]),
+		expand("{path}/icSHAPE_{{condition}}_{method_suffix}", path = exp_path,
+			method_suffix = ["PROBer.beta", "StructureFold.scores", "Modseq.scores", "icSHAPE.scores"])
+	output:
+		expand("{path}/icSHAPE_{{condition,(invitro|invivo)}}_roc_{name}.pdf", path = result_path, name = ["18S", "12S_Mt"])
+	shell:
+		"{script_path}/plotROC {gt_path} 86 {exp_path}/icSHAPE_{wildcards.condition} {result_path}/icSHAPE_{wildcards.condition}_roc"
+
+
 
 
 # Pseudo-seq experiments for Pseudouridine modification
+
 
 rule generate_pseudoU_PR_ROC_plots:
 	input:

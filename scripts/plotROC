@@ -1,0 +1,98 @@
+#!/usr/bin/env Rscript
+
+argv = commandArgs(TRUE)
+if (length(argv) != 4) {
+   cat("Usage: plotROC ground_truth_dir exclude_bp experiment_prefix output_name\n")
+   q(status = 1)
+}
+
+library(PRROC)
+
+genPosList = function(name, ground_truth_dir, exclude_bp) {
+  isAC = scan(sprintf("%s/%s.isac", ground_truth_dir, name), what = 0)
+  res = 1:(length(isAC) - exclude_bp)
+  if (!grepl("^mouse", name)) res = which(isAC[res] == 1)
+
+  return(res)
+}
+
+collectTruth = function(name, ground_truth_dir) {
+  scan(sprintf("%s/%s.structure", ground_truth_dir, name), what = 0)
+}
+
+collectPROBer = function(pos, file_name) {
+  prober = scan(file_name, what = "", skip = pos, nlines = 1)
+  as.numeric(prober[3:length(prober)])
+}
+
+collectScore = function(pos, file_name) {
+  scan(file_name, what = 0.0, skip = pos - 1, nlines = 1)
+}
+
+calculateROC = function(id, estList, truthList, posList) {
+  roc.curve(estList[[id]][posList[[id]]], weights.class0 = truthList[[id]][posList[[id]]], curve = T)
+}
+
+plotROC = function(id, output_name, rRNAs, PROBerRocs, StructureFoldRocs, ModseqRocs, icSHAPERocs) {
+  pdf(sprintf("%s_%s.pdf", output_name, rRNAs[id]))
+
+  plot(PROBerRocs[[id]], lwd = 1, col = "red", auc.main = F, main = rRNAs[id])
+  if (!is.null(StructureFoldRocs)) plot(StructureFoldRocs[[id]], lwd = 1, col = "dodgerblue", add = T)
+  plot(ModseqRocs[[id]], lwd = 1, col = "green2", add = T)
+  plot(icSHAPERocs[[id]], lwd = 1, col = "yellow2", add = T)
+
+
+  legends = c(as.expression(bquote(paste("PROBer, AUC = ", .(sprintf("%.2f", PROBerRocs[[id]]$auc))))))
+  if (!is.null(StructureFoldRocs)) legends = c(legends, as.expression(bquote(paste("StructureFold, AUC = ", .(sprintf("%.2f", StructureFoldRocs[[id]]$auc))))))
+  legends = c(legends, as.expression(bquote(paste("Mod-seq, AUC = ", .(sprintf("%.2f", ModseqRocs[[id]]$auc))))),
+              as.expression(bquote(paste("icSHAPE, AUC = ", .(sprintf("%.2f", icSHAPERocs[[id]]$auc))))))
+
+  colors = c("red")
+  if (!is.null(StructureFoldRocs)) colors = c(colors, "dodgerblue")
+  colors = c(colors, "green2", "yellow2")
+
+  legend("topleft", legend = legends, lty = 1, col = colors)
+
+  null = dev.off()
+
+  cat(sprintf("PROBer = %.2f, ", PROBerRocs[[id]]$auc))
+  if (!is.null(StructureFoldRocs)) cat(sprintf("StructureFold = %.2f, ", StructureFoldRocs[[id]]$auc))
+  cat(sprintf("Mod-seq = %.2f, icSHAPE = %.2f\n", ModseqRocs[[id]]$auc, icSHAPERocs[[id]]$auc))
+
+  return(NULL)
+}
+
+
+fileList = c(sprintf("%s_%sPROBer.beta", argv[3], ifelse(grepl("structre_seq$", argv[3]), "sorted_", "")), 
+             sprintf("%s_%s.scores", argv[3], c("StructureFold", "Modseq", "icSHAPE")))
+
+if (grepl("structure_seq$", argv[3])) {
+  rRNAs = c("18S", "25S")
+  gtNames = sprintf("arabidopsis_%s", rRNAs)
+  rowList = 1:2
+} else if (grepl("mod_seq$", argv[3])) {
+  rRNAs = c("18S", "25S")
+  gtNames = sprintf("yeast_%s", rRNAs)
+  rowList = 36:37
+} else {
+  stopifnot(grepl("icSHAPE", argv[3]))
+  rRNAs = c("18S", "12S_Mt")
+  gtNames = sprintf("mouse_%s", rRNAs)
+  rowList = 2:1
+}
+
+posList = lapply(gtNames, genPosList, argv[1], as.numeric(argv[2]))
+truthList = lapply(gtNames, collectTruth, argv[1])
+
+PROBerList = lapply(rowList, collectPROBer, fileList[1])
+if (!grepl("mod_seq", argv[3])) StructureFoldList = lapply(rowList, collectScore, fileList[2])
+ModseqList = lapply(rowList, collectScore, fileList[3])
+icSHAPEList = lapply(rowList, collectScore, fileList[4])
+
+PROBerRocs = lapply(1:2, calculateROC, PROBerList, truthList, posList)
+StructureFoldRocs = NULL
+if (!grepl("mod_seq", argv[3])) StructureFoldRocs = lapply(1:2, calculateROC, StructureFoldList, truthList, posList)
+ModseqRocs = lapply(1:2, calculateROC, ModseqList, truthList, posList)
+icSHAPERocs = lapply(1:2, calculateROC, icSHAPEList, truthList, posList)
+
+null_vec = lapply(1:2, plotROC, argv[4], rRNAs, PROBerRocs, StructureFoldRocs, ModseqRocs, icSHAPERocs)

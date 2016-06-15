@@ -7,7 +7,7 @@ rule build_PROBer_and_Bowtie_indices:
         expand("{{ref_name}}.{suffix}", suffix = ["fa", "t2g"]),
         PROBer, Bowtie
     output:
-        touch("{ref_name}")
+        touch("{ref_name,^references/[a-z]+/[a-z]+_[a-z]+}")
     shell:
         "{PROBer} prepare --transcript-to-gene-map {input[1]} --bowtie --bowtie-path {bowtie_path} {input[0]} {wildcards.ref_name}"
 
@@ -16,7 +16,7 @@ rule build_RSEM_indices:
         expand("{{ref_name}}.{suffix}", suffix = ["fa", "t2g"]),
         RSEM_prepare
     params:
-        ref_rsem = "{ref_name}_rsem"
+        ref_rsem = "{ref_name,^references/[a-z]+/[a-z]+_[a-z]+}_rsem"
     output:
         touch("{ref_name}_rsem")
     shell:
@@ -59,7 +59,7 @@ rule extract_arabidopsis_transcripts:
 
 rule calculate_mappability_for_arabidopsis_filt:
     input:
-        arabidopsis_filt + "",
+        arabidopsis_filt,
         "{path}/calcMappability".format(path = script_path)
     output:
         arabidopsis_filt + ".mappability"
@@ -115,11 +115,12 @@ rule download_mouse_GTF:
         "gunzip -c {input} > {output}"
 
 rule generate_mouse_remove_list:
+    input:
+        rules.download_mouse_GTF.output
     output:
         "{path}/remove_list.txt".format(path = ref_mouse)
-    run:
-        with open(output[0], "w") as fout:
-            fout.write("ENSMUST00000082388\n")
+    shell:
+        "{script_path}/gen_mouse_remove_list {input} {output}"
 
 rule extract_mouse_transcripts:
     input:

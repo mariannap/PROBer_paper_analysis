@@ -79,21 +79,22 @@ sim_path = "simulation"
 
 ### results
 result_path = "results"
+
 results = expand("{path}/structure_seq_sim{digit}_{name}_boxplot.pdf", path = result_path, digit = ['1', '2'], name = ["vs_full", "vs_pipeline", "main"])
 results.extend(expand("{path}/{name}", path = result_path, name = ["digital_spike_in.txt", "scatters.pdf", "mapping_statistics_table.txt", "time_and_memory_table.txt"]))
+results.extend(expand("{path}/{name}_seq_roc_{rRNA}.pdf", path = result_path, name = ["structure", "mod"], rRNA = ["18S", "25S"]))
+results.extend(expand("{path}/icSHAPE_{condition}_roc_{rRNA}.pdf", path = result_path, condition = ["invitro", "invivo"], rRNA = ["18S", "12S_Mt"]))
+results.extend(expand("{path}/pseudoU_{type}.pdf", path = result_path, type = ["PR", "ROC"]))
 
 ## Import Snakemake modules
 
 include: "scripts/Snakefile"
 include: "tools/Snakefile"
 include: "ground_truth/Snakefile"
-# include: "references/Snakefile"
+include: "references/Snakefile"
 include: "data/Snakefile"
 include: "exp/Snakefile"
 include: "simulation/Snakefile"
 
 rule all:
 	input: results
-
-		
-

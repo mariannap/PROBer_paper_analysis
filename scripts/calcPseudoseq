@@ -48,8 +48,6 @@ if len(argv) != 4:
     print("Usage: calcPseudoseq control.cnts treatment.cnts output")
     exit(-1)
 
-ids = set([int(x) for x in argv[4].split(",")])
-
 with open(argv[1], "r") as fc:
     with open(argv[2], "r") as ft:
         with open(argv[3], "w") as fout:
