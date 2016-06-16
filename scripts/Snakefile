@@ -1,7 +1,7 @@
-rule compile_mappability:
+rule compile_cpp:
 	input:
-		script_path + "/calcMappability.cpp"
+		"{path}/{{program}}.cpp".format(path = script_path)
 	output:
-		script_path + "/calcMappability"
+		"{path}/{{program,\w+}}".format(path = script_path)
 	shell:
 		"g++ -O3 {input} -o {output}"
