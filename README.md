@@ -4,77 +4,60 @@ Reproduce PROBer paper analysis
 
 ### Prerequisites
 
-This snakemake workflow is tested and intended to run under Ubuntu Linux 64 bit architecture.
+This snakemake workflow is tested and intended to run under Ubuntu Linux 64 bit architecture. Please make sure that your server has at least 20 cores and 32G memory.
 
-First, you need to install [Snakemake](https://bitbucket.org/johanneskoester/snakemake/wiki/Home). 
+First, you need to install [Snakemake](https://bitbucket.org/snakemake/snakemake/wiki/Home)(>= 3.7.1). 
 
-Then, please make sure that you have `Perl`, `Python` and `R`(>= 3.1.0) installed. For `Python`, we additionally require the following packages installed: [Cython](http://cython.org/), [numpy](http://www.numpy.org), [scipy](http://www.scipy.org/), and [pysam](https://github.com/pysam-developers/pysam). For `R`, please install the [pROC](http://cran.r-project.org/web/packages/pROC) and [reshape2](http://cran.r-project.org/web/packages/reshape2) packages.
+Second, please make sure that you have `Perl`, `Python` and `R`(>= 3.3.0) installed. For `Python`, we additionally require the following packages: `Cython`, `numpy`, `scipy`, `pysam`, and `requests`. For `R`, please install packages `reshape2` and `PRROC`.
 
-You also need to install [SRA Toolkit](http://www.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?view=software) in order to use [fastq-dump](http://www.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?view=toolkit_doc&f=fastq-dump).
+The snippet below shows how to install `Snakemake` and required packages under `virtualenv`.
+
+```
+pip3 install virtualenv
+virtualenv venv
+source venv/bin/activate
+
+pip3 install snakemake
+pip3 install numpy
+pip3 install scipy
+pip3 install Cython
+pip3 install pysam
+pip3 install requests
+
+R
+>install.packages("reshape2")
+>install.packages("PRROC")
+>q()
+```
 
 ### Reproduce analyses
 
-#### Download Ding et al. read data from SRA 
+#### Clone the workflow
 
-You should put FASTQ files into `data/`.
-
-Suppose you have `wget`, run the following commands:
+Type 
 
 ```
-cd data
-wget ftp://ftp-trace.ncbi.nih.gov/sra/sra-instant/reads/ByRun/sra/SRR/SRR933/SRR933551/SRR933551.sra
-wget ftp://ftp-trace.ncbi.nih.gov/sra/sra-instant/reads/ByRun/sra/SRR/SRR933/SRR933552/SRR933552.sra
-wget ftp://ftp-trace.ncbi.nih.gov/sra/sra-instant/reads/ByRun/sra/SRR/SRR933/SRR933556/SRR933556.sra
-wget ftp://ftp-trace.ncbi.nih.gov/sra/sra-instant/reads/ByRun/sra/SRR/SRR933/SRR933557/SRR933557.sra
+git clone git@github.com:pachterlab/PROBer_paper_analysis.git work_dir
 ```
 
-Then run `fastq-dump` from SRA Toolkit to get FASTQ files:
-
-```
-fastq-dump SRR933551.sra 
-fastq-dump SRR933552.sra 
-fastq-dump SRR933556.sra 
-fastq-dump SRR933557.sra 
-```
-
-The meaning of each data is listed in the table below:
-
-<table>
-        <tr>
-                <th>Accession</th>
-                <th>Meaning</th>
-        </tr>
-        <tr>
-                <td>SRR933551</td>
-                <td>Biological replicate I, (-) channel</td>
-        </tr>
-        <tr>
-                <td>SRR933552</td>
-                <td>Biological replicate I, (+) channel</td>
-        </tr>
-        <tr>
-                <td>SRR933556</td>
-                <td>Biological replicate II, (+) channel</td>
-        </tr>
-        <tr>
-                <td>SRR933557</td>
-                <td>Biological replicate II, (-) channel</td>
-        </tr>
-</table>
+to clone PROBer paper analysis workflow to your working directory. `work_dir` refers to the working directory you choose (e.g. 'PROBer_paper_analysis').
 
 #### Run snakemake
 
-Type
+Activate your environment (if you use `virtualenv`) and go to `work_dir`:
+
+```
+source venv/bin/activate
+cd work_dir
+```
+
+Then type 
 
 ```
 snakemake -j <number_of_threads>
 ```
 
-in the top directory. `<number_of_threads>` is the total number of threads you want to use. 
-
-##### Running time and memory usage measurement
-
-Please make sure that your server has at least 40 cores in order to make sure the time measurement is comparable to what we reported in our paper.
+`<number_of_threads>` is the total number of threads you want to use. This number should be no less than 20. 
 
 #### Results
 
@@ -171,11 +154,3 @@ The mappings between table names in our draft and file names under `results` are
                 <td>sim_modes_table.txt</td>
         </tr>
 </table>
-
-In addition, the file `number_of_reads_in_real_data.txt` under `results` lists the number of reads left in the control and treatment groups after preprocessing.
-   
-### Notes
-
-1. Each run of the snakemake may provide slightly different results (although qualitatively the same). In our Snakemake pipeline, we first run PROBer on the real data set with 40 threads. In this multi-threading setting, the results PROBer generates are not exactly the same each time due to floating point errors. Then our Snakemake pipeline generates simulated data sets based on these real data results and thus produces different simulated data sets. Lastly, the different simulated data sets will produce slightly different final results.
-
-2. In our pipeline, we use PROBer to simulate paired-end reads and then pick the first mates as the simulated single-end reads. In this way, when we compare the effects of single-end vs paired-end reads on estimation accuracy, we can make sure these data sets are generated in the same batch.
