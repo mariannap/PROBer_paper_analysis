@@ -4,15 +4,16 @@ from sys import argv, exit
 import pysam
 
 if len(argv) != 3:
-	print("Usage: collectAlignStat input.bam rRNA_list\n  Only used for SE reads and Bowtie alignments.")
+	print("Usage: collectAlignStat input.bam rRNA_list(can be None)\n  Only used for SE reads and Bowtie alignments.")
 	exit(-1)
 
 def build_rRNA_set(inpF, names):
 	rRNAs = set()
-	with open(inpF) as fin:
-		for line in fin:
-			name = line.strip().split('\t')[0]
-			rRNAs.add(names.index(name))
+	if inpF != "None":
+		with open(inpF) as fin:
+			for line in fin:
+				name = line.strip().split('\t')[0]
+				rRNAs.add(names.index(name))
 
 	return rRNAs
 
@@ -68,4 +69,5 @@ for aread in sam_in:
 updateStat(cname, ctype, nalign, cisr)
 
 print("{:,}\t{:,}\t{:,}\t{:,}".format(N11, N12, N0, N2))
-print("{:,}\t{:,}\t{:,}\t{:,}".format(N11 - N11r, N12 - N12r, N0, N2))
+if argv[2] != "None":
+	print("{:,}\t{:,}\t{:,}\t{:,}".format(N11 - N11r, N12 - N12r, N0, N2))

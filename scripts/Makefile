@@ -1,6 +1,6 @@
 .PHONY : clean
 
 clean:
-	rm -rf calcMappability *~
+	rm -rf calcMappability detectMotif calcMotifRate *~
 
 

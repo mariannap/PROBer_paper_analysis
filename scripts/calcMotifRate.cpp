@@ -24,8 +24,8 @@ int tpos, motif_pos;
 double a[5], b[5];
 
 int main(int argc, char* argv[]) {
-  if (argc != 6) {
-    printf("Usage: calcMotifRate w threshold name.motifs name_res.site_info name_naive.site_info\n");
+  if (argc != 7) {
+    printf("Usage: calcMotifRate w threshold name.motifs name_res.site_info name_naive.site_info output_file\n");
     exit(-1);
   }
 
@@ -89,13 +89,14 @@ int main(int argc, char* argv[]) {
   fr.close();
   fn.close();
 
-  printf("\tUnique\tPROBer_m\tNaive_m\tPROBer_e\tNaive_e\n");
-  printf("Total sites");
-  for (int i = 0; i < 5; ++i) printf("\t%.0f", b[i]);
-  printf("\nUGCAUG");
-  for (int i = 0; i < 5; ++i) printf("\t%.2f%%", a[i] * 100.0 / b[i]);
-  printf("\n");
-  for (int i = 0; i < 5; ++i) delete[] h[i];
+  FILE *fo = fopen(argv[6], "w");
+  fprintf(fo, "\tUnique\tPROBer_m\tNaive_m\tPROBer_e\tNaive_e\n");
+  fprintf(fo, "Total sites");
+  for (int i = 0; i < 5; ++i) fprintf(fo, "\t%.0f", b[i]);
+  fprintf(fo, "\nUGCAUG");
+  for (int i = 0; i < 5; ++i) fprintf(fo, "\t%.2f%%", a[i] * 100.0 / b[i]);
+  fprintf(fo, "\n");
+  fclose(fo);
 
   return 0;
 }
