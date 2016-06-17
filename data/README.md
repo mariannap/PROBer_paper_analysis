@@ -15,9 +15,9 @@ Data were pre-processed according to Ding *et al.* as follows:
 
 2. The adapter sequence was stripped from the 3' end of each read using `cutadapt` (v1.10). Reads that are shorter than 21 nucleotides (nt) were discarded. The `cutadapt` options we used are:
 
-```
--u 3 -a GATCGGAAGAGCACACGTCTGAACTCCAGTCAC -m 21
-```
+    ```
+    -u 3 -a GATCGGAAGAGCACACGTCTGAACTCCAGTCAC -m 21
+    ```
 
 The pre-processed data contain 117,242,295 and 81,596,350 single-end reads in modification-treated and mock-treated experiments respectively. The read length variates between 21 nt and 37 nt.
 
@@ -42,9 +42,9 @@ Data were pre-processed according to Talkish *et al.* as follows:
 
 2. 5' prime adapters were trimmed and untrimmed reads were kept:
 
-```
--g ^ATCGTAGGCACCTGAAA --untrimmed-output output_name
-```
+    ```
+    -g ^ATCGTAGGCACCTGAAA --untrimmed-output output_name
+    ```
 
 3. Untrimmed reads from previous step were aligned to the yeast transcript sequences using `Bowtie` (v1.1.2) and then mismatches at the 5' end were trimmed using in-house script.
 
