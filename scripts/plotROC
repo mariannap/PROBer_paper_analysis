@@ -36,10 +36,11 @@ calculateROC = function(id, estList, truthList, posList) {
 plotROC = function(id, output_name, rRNAs, PROBerRocs, StructureFoldRocs, ModseqRocs, icSHAPERocs) {
   pdf(sprintf("%s_%s.pdf", output_name, rRNAs[id]))
 
-  plot(PROBerRocs[[id]], lwd = 1, col = "red", auc.main = F, main = rRNAs[id])
-  if (!is.null(StructureFoldRocs)) plot(StructureFoldRocs[[id]], lwd = 1, col = "dodgerblue", add = T)
-  plot(ModseqRocs[[id]], lwd = 1, col = "green2", add = T)
-  plot(icSHAPERocs[[id]], lwd = 1, col = "yellow2", add = T)
+  par(oma = c(0, 0, 0, 0), mar = c(5, 4, 0, 0) + 0.1)
+  plot(PROBerRocs[[id]], lwd = 1, col = "red", auc.main = F, main = "") #rRNAs[id])
+  if (!is.null(StructureFoldRocs)) plot(StructureFoldRocs[[id]], lwd = 1, col = "blue", add = T)
+  plot(ModseqRocs[[id]], lwd = 1, col = "green", add = T)
+  plot(icSHAPERocs[[id]], lwd = 1, col = "orange", add = T)
 
 
   legends = c(as.expression(bquote(paste("PROBer, AUC = ", .(sprintf("%.2f", PROBerRocs[[id]]$auc))))))
@@ -48,8 +49,8 @@ plotROC = function(id, output_name, rRNAs, PROBerRocs, StructureFoldRocs, Modseq
               as.expression(bquote(paste("icSHAPE, AUC = ", .(sprintf("%.2f", icSHAPERocs[[id]]$auc))))))
 
   colors = c("red")
-  if (!is.null(StructureFoldRocs)) colors = c(colors, "dodgerblue")
-  colors = c(colors, "green2", "yellow2")
+  if (!is.null(StructureFoldRocs)) colors = c(colors, "blue")
+  colors = c(colors, "green", "orange")
 
   legend("topleft", legend = legends, lty = 1, col = colors)
 

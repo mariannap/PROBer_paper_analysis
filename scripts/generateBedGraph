@@ -28,9 +28,9 @@ def collectBedGraphRecords(input_file, chr, strand, start, end):
 				tot = uniq + multi
 				if tot > 0.0:
 					maxv = max(maxv, tot)
-					bg_records_tot.append("{chr} {start} {end} {value:.2f}".format(chr = chr, start = pos, end = pos + 1, value = tot))
+					bg_records_tot.append("chr{chr} {start} {end} {value:.2f}".format(chr = chr, start = pos, end = pos + 1, value = tot))
 				if uniq > 0:
-					bg_records_uniq.append("{chr} {start} {end} {value}".format(chr = chr, start = pos, end = pos + 1, value = uniq))
+					bg_records_uniq.append("chr{chr} {start} {end} {value}".format(chr = chr, start = pos, end = pos + 1, value = uniq))
 	
 	return (bg_records_tot, bg_records_uniq, int(ceil(maxv)))
 	
@@ -39,7 +39,7 @@ def generateBedGraphFile(output, chr, start, end, bg_records_tot, bg_records_uni
 	""" start and end are 1-based """
 
 	with open(output, "w") as fout:
-		fout.write("browser position {chr}:{start}-{end}\n".format(chr = chr, start = start, end = end))
+		fout.write("browser position chr{chr}:{start}-{end}\n".format(chr = chr, start = start, end = end))
 		fout.write("browser hide all\n")
 		fout.write("browser pack refGene\n")
 
