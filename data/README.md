@@ -36,9 +36,9 @@ Data were pre-processed according to Talkish *et al.* as follows:
 
 1. 3' prime adapters were trimmed using `cutadapt` and only reads no shorter than 25 nt were kept. The `cutadapt` options are:
 
-```
--a CTGTAGGCACCATCAAT -m 25
-```
+    ``` 
+    -a CTGTAGGCACCATCAAT -m 25
+    ```
 
 2. 5' prime adapters were trimmed and untrimmed reads were kept:
 
