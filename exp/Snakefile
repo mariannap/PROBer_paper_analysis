@@ -480,5 +480,5 @@ rule generate_BedGraph:
 	output:
 		expand("{path}/{name}.bedGraph", path = result_path, name = ["SRGAP2B", "SRGAP2D"])
 	shell:
-		"{script_path}/generateBedGraph chr1 - 144887265 145095528 {input} {output[0]} && "
-		"{script_path}/generateBedGraph chr1 + 143975087 144068350 {input} {output[1]}"
+		"{script_path}/generateBedGraph 1 - 144887265 145095528 {input} {output[0]} && "
+		"{script_path}/generateBedGraph 1 + 143975087 144068350 {input} {output[1]}"
