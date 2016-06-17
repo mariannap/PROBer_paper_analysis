@@ -36,13 +36,13 @@ if (grepl("main", argv[1])) {
 	mtext("Pearson correlation coefficient", side = 2, line = 3, cex = 1.5)
 	dev.off()		
 } else if (grepl("vs_full", argv[1])) {
-	cols = c("red", "dodgerblue")
+	cols = c("red", "cyan")
 	boxcols = rep(cols, 4)
 	methods = c("PROBer", "Full model")
 	
-	pdf(output_file, height = 6)
+	pdf(output_file, height = 6.5)
 	par(mar = c(5, 5, 0, 0) + 0.1)
-	boxplot(corr ~ method * Range, data = data_long, col = boxcols, outcol = boxcols, at = c(1:2, 5:6, 9:10, 13:14), names = rep("", 8), pch = 20, boxwex = 0.5, xlim = c(1, 17))
+	boxplot(corr ~ method * Range, data = data_long, col = boxcols, outcol = boxcols, at = c(1:2, 5:6, 9:10, 13:14), names = rep("", 8), pch = 20, boxwex = 0.5, xlim = c(1, 15))
 	legend("bottomright", fill = cols, legend = methods)
 	mtext(intervals, side = 1, line = 1.5, at = c(1.5, 5.5, 9.5, 13.5), cex = 1.2)
 	mtext("Transcripts per million range", side = 1, line = 3.5, cex = 1.5)
@@ -51,13 +51,13 @@ if (grepl("main", argv[1])) {
 } else {
 	stopifnot(grepl("vs_pipeline", argv[1]))
 
-	cols = c("red", "dodgerblue")
+	cols = c("red", "green")
 	boxcols = rep(cols, 4)
 	methods = c("PROBer", "RSEM + PROBer*")
 	
-	pdf(output_file, height = 6)
+	pdf(output_file, height = 6.5)
 	par(mar = c(5, 5, 0, 0) + 0.1)
-	boxplot(corr ~ method * Range, data = data_long, col = boxcols, outcol = boxcols, at = c(1:2, 5:6, 9:10, 13:14), names = rep("", 8), pch = 20, boxwex = 0.5, xlim = c(1, 17))
+	boxplot(corr ~ method * Range, data = data_long, col = boxcols, outcol = boxcols, at = c(1:2, 5:6, 9:10, 13:14), names = rep("", 8), pch = 20, boxwex = 0.5, xlim = c(1, 15))
 	legend("bottomright", fill = cols, legend = methods)
 	mtext(intervals, side = 1, line = 1.5, at = c(1.5, 5.5, 9.5, 13.5), cex = 1.2)
 	mtext("Transcripts per million range", side = 1, line = 3.5, cex = 1.5)

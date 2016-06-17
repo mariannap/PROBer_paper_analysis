@@ -63,14 +63,19 @@ snakemake -j <number_of_threads>
 
 You can find all tables and figures under the `results` directory.
 
-The mappings between figure names in our draft and file names under `results` are shown in the table below: 
-<table>
-        <tr>
-                <th>Figure Name</th>
-                <th>File Name</th>
-        </tr>
-        <tr>
-                <td>Figure 3</td>
+Mappings between figure names in our draft and file names under `results` are shown in the table below:
+
+Figure Name | File Name
+----------- | ---------
+Figure 3 | structure_seq_sim1_main_boxplot.pdf
+Figure S6a | structure_seq_sim1_vs_full_boxplot.pdf
+Figure S6b | structure_seq_sim1_vs_pipeline_boxplot.pdf
+Figure S7a | structure_seq_sim2_vs_full_boxplot.pdf
+Figure S7b | structure_seq_sim2_vs_pipeline_boxplot.pdf
+Figure S7c | structure_seq_sim2_main_boxplot.pdf
+
+
+
                 <td>sim_boxplot.pdf</td>
         </tr>
         <tr>
@@ -123,34 +128,12 @@ The mappings between figure names in our draft and file names under `results` ar
         </tr>
 </table>
 
-The mappings between table names in our draft and file names under `results` are shown in the table below:
-<table>
-        <tr>
-                <th>Table Name</th>
-                <th>File Name</th>
-        </tr>
-        <tr>
-                <td>Table S1</td>
-                <td>grid_search_for_prior.txt</td>
-        </tr>
-        <tr>
-                <td>Table S2</td>
-                <td>mapping_statistics_table.txt</td>
-        </tr>
-        <tr>
-                <td>Table S3</td>
-                <td>time_and_memory_table.txt</td>
-        </tr>
-        <tr>
-                <td>Table S5</td>
-                <td>digital_spike_in.txt</td>
-        </tr>
-        <tr>
-                <td>Table S6</td>
-                <td>fake_pearson_table.txt</td>
-        </tr>
-        <tr>
-                <td>Table S7</td>
-                <td>sim_modes_table.txt</td>
-        </tr>
-</table>
+Mappings between table names in our draft and file names under `results` are shown in the table below:
+
+Table Name | File Name
+---------- | ---------
+Table S1 | mapping_statistics_table.txt
+Table S2 | time_and_memory_table.txt
+Table S4 | digital_spike_in.txt
+Table S5 | iCLIP_mapping_statistics.txt
+
