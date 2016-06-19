@@ -403,6 +403,14 @@ rule generate_pseudoU_PR_ROC_plots:
 	shell:
 		"{script_path}/plot_PR_ROC {input[0]}.transcripts.fa {gt_path} {exp_path}/pseudo_seq {result_path}/pseudoU"
 
+rule visualize_18S_for_pseudoU_experiment:
+	input:
+		"{path}/18S.truth".format(path = gt_path),
+		expand("{path}/pseudo_seq_{score}", path = exp_path, score = ["PROBer.beta", "Pseudoseq.scores"])
+	output:
+		"{path}/pseudoU_18S.pdf".format(path = result_path)
+	shell:
+		"{script_path}/plotPseudoUScore {input} 36 1,500,1000,1191,1500,1800 \"18S rRNA\" {output}"
 
 # iCLIP
 
@@ -480,5 +488,5 @@ rule generate_BedGraph:
 	output:
 		expand("{path}/{name}.bedGraph", path = result_path, name = ["SRGAP2B", "SRGAP2D"])
 	shell:
-		"{script_path}/generateBedGraph 1 - 144887265 145095528 {input} {output[0]} && "
-		"{script_path}/generateBedGraph 1 + 143975087 144068350 {input} {output[1]}"
+		"{script_path}/generateBedGraph 1 - 145086400 145093400 {input} {output[0]} && "
+		"{script_path}/generateBedGraph 1 + 143975000 143982000 {input} {output[1]}"

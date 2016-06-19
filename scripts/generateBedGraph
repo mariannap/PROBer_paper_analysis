@@ -43,7 +43,7 @@ def generateBedGraphFile(output, chr, start, end, bg_records_tot, bg_records_uni
 		fout.write("browser hide all\n")
 		fout.write("browser pack refGene\n")
 
-		track_settings = "visibility=full color=200,100,0 altColor=0,100,200 priority=20 autoScale=off viewLimits=0:{} yLineMark=10 yLineOnOff=on".format(maxv)
+		track_settings = "visibility=full color=255,0,0 altColor=255,0,0 priority=20 autoScale=off viewLimits=0:{} yLineMark=10 yLineOnOff=on".format(maxv)
 		fout.write("track type=bedGraph name=\"all\" description=\"using all reads\" {}\n".format(track_settings))
 		for line in bg_records_tot:
 			fout.write(line + "\n")

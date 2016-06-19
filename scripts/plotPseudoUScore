@@ -1,0 +1,31 @@
+#!/usr/bin/env Rscript
+
+argv = commandArgs(TRUE)
+if (length(argv) != 7) {
+	cat("Usage: plotPseudoUScore ground_truth PROBer.beta Pseudoseq.scores line_no x_tick_marks RNA_name output_file")
+	q(status = 1)
+}
+
+ground_truth = which(scan(argv[1], what = 0) == 1)
+line_no = as.numeric(argv[4])
+PROBer = scan(argv[2], what = "", skip = line_no, nlines = 1)
+PROBer = as.numeric(PROBer[3:length(PROBer)])
+Pseudoseq = scan(argv[3], what = 0.0, skip = line_no - 1, nlines = 1)
+x = 1:length(PROBer)
+
+x_tick_marks = as.numeric(unlist(strsplit(argv[5], ',')))
+xlab_string = sprintf("%s transcript coordinate", argv[6])
+output_file = argv[7]
+
+pdf(output_file)
+par(mfrow = c(2, 1), mar = c(5, 4, 0, 0) + 0.1)
+plot(x, PROBer, xlab = "", ylab = "PROBer", type = 'h', col = 'grey', xaxt = 'n')
+axis(1, at = x_tick_marks)
+title(xlab = xlab_string, line = 3)
+lines(ground_truth, PROBer[ground_truth], type = 'h', col = 'red')
+par(mar = c(4, 4, 2, 0) + 0.1)
+plot(x, Pseudoseq, xlab = "", ylab = "Pseudo-seq", type = 'h', col = 'grey', xaxt = 'n')
+lines(ground_truth, Pseudoseq[ground_truth], type = 'h', col = 'red')
+axis(1, at = x_tick_marks)
+title(xlab = xlab_string, line = 3)
+dev.off()
