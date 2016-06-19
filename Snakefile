@@ -1,5 +1,7 @@
+from snakemake.utils import min_version
 from snakemake.utils import makedirs
 
+min_version("3.7.1")
 ## Define variables 
 
 ### scripts
