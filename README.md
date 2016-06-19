@@ -8,7 +8,7 @@ Reproduce PROBer paper analysis
 
 This snakemake workflow is tested and intended to run under Ubuntu Linux 64 bit architecture. Please make sure that your server has at least 20 cores and 32G memory.
 
-First, you need to install [Snakemake](https://bitbucket.org/snakemake/snakemake/wiki/Home)(>= 3.7.1). 
+First, you need to install the latest version of [Snakemake](https://bitbucket.org/snakemake/snakemake/wiki/Home). 
 
 Second, please make sure that you have `Perl`, `Python` and `R`(>= 3.3.0) installed. For `Python`, we additionally require the following packages: `Cython`, `numpy`, `scipy`, `pysam`, and `requests`. For `R`, please install packages `reshape2` and `PRROC`.
 
