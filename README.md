@@ -61,72 +61,34 @@ snakemake -j <number_of_threads>
 
 #### Results
 
-You can find all tables and figures under the `results` directory.
+You can find all figures and tables under `results`.
+
+##### Figures
 
 Mappings between figure names in our draft and file names under `results` are shown in the table below:
 
 Figure Name | File Name
 ----------- | ---------
-Figure 3 | structure_seq_sim1_main_boxplot.pdf
+Figure 2a | structure_seq_sim1_main_boxplot.pdf
+Figure 2b | pseudoU_PR.pdf
 Figure S6a | structure_seq_sim1_vs_full_boxplot.pdf
 Figure S6b | structure_seq_sim1_vs_pipeline_boxplot.pdf
 Figure S7a | structure_seq_sim2_vs_full_boxplot.pdf
 Figure S7b | structure_seq_sim2_vs_pipeline_boxplot.pdf
 Figure S7c | structure_seq_sim2_main_boxplot.pdf
+Figure S8 | scatters.pdf
+Figure S9a | structure_seq_roc_18S.pdf
+Figure S9b | structure_seq_roc_25S.pdf
+Figure S10a | mod_seq_roc_18S.pdf
+Figure S10b | mod_seq_roc_25S.pdf
+Figure S11a | icSHAPE_invitro_roc_18S.pdf
+Figure S11b | icSHAPE_invitro_roc_12S_Mt.pdf
+Figure S11c | icSHAPE_invivo_roc_18S.pdf
+Figure S11d | icSHAPE_invivo_roc_12S_Mt.pdf
+Figure S12 | pseudoU_18S.pdf
+Figure S13 | pseudoU_ROC.pdf
 
-
-
-                <td>sim_boxplot.pdf</td>
-        </tr>
-        <tr>
-                <td>Figure S6</td>
-                <td>sim2_boxplot.pdf</td>
-        </tr>
-        <tr>
-                <td>Figure S7a</td>
-                <td>sim_SEvsPE_boxplot.pdf</td>
-        </tr>
-        <tr>
-                <td>Figure S7b</td>
-                <td>sim_SEvsPE_half_boxplot.pdf</td>
-        </tr>
-        <tr>
-                <td>Figure S7c</td>
-                <td>sim2_SEvsPE_boxplot.pdf</td>
-        </tr>
-        <tr>
-                <td>Figure S7d</td>
-                <td>sim2_SEvsPE_half_boxplot.pdf</td>
-        </tr>
-        <tr>
-                <td>Figure S8a</td>
-                <td>real_ROC_18S.pdf</td>
-        </tr>
-        <tr>
-                <td>Figure S8b</td>
-                <td>real_ROC_25S.pdf</td>
-        </tr>
-        <tr>
-                <td>Figure S9a</td>
-                <td>fake_ROC_18S.pdf</td>
-        </tr>
-        <tr>
-                <td>Figure S9b</td>
-                <td>fake_ROC_25S.pdf</td>
-        </tr>
-        <tr>
-                <td>Figure S10</td>
-                <td>scatters.pdf</td>
-        </tr>
-        <tr>
-                <td>Figure S11a</td>
-                <td>sim_modes_boxplot.pdf</td>
-        </tr>
-        <tr>
-                <td>Figure S11b</td>
-                <td>sim_modes_half_boxplot.pdf</td>
-        </tr>
-</table>
+##### Tables
 
 Mappings between table names in our draft and file names under `results` are shown in the table below:
 
@@ -137,3 +99,12 @@ Table S2 | time_and_memory_table.txt
 Table S4 | digital_spike_in.txt
 Table S5 | iCLIP_mapping_statistics.txt
 
+##### BedGraph files
+
+`SRGAP2B.bedGraph` and `SRGAP2D.bedGraph` show the RBFOX2 iCLIP hits on pseudogenes `SRGAP2B` and `SRGAP2D`. To visualize them, following the instructions below:
+
+1. Go to https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38
+2. Click "add custom tracks"
+3. Click "Choose file" at "Paste URLs or data:         Or upload:", and upload one bedGraph file
+4. Click "Submit"
+5. Click "go" at the right side of "view in Genome Browser".
