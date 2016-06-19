@@ -1,7 +1,8 @@
 .PHONY: clean
 
 clean: 
-	rm -rf *.* ground_truth
+	rm -rf g* s* i*
+
 
 
 
