@@ -1,31 +1,46 @@
 #!/usr/bin/env Rscript
 
 argv = commandArgs(TRUE)
-if (length(argv) != 7) {
-	cat("Usage: plotPseudoUScore ground_truth PROBer.beta Pseudoseq.scores line_no x_tick_marks RNA_name output_file")
+if (length(argv) != 10) {
+	cat("Usage: plotPseudoUScore ground_truth PROBer.beta Pseudoseq.scores StructureFold.scores Modseq.scores icSHAPE.scores line_no x_tick_marks RNA_name output_file")
 	q(status = 1)
 }
 
 ground_truth = which(scan(argv[1], what = 0) == 1)
-line_no = as.numeric(argv[4])
+line_no = as.numeric(argv[7])
 PROBer = scan(argv[2], what = "", skip = line_no, nlines = 1)
 PROBer = as.numeric(PROBer[3:length(PROBer)])
 Pseudoseq = scan(argv[3], what = 0.0, skip = line_no - 1, nlines = 1)
+StructureFold = scan(argv[4], what = 0.0, skip = line_no - 1, nlines = 1)
+Modseq = scan(argv[5], what = 0.0, skip = line_no - 1, nlines = 1)
+icSHAPE = scan(argv[6], what = 0.0, skip = line_no - 1, nlines = 1)
 x = 1:length(PROBer)
 
-x_tick_marks = as.numeric(unlist(strsplit(argv[5], ',')))
-xlab_string = sprintf("%s transcript coordinate", argv[6])
-output_file = argv[7]
+x_tick_marks = as.numeric(unlist(strsplit(argv[8], ',')))
+xlab_string = sprintf("%s transcript coordinate", argv[9])
+output_file = argv[10]
 
-pdf(output_file, height = 5)
-par(mfrow = c(2, 1), mar = c(5, 4, 0, 0) + 0.1)
+pdf(output_file, height = 10)
+par(mfrow = c(5, 1), mar = c(4, 4, 0, 0) + 0.1)
 plot(x, PROBer, xlab = "", ylab = "PROBer", type = 'h', col = 'grey', xaxt = 'n')
 axis(1, at = x_tick_marks)
-title(xlab = xlab_string, line = 3)
 lines(ground_truth, PROBer[ground_truth], type = 'h', col = 'red')
-par(mar = c(4, 4, 1, 0) + 0.1)
+par(mar = c(4, 4, 0, 0) + 0.1)
 plot(x, Pseudoseq, xlab = "", ylab = "Pseudo-seq", type = 'h', col = 'grey', xaxt = 'n')
 lines(ground_truth, Pseudoseq[ground_truth], type = 'h', col = 'red')
 axis(1, at = x_tick_marks)
+par(mar = c(4, 4, 0, 0) + 0.1)
+plot(x, StructureFold, xlab = "", ylab = "StructureFold", type = 'h', col = 'grey', xaxt = 'n')
+lines(ground_truth, StructureFold[ground_truth], type = 'h', col = 'red')
+axis(1, at = x_tick_marks)
+par(mar = c(4, 4, 0, 0) + 0.1)
+plot(x, Modseq, xlab = "", ylab = "Mod-seq", type = 'h', col = 'grey', xaxt = 'n')
+lines(ground_truth, Modseq[ground_truth], type = 'h', col = 'red')
+axis(1, at = x_tick_marks)
+par(mar = c(5, 4, 0, 0) + 0.1)
+plot(x, icSHAPE, xlab = "", ylab = "icSHAPE", type = 'h', col = 'grey', xaxt = 'n')
+lines(ground_truth, icSHAPE[ground_truth], type = 'h', col = 'red')
+axis(1, at = x_tick_marks)
 title(xlab = xlab_string, line = 3)
+
 dev.off()

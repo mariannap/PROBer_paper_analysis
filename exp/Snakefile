@@ -406,7 +406,8 @@ rule generate_pseudoU_PR_ROC_plots:
 rule visualize_18S_for_pseudoU_experiment:
 	input:
 		"{path}/18S.truth".format(path = gt_path),
-		expand("{path}/pseudo_seq_{score}", path = exp_path, score = ["PROBer.beta", "Pseudoseq.scores"])
+		"{path}/pseudo_seq_PROBer.beta".format(path = exp_path),
+		expand("{path}/pseudo_seq_{method}.scores", path = exp_path, method = ["Pseudoseq", "StructureFold", "Modseq", "icSHAPE"])
 	output:
 		"{path}/pseudoU_18S.pdf".format(path = result_path)
 	shell:
