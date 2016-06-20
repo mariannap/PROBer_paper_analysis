@@ -4,7 +4,6 @@
 
 Reproduce PROBer paper analysis.
 
----
 ## Table of contents
 
 * [Prerequisites](#pre)
@@ -16,6 +15,7 @@ Reproduce PROBer paper analysis.
         + [Tables](#tables)
         + [BedGraph files](#bedgraph)
 * [Experiment details](#details)
+
 ---
 
 ### <a name="pre" />Prerequisites
