@@ -113,4 +113,4 @@ Table S5 | iCLIP_mapping_statistics.txt
 
 ### Experiment details
 
-We have experiment details explained in subfolders. For information about tools this workflow used, go to [tools](tools)
+We have experiment details explained in subfolders. For information about tools this workflow used, go to [tools](tools/README.md)
