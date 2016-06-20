@@ -110,3 +110,7 @@ Table S5 | iCLIP_mapping_statistics.txt
 3. Click "Choose file" at "Paste URLs or data:         Or upload:", and upload one bedGraph file
 4. Click "Submit"
 5. Click "go" at the right side of "view in Genome Browser".
+
+### Experiment details
+
+We have experiment details explained in subfolders. For information about tools this workflow used, go to [tools](tools)
