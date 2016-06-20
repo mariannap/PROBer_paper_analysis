@@ -16,8 +16,6 @@ Reproduce PROBer paper analysis.
         + [BedGraph files](#bedgraph)
 * [Experiment details](#details)
 
-
-
 ### <a name="pre" />Prerequisites
 
 This snakemake workflow is tested and intended to run under Ubuntu Linux 64 bit architecture. Please make sure that your server has at least 20 cores and 32G memory.
