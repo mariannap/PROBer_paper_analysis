@@ -109,8 +109,14 @@ Table S5 | iCLIP_mapping_statistics.txt
 2. Click "add custom tracks"
 3. Click "Choose file" at "Paste URLs or data:         Or upload:", and upload one bedGraph file
 4. Click "Submit"
-5. Click "go" at the right side of "view in Genome Browser".
+5. Click "go" at the right side of "view in Genome Browser"
 
 ### Experiment details
 
-We have experiment details explained in subfolders. For information about tools this workflow used, go to [tools](tools/README.md)
+We have experiment details explained in subfolders: 
+
+* Go to [tools](tools) for information about tools this workflow used
+* Go to [references](references)for reference building details
+* Go to [ground_truth](ground_truth) if you want to know how to download ground truth rRNA structures and pseudouridine sites
+* Go to [data](data) to learn more about how data were downloaded and pre-processed
+* Go to [exp](exp) to learn more about how PROBer options were set for different data sets
