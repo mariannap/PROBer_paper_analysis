@@ -4,7 +4,9 @@
 
 Reproduce PROBer paper analysis.
 
+---
 ## Table of contents
+
 * [Prerequisites](#pre)
 * [Reproduce analyses](#reproduce)
     - [Clone the workflow](#clone)
@@ -14,6 +16,7 @@ Reproduce PROBer paper analysis.
         + [Tables](#tables)
         + [BedGraph files](#bedgraph)
 * [Experiment details](#details)
+---
 
 ### <a name="pre" />Prerequisites
 
@@ -127,7 +130,7 @@ Table S5 | iCLIP_mapping_statistics.txt
 We have experiment details explained in subfolders: 
 
 * Go to [tools](tools) for information about tools this workflow used
-* Go to [references](references)for reference building details
+* Go to [references](references) for reference building details
 * Go to [ground_truth](ground_truth) if you want to know how to download ground truth rRNA structures and pseudouridine sites
 * Go to [data](data) to learn more about how data were downloaded and pre-processed
 * Go to [exp](exp) to learn more about how PROBer options were set for different data sets
