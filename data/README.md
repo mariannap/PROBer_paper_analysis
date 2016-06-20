@@ -1,4 +1,4 @@
-#### Ding *et al.* arabidopsis data
+#### Ding *et al.* Arabidopsis data
 
 Data locate at `AssmannLab`. Each run is explained in the table below.
 

@@ -4,7 +4,7 @@ For protocols using random hexamer priming, `--primer-length` is set to 6. Other
 
 The option values used for each data set are described below:
 
-1. Ding *et al.* arabidopsis data 
+1. Ding *et al.* Arabidopsis data 
 
     ```
     --primer-length 6 --size-selection-min 21 --size-selection-max 526 --read-length 37
