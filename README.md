@@ -1,10 +1,21 @@
+
+# PROBer paper analysis workflow
 [![Snakemake](https://img.shields.io/badge/snakemake-≥3.7.1-brightgreen.svg?style=flat-square)](http://snakemake.bitbucket.org)
 
-# PROBer_paper_analysis
+Reproduce PROBer paper analysis.
 
-Reproduce PROBer paper analysis
+## Table of contents
+* [Prerequisites](#pre)
+* [Reproduce analyses](#reproduce)
+    - [Clone the workflow](#clone)
+    - [Run snakemake](#snakemake)
+    - [Results](#results)
+        + [Figures](#figures)
+        + [Tables](#tables)
+        + [BedGraph files](#bedgraph)
+* [Experiment details](#details)
 
-### Prerequisites
+### <a name="pre" />Prerequisites
 
 This snakemake workflow is tested and intended to run under Ubuntu Linux 64 bit architecture. Please make sure that your server has at least 20 cores and 32G memory.
 
@@ -32,9 +43,9 @@ R
 >q()
 ```
 
-### Reproduce analyses
+### <a name="reproduce" />Reproduce analyses
 
-#### Clone the workflow
+#### <a name="clone" />Clone the workflow
 
 Type 
 
@@ -44,7 +55,7 @@ git clone git@github.com:pachterlab/PROBer_paper_analysis.git work_dir
 
 to clone PROBer paper analysis workflow to your working directory. `work_dir` refers to the working directory you choose (e.g. 'PROBer_paper_analysis').
 
-#### Run snakemake
+#### <a name="snakemake" />Run snakemake
 
 Activate your environment (if you use `virtualenv`) and go to `work_dir`:
 
@@ -61,11 +72,11 @@ snakemake -j <number_of_threads>
 
 `<number_of_threads>` is the total number of threads you want to use. This number should be no less than 20. 
 
-#### Results
+#### <a name="results" />Results
 
 You can find all figures and tables under `results`.
 
-##### Figures
+##### <a name="figures" />Figures
 
 Mappings between figure names in our draft and file names under `results` are shown in the table below:
 
@@ -90,7 +101,7 @@ Figure S11d | icSHAPE_invivo_roc_12S_Mt.pdf
 Figure S12 | pseudoU_18S.pdf
 Figure S13 | pseudoU_ROC.pdf
 
-##### Tables
+##### <a name="tables" />Tables
 
 Mappings between table names in our draft and file names under `results` are shown in the table below:
 
@@ -101,7 +112,7 @@ Table S2 | time_and_memory_table.txt
 Table S4 | digital_spike_in.txt
 Table S5 | iCLIP_mapping_statistics.txt
 
-##### BedGraph files
+##### <a name="bedgraph" />BedGraph files
 
 `SRGAP2B.bedGraph` and `SRGAP2D.bedGraph` show the RBFOX2 iCLIP hits on pseudogenes `SRGAP2B` and `SRGAP2D`. To visualize them, following the instructions below:
 
@@ -111,7 +122,7 @@ Table S5 | iCLIP_mapping_statistics.txt
 4. Click "Submit"
 5. Click "go" at the right side of "view in Genome Browser"
 
-### Experiment details
+### <a name="details" />Experiment details
 
 We have experiment details explained in subfolders: 
 
