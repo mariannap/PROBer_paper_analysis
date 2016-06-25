@@ -83,24 +83,24 @@ Mappings between figure names in our draft and file names under `results` are sh
 
 Figure Name | File Name
 ----------- | ---------
-Figure 2a | structure_seq_sim1_main_boxplot.pdf
-Figure 2b | pseudoU_PR.pdf
-Figure S6a | structure_seq_sim1_vs_full_boxplot.pdf
-Figure S6b | structure_seq_sim1_vs_pipeline_boxplot.pdf
-Figure S7a | structure_seq_sim2_vs_full_boxplot.pdf
-Figure S7b | structure_seq_sim2_vs_pipeline_boxplot.pdf
-Figure S7c | structure_seq_sim2_main_boxplot.pdf
-Figure S8 | scatters.pdf
-Figure S9a | structure_seq_roc_18S.pdf
-Figure S9b | structure_seq_roc_25S.pdf
-Figure S10a | mod_seq_roc_18S.pdf
-Figure S10b | mod_seq_roc_25S.pdf
-Figure S11a | icSHAPE_invitro_roc_18S.pdf
-Figure S11b | icSHAPE_invitro_roc_12S_Mt.pdf
-Figure S11c | icSHAPE_invivo_roc_18S.pdf
-Figure S11d | icSHAPE_invivo_roc_12S_Mt.pdf
-Figure S12 | pseudoU_18S.pdf
-Figure S13 | pseudoU_ROC.pdf
+Figure 2A | structure_seq_sim1_main_boxplot.pdf
+Figure 2B | pseudoU_PR.pdf
+Figure S2A | structure_seq_sim1_vs_full_boxplot.pdf
+Figure S2B | structure_seq_sim1_vs_pipeline_boxplot.pdf
+Figure S3A | structure_seq_sim2_vs_full_boxplot.pdf
+Figure S3B | structure_seq_sim2_vs_pipeline_boxplot.pdf
+Figure S3C | structure_seq_sim2_main_boxplot.pdf
+Figure S4 | scatters.pdf
+Figure S5A | structure_seq_roc_18S.pdf
+Figure S5B | structure_seq_roc_25S.pdf
+Figure S5C | mod_seq_roc_18S.pdf
+Figure S5D| mod_seq_roc_25S.pdf
+Figure S5E | icSHAPE_invitro_roc_18S.pdf
+Figure S5F | icSHAPE_invitro_roc_12S_Mt.pdf
+Figure S5G | icSHAPE_invivo_roc_18S.pdf
+Figure S5H | icSHAPE_invivo_roc_12S_Mt.pdf
+Figure S6 | pseudoU_18S.pdf
+Figure S7 | pseudoU_ROC.pdf
 
 ##### <a name="tables" />Tables
 
@@ -109,9 +109,8 @@ Mappings between table names in our draft and file names under `results` are sho
 Table Name | File Name
 ---------- | ---------
 Table S1 | mapping_statistics_table.txt
-Table S2 | time_and_memory_table.txt
-Table S4 | digital_spike_in.txt
-Table S5 | iCLIP_mapping_statistics.txt
+Table S2 | iCLIP_mapping_statistics.txt
+Table S3 | digital_spike_in.txt
 
 ##### <a name="bedgraph" />BedGraph files
 
