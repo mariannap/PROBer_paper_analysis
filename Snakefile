@@ -73,7 +73,8 @@ results.extend(expand("{path}/icSHAPE_{condition}_roc_{rRNA}.pdf", path = result
 results.extend(expand("{path}/pseudoU_{type}.pdf", path = result_path, type = ["PR", "ROC"]))
 results.append("{path}/pseudoU_18S.pdf".format(path = result_path))
 results.extend(expand("{path}/{name}.txt", path = result_path, name = ["RBFOX2_iCLIP_table", "iCLIP_mapping_statistics"]))
-results.extend(expand("{path}/{name}.bedGraph", path = result_path, name = ["SRGAP2B", "SRGAP2D"]))
+#results.extend(expand("{path}/{name}.bedGraph", path = result_path, name = ["SRGAP2B", "SRGAP2D"]))
+results.extend(expand("{path}/{name}.bedGraph", path = result_path, name = "NUP133"))
 
 ## Import Snakemake modules
 
