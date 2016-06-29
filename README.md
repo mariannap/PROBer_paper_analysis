@@ -114,7 +114,7 @@ Table S3 | digital_spike_in.txt
 
 ##### <a name="bedgraph" />BedGraph files
 
-`SRGAP2B.bedGraph` and `SRGAP2D.bedGraph` show the RBFOX2 iCLIP hits on pseudogenes `SRGAP2B` and `SRGAP2D`. To visualize them, following the instructions below:
+`NUP133.bedGraph` shows the RBFOX2 iCLIP hits on gene `NUP133`. To visualize it, following the instructions below:
 
 1. Go to https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38
 2. Click "add custom tracks"
