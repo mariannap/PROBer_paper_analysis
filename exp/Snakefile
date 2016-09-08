@@ -489,7 +489,7 @@ rule generate_BedGraph:
 	output:
 		expand("{path}/{name}.bedGraph", path = result_path, name = "NUP133")
 	shell:
-		"{script_path}/generateBedGraph 1 - 229470242 229470388 {input} {output[0]}"
+		"{script_path}/generateBedGraph 1 - 229470242 229470387 {input} {output[0]}"
 
 # rule generate_BedGraph:
 # 	input:
