@@ -4,3 +4,6 @@
 25SmodelC.txt
 
 are SASAs from Silvi
+
+// at ..
+Rscript scripts/plot_ROC_sasa.R ../ground_truth 49 ../exp/mod_seq mod_seq
