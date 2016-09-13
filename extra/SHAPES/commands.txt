@@ -1,0 +1,11 @@
+### Sept 7, 2016
+
+SHAPES data: http://people.binf.ku.dk/~jvinther/data/SHAPES-Seq/
+Hrf-seq data: http://people.binf.ku.dk/~jvinther/data/HRF-Seq/                     // reference sequence is here
+
+#### Download ground truth
+
+wget http://www.rna.icmb.utexas.edu/RNA/Structures/d.16.b.E.coli.bpseq
+~/PROBer_paper_analysis/scripts/extractInfoFromBPSeq d.16.b.E.coli.bpseq 16S 16S_rRNA_E.coli
+
+

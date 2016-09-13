@@ -1,0 +1,34 @@
+#!/usr/bin/env python2
+
+from sys import argv, exit
+
+import pymol
+from pymol import cmd, stored
+pymol.pymol_argv = ['pymol', '-qc']
+pymol.finish_launching()
+
+if len(argv) != 4:
+	print("Usage: calc_sasa_pymol base chain resi[,resi,..]")
+	exit(-1)
+
+base = argv[1]
+chain = argv[2]
+ids = argv[3].split(',')
+
+# Set parameters
+cmd.set('dot_solvent', 1)
+cmd.set('dot_density', 3)
+cmd.set('solvent_radius', 3.0)
+
+# Load pdbs
+cmd.load("3u5b.pdb")
+cmd.load("3u5c.pdb")
+cmd.load("3u5d.pdb")
+cmd.load("3u5e.pdb")
+
+# Create ribosome complex
+cmd.create("mycomp", "3u5b 3u5c 3u5d 3u5e")
+
+for i in ids:
+	sasa = cmd.get_area("/mycomp//{0}/{1}/N{2}".format(chain, i, '1' if base == 'A' else '3'))
+	print("{0} {1} {2:.4f}".format(i, base, sasa))

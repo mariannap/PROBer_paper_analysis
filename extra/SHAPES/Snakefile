@@ -1,0 +1,36 @@
+from snakemake.utils import min_version
+
+min_version("3.7.1")
+
+cutadapt = "/home/bli/PROBer_paper_analysis/tools/cutadapt-1.10/bin/cutadapt"
+PROBer = "/home/bli/software/PROBer/build/src/PROBer"
+
+rule all:
+	input:
+		expand("exp/{sample}.bam", sample = ["DMSO_no-sel", "NPIA_no-sel", "NPIA_sel"])
+
+
+
+
+
+rule build_ref:
+	input: "ref/ecoli_rRNA.fa"
+	output: touch("ref/ecoli_rRNA")
+	shell:
+		"bowtie2-build {input[0]} {output}"
+
+rule trim_adapter:
+	input: expand("data/E.coli_{{sample}}_R{mate}.fastq", mate = ["1", "2"]), cutadapt
+	output: expand("data/{{sample}}_trimmed_{mate}.fastq", mate = ["1", "2"])
+	log: "data/{sample}_trimmed.log"
+	shell:
+		"{cutadapt} -f fastq -q 17 -m 15 -a AGATCGGAAGAGCACACGTCT -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT"
+		" -o {output[0]} -p {output[1]} {input[0]} {input[1]} > {log}"
+
+rule align_reads:
+	input: "ref/ecoli_rRNA", expand("data/{{sample}}_trimmed_{mate}.fastq", mate = ["1", "2"])
+	output: "exp/{sample}.bam"
+	threads: 10
+	log: "exp/{sample}.log"
+	shell:
+		"bowtie2 -p {threads} -N 1 -L 15 --norc -X 700 --no-mixed --no-discordant -x {input[0]} -1 {input[1]} -2 {input[2]} 2> {log} | samtools view -b -o {output} -"

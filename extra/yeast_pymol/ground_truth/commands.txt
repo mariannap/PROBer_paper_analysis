@@ -1,0 +1,25 @@
+### Sept 11, 2016
+
+// install PyMol
+apt-get install pymol
+
+// rRNA <---> Chain
+
+25S:  1
+18S:  2
+5S:   3
+5.8S: 4
+
+#### Calculate SASA for 5S and 5.8S
+
+../scripts/calc_sasa_rRNA_pymol ../scripts 5S 3 10
+../scripts/calc_sasa_rRNA_pymol ../scripts 5.8S 4 10
+
+####  Get structural truth
+
+head -n 162 ../../ground_truth/d.23.e.S.cerevisiae.bpseq > yeast_5.8S.bpseq
+../../scripts/extractInfoFromBPSeq yeast_5.8S.bpseq yeast_5.8S 5.8S_rRNA
+
+http://www.rna.icmb.utexas.edu/RNA/Structures/d.5.e.S.cerevisiae.bpseq
+python ../scripts/convert_yeast_5S_bpseq.py d.5.e.S.cerevisiae.bpseq yeast_5S.bpseq
+../../scripts/extractInfoFromBPSeq yeast_5S.bpseq yeast_5S 5S_rRNA

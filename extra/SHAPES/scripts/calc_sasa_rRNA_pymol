@@ -1,0 +1,64 @@
+#!/usr/bin/env python2
+
+import os
+from sys import argv, exit
+import threading
+import subprocess
+
+import pymol
+from pymol import cmd, stored
+pymol.pymol_argv = ['pymol', '-qc']
+pymol.finish_launching()
+
+
+def calc_sasa(prog, base, chain, resiList, thread_id, results):
+	results[thread_id] = subprocess.check_output([prog, base, chain, ','.join(resiList)]).replace(' ', '\t')
+
+def calc_sasa_parallel(prog, base, chain, resiList, num_threads):
+	threads = []
+	results = [""] * num_threads
+	q = len(resiList) / num_threads
+	r = len(resiList) % num_threads
+
+	lb = ub = 0
+	for i in xrange(num_threads):
+		ub = lb + q + (1 if i < r else 0)
+		threads.append(threading.Thread(target = calc_sasa, args = (prog, base, chain, resiList[lb:ub], i, results)))
+		threads[-1].start()
+		lb = ub
+
+	for thread in threads:
+		thread.join()
+
+	return "".join(results)
+
+
+if len(argv) != 5:
+	print("Usage: calc_sasa_rRNA_pymol script_path rRNA chain num_threads")
+	exit(-1)
+
+prog = os.path.expanduser(argv[1]) + "/calc_sasa_pymol"
+rRNA = argv[2]
+chain = argv[3]
+num_threads = int(argv[4])
+
+# Load pdbs
+cmd.load("3u5b.pdb")
+cmd.load("3u5c.pdb")
+cmd.load("3u5d.pdb")
+cmd.load("3u5e.pdb")
+
+# Create ribosome complex
+cmd.create("mycomp", "3u5b 3u5c 3u5d 3u5e")
+
+
+with open("yeast_{0}.sasa".format(rRNA), "w") as fout:
+	# Obtain resi for A
+	stored.residues = []
+	cmd.iterate("mycomp//{0}/A/N1".format(chain), "stored.residues.append(resi)")
+	fout.write(calc_sasa_parallel(prog, 'A', chain, stored.residues, num_threads))
+
+	# Obtain resi for C
+	stored.residues = []
+	cmd.iterate("mycomp//{0}/C/N3".format(chain), "stored.residues.append(resi)")
+	fout.write(calc_sasa_parallel(prog, 'C', chain, stored.residues, num_threads))
