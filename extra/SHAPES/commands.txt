@@ -9,3 +9,6 @@ wget http://www.rna.icmb.utexas.edu/RNA/Structures/d.16.b.E.coli.bpseq
 ~/PROBer_paper_analysis/scripts/extractInfoFromBPSeq d.16.b.E.coli.bpseq 16S 16S_rRNA_E.coli
 
 
+#### Calcualte SASA @ ground_truth
+
+../scripts/calc_sasa_rRNA_pymol ../scripts 20

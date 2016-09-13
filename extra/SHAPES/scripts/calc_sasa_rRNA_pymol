@@ -11,10 +11,10 @@ pymol.pymol_argv = ['pymol', '-qc']
 pymol.finish_launching()
 
 
-def calc_sasa(prog, base, chain, resiList, thread_id, results):
-	results[thread_id] = subprocess.check_output([prog, base, chain, ','.join(resiList)]).replace(' ', '\t')
+def calc_sasa(prog, resiList, thread_id, results):
+	results[thread_id] = subprocess.check_output([prog, ','.join(resiList)]).replace(' ', '\t')
 
-def calc_sasa_parallel(prog, base, chain, resiList, num_threads):
+def calc_sasa_parallel(prog, resiList, num_threads):
 	threads = []
 	results = [""] * num_threads
 	q = len(resiList) / num_threads
@@ -23,7 +23,7 @@ def calc_sasa_parallel(prog, base, chain, resiList, num_threads):
 	lb = ub = 0
 	for i in xrange(num_threads):
 		ub = lb + q + (1 if i < r else 0)
-		threads.append(threading.Thread(target = calc_sasa, args = (prog, base, chain, resiList[lb:ub], i, results)))
+		threads.append(threading.Thread(target = calc_sasa, args = (prog, resiList[lb:ub], i, results)))
 		threads[-1].start()
 		lb = ub
 
@@ -33,32 +33,24 @@ def calc_sasa_parallel(prog, base, chain, resiList, num_threads):
 	return "".join(results)
 
 
-if len(argv) != 5:
-	print("Usage: calc_sasa_rRNA_pymol script_path rRNA chain num_threads")
+if len(argv) != 3:
+	print("Usage: calc_sasa_rRNA_pymol script_path num_threads")
 	exit(-1)
 
 prog = os.path.expanduser(argv[1]) + "/calc_sasa_pymol"
-rRNA = argv[2]
-chain = argv[3]
-num_threads = int(argv[4])
+num_threads = int(argv[2])
 
 # Load pdbs
-cmd.load("3u5b.pdb")
-cmd.load("3u5c.pdb")
-cmd.load("3u5d.pdb")
-cmd.load("3u5e.pdb")
+cmd.load("3ofa.pdb")
+cmd.load("3ofc.pdb")
+cmd.alter("/3ofc//A", "chain='SA'")
 
 # Create ribosome complex
-cmd.create("mycomp", "3u5b 3u5c 3u5d 3u5e")
+cmd.create("mycomp", "3ofa 3ofc")
 
 
-with open("yeast_{0}.sasa".format(rRNA), "w") as fout:
-	# Obtain resi for A
+with open("ecoli_16S.sasa", "w") as fout:
+	# Obtain resi
 	stored.residues = []
-	cmd.iterate("mycomp//{0}/A/N1".format(chain), "stored.residues.append(resi)")
-	fout.write(calc_sasa_parallel(prog, 'A', chain, stored.residues, num_threads))
-
-	# Obtain resi for C
-	stored.residues = []
-	cmd.iterate("mycomp//{0}/C/N3".format(chain), "stored.residues.append(resi)")
-	fout.write(calc_sasa_parallel(prog, 'C', chain, stored.residues, num_threads))
+	cmd.iterate("mycomp//A//O2'", "stored.residues.append(resi)")
+	fout.write(calc_sasa_parallel(prog, stored.residues, num_threads))
