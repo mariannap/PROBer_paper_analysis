@@ -1,0 +1,12 @@
+rule download_sra:
+	output: "data/{run,SRR\d+}.sra"
+	run:
+		url = "ftp://ftp-trace.ncbi.nih.gov/sra/sra-instant/reads/ByRun/sra/SRR/{0}/{1}/{1}.sra".format(wildcards.run[:6], wildcards.run)
+		shell("wget -O {output} {url}")
+
+rule dump_to_FASTQ_PE:
+	input: "data/{run}.sra", fastq_dump
+	output: expand("data/{{run,SRR\d+}}_{mate}.fastq", mate = ["1", "2"])
+	shell: "{fastq_dump} --split-spot --split-3 -O data {input[0]}"
+
+

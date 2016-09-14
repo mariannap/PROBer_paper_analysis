@@ -1,0 +1,15 @@
+from snakemake.utils import min_version
+
+min_version("3.7.1")
+
+fastq_dump = "/home/bli/PROBer_paper_analysis/tools/sratoolkit.2.6.3-ubuntu64/bin/fastq-dump"
+cutadapt = "/home/bli/PROBer_paper_analysis/tools/cutadapt-1.10/bin/cutadapt"
+PROBer = "/home/bli/software/PROBer/build/src/PROBer"
+
+include: "data/Snakefile"
+
+rule all:
+	input:
+		expand("data/{run}_{mate}.fastq", run = ["SRR1041315", "SRR1041316", "SRR1041322", "SRR1041323"], mate = ["1", "2"]),
+		expand("data/{run}_{mate}.fastq", run = ["SRR1041324", "SRR1041325", "SRR1041326", "SRR1041327", "SRR1041328", "SRR1041329"], mate = ["1", "2"])
+		

@@ -1,0 +1,21 @@
+### Sept 14, 2016
+
+// Download reads to data
+
+NAI, in vivo
+
+80S_18S_DMSO_1	SRR1041315
+80S_18S_DMSO_2	SRR1041316
+80S_18S_NAI_1	SRR1041322
+80S_18S_NAI_2	SRR1041323
+
+
+DMS, in vitro
+
+control_average_1	SRR1041324
+control_average_2	SRR1041325
+control_average_3	SRR1041326
+DMS_average_1	SRR1041327
+DMS_average_2	SRR1041328
+DMS_average_3	SRR1041329
+
