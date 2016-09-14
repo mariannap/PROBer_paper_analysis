@@ -6,8 +6,10 @@ cutadapt = "/home/bli/PROBer_paper_analysis/tools/cutadapt-1.10/bin/cutadapt"
 PROBer = "/home/bli/software/PROBer/build/src/PROBer"
 
 rule all:
-	input: "exp/ecoli_16S_PROBer.beta"
-#		expand("exp/{sample}.trimmed.bam", sample = ["DMSO_no-sel", "NPIA_no-sel", "NPIA_sel"])
+	input: expand("results/SHAPES_{name}.pdf", name = ["bias", "roc"])
+
+#		"exp/ecoli_16S_PROBer.beta"
+#		expand("exp/{sample}.trimmed.bam", sample = )
 
 
 
@@ -56,3 +58,23 @@ rule run_PROBer_sel:
 	shell:
 		"{PROBer} estimate --paired-end -p {threads} --size-selection-min 10 --size-selection-max 700 {input[0]} exp/ecoli_16S_PROBer_sel --alignments {input[1]}"
 
+rule collect_data_for_RNAprobR:
+	input: "exp/{sample}.trimmed.bam"
+	output: expand("exp/{{sample,(\w|-)+}}.{suffix}", suffix = ["counts", "bias"])
+	shell:
+		"scripts/collect_data_for_RNAprobR {input} exp/{wildcards.sample}"
+
+rule plot_bias:
+	input: expand("exp/{sample}.bias", sample = ["DMSO_no-sel", "NPIA_no-sel", "NPIA_sel"])
+	output: expand("results/SHAPES_bias.pdf")
+	shell:
+		"scripts/plotBias {input} {output}"
+
+rule plot_ROC_SHAPES:
+	input:
+		expand("ground_truth/{name}", name = ["16S.structure", "ecoli_16S.sasa"]),
+		expand("exp/{sample}.counts", sample = ["DMSO_no-sel", "NPIA_no-sel", "NPIA_sel"]),
+		expand("exp/ecoli_16S_PROBer{extra}.beta", extra = ["", "_sel"])
+	output: "results/SHAPES_roc.pdf"
+	shell:
+		"scripts/plotROC_SHAPES {input} {output}"

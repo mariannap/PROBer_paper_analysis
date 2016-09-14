@@ -1,0 +1,25 @@
+#!/usr/bin/env Rscript
+
+argv = commandArgs(TRUE)
+if (length(argv) != 4) {
+   cat("Usage: plotBias DMSO_no-sel.bias NPIA_no-sel.bias NPIA_sel.bias output_file\n")
+   q(status = 1)
+}
+
+loadBias = function(file_name) {
+	scan(file_name, what = 0.0)
+}
+
+plotBias = function(id, biases, names) {
+	plot(biases[[id]], type = 'h', xlim = c(1, 1542), xaxt = "n", xlab = "Transcript coordinate", ylab = "Read count", main = names[id])
+	axis(1, at = c(1, 500, 1000, 1500))
+	return(NULL)
+}
+
+biases = lapply(argv[1:3], loadBias)
+names = c("DMSO", "NPIA unselected", "NPIA selected")
+pdf(argv[4])
+par(mfrow = c(3, 1))
+null_vec = lapply(1:3, plotBias, biases, names)
+dev.off()
+
