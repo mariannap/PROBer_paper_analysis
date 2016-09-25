@@ -86,8 +86,8 @@ cname = ""
 alignments = []
 
 for aread in sam_in:
-    if not aread.is_unmapped:
-        assert not aread.is_reverse and not aread.is_paired
+    if not aread.is_unmapped and (not aread.is_paired or aread.is_paired and aread.is_read1):
+        assert not aread.is_reverse
 
         if cname != aread.query_name:
             update(alignments)

@@ -1,3 +1,7 @@
+### Sept 16, 2016
+
+scripts/plotROC_SHAPES ground_truth/16S.structure ground_truth/ecoli_16S_lukasz.sasa exp/DMSO_no-sel.counts exp/NPIA_no-sel.counts exp/NPIA_sel.counts exp/ecoli_16S_PROBer.beta exp/ecoli_16S_PROBer_sel.beta results/SHAPES_lukasz_roc.pdf
+
 ### Sept 7, 2016
 
 SHAPES data: http://people.binf.ku.dk/~jvinther/data/SHAPES-Seq/

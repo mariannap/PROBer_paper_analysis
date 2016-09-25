@@ -57,16 +57,19 @@ cname = ""
 alignments = []
 
 for aread in sam_in:
-    if not aread.is_unmapped:
-        assert not aread.is_reverse and not aread.is_paired
+    if not aread.is_unmapped and (not aread.is_paired or aread.is_paired and aread.is_read1):
+        assert not aread.is_reverse
 
         if cname != aread.query_name:
             update(alignments)
             cname = aread.query_name
             alignments = []
 
-        alignments.append((aread.reference_id, aread.reference_start, aread.reference_end))
-        
+        if not aread.is_paired:
+            alignments.append((aread.reference_id, aread.reference_start, aread.reference_end))
+        else:
+            alignments.append((aread.reference_id, aread.reference_start, aread.reference_start + aread.template_length))
+            
     cnt += 1
     if cnt % 1000000 == 0:
         print("{} FIN!".format(cnt))

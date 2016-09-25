@@ -1,12 +1,41 @@
-rule download_sra:
-	output: "data/{run,SRR\d+}.sra"
-	run:
-		url = "ftp://ftp-trace.ncbi.nih.gov/sra/sra-instant/reads/ByRun/sra/SRR/{0}/{1}/{1}.sra".format(wildcards.run[:6], wildcards.run)
-		shell("wget -O {output} {url}")
+# rule download_sra:
+# 	output: "data/{run,SRR\d+}.sra"
+# 	run:
+# 		url = "ftp://ftp-trace.ncbi.nih.gov/sra/sra-instant/reads/ByRun/sra/SRR/{0}/{1}/{1}.sra".format(wildcards.run[:6], wildcards.run)
+# 		shell("wget -O {output} {url}")
 
-rule dump_to_FASTQ_PE:
-	input: "data/{run}.sra", fastq_dump
-	output: expand("data/{{run,SRR\d+}}_{mate}.fastq", mate = ["1", "2"])
-	shell: "{fastq_dump} --split-spot --split-3 -O data {input[0]}"
+# rule dump_to_FASTQ_PE:
+# 	input: "data/{run}.sra", fastq_dump
+# 	output: expand("data/{{run,SRR\d+}}_{mate}.fastq", mate = ["1", "2"])
+# 	shell: "{fastq_dump} --split-spot --split-3 -O data {input[0]}"
+
+rule trim_first_nucleotide:
+	input: expand("{path}/{{sample}}_averages_{{rep}}_{mate}.fastq.gz", path = data_path, mate = ["1", "2"])
+	params: name="{path}/{{sample,[A-Za-z]+}}_averages_{{rep}}_trim1nt".format(path = data_path)
+	output: expand("{path}/{{sample}}_averages_{{rep,\d}}_trim1nt_{mate}.fastq", path = data_path, mate = ["1", "2"])
+	shell:
+		"scripts/trim_first_nt {input} {params.name}"
 
 
+inline_barcodes = ["CGTGAT", "ACATCG", "GCCTAA"]
+data2barcodes = {("Control", "1") : inline_barcodes[0], ("Control", "2") : inline_barcodes[0],
+				 ("Control", "3") : inline_barcodes[1], ("DMS", "1") : inline_barcodes[2],
+				 ("DMS", "2") : inline_barcodes[0], ("DMS", "3") : inline_barcodes[2]}
+
+def get_adapter_seq_for_mate2(wildcards):
+	return 'N' + data2barcodes[(wildcards.sample, wildcards.rep)] + 'N' * 6 + "AGATCGGAAGAGCGTCGTGTAGGG"
+
+rule trim_adapter:
+	input: expand("{path}/{{sample}}_averages_{{rep}}_trim1nt_{mate}.fastq", path = data_path, mate = ["1", "2"]), cutadapt
+	params: get_adapter_seq_for_mate2
+	output: expand("{path}/{{sample,[A-Za-z]+}}_averages_{{rep,\d}}_trimmed_{mate}.fastq", path = data_path, mate = ["1", "2"])
+	log: "{path}/{{sample}}_averages_{{rep}}_trimmed.log".format(path = data_path)
+	shell:
+		"{cutadapt} -a AGATCGGAAGAGCACACG -A {params} -m 18 -o {output[0]} -p {output[1]} {input[0]} {input[1]} > {log}"
+
+rule remove_PCR_duplicate:
+	input: expand("{path}/{{sample}}_averages_{{rep}}_trimmed_{mate}.fastq", path = data_path, mate = ["1", "2"])
+	output: expand("{path}/{{sample,[A-Za-z]+}}_averages_{{rep,\d}}_cleaned_{mate}.fastq", path = data_path, mate = ["1", "2"])
+	log: "{path}/{{sample}}_averages_{{rep}}_cleaned.log".format(path = data_path)
+	shell:
+		"/home/bli/bio_project/scripts/remove_PCR_dup_PE 25 {input} {output} > {log}"

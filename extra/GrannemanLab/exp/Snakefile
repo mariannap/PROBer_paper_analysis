@@ -1,0 +1,132 @@
+# grep -A 1 "RDN" ~/PROBer_paper_analysis/references/yeast/yeast_filt.fa > yeast_rRNAs.fa
+rule build_ref:
+	input: "ref/yeast_rRNAs.fa", PROBer
+	output: touch("ref/yeast_rRNAs")
+	shell:
+		"{PROBer} prepare --bowtie2 {input[0]} {output}"
+
+def get_ref(wildcards):
+	return "ref/yeast_rRNAs"
+
+def get_data_as_input(wildcards):
+	if wildcards.sample.find("plus") >= 0:
+		return expand("{path}/DMS_averages_2_cleaned_{mate}.fastq", path = data_path, mate = ["1", "2"])
+	else:
+		return expand("{path}/Control_averages_2_cleaned_{mate}.fastq", path = data_path, mate = ["1", "2"])
+
+rule bowtie2_alignment_all:
+	input: get_ref, get_data_as_input, samtools
+	output:
+		"{path}/{{sample}}.bam".format(path = exp_path)
+	log:
+		"{path}/{{sample}}.log".format(path = exp_path)
+	threads: 20
+	shell:
+		"bowtie2 --norc -a -p {threads} -I 1 -X 700 --no-mixed --no-discordant -x {input[0]} -1 {input[1]} -2 {input[2]} 2> {log} | {samtools} view -S -b -o {output} -"
+
+rule bowtie2_alignment_best_strata:
+	input: get_ref, get_data_as_input, samtools
+	output:
+		"{path}/{{sample}}_best_strata.bam".format(path = exp_path)
+	log:
+		"{path}/{{sample}}_best_strata.log".format(path = exp_path)
+	threads: 20
+	shell:
+		"bowtie2 --norc -p {threads} -I 1 -X 700 --no-mixed --no-discordant -x {input[0]} -1 {input[1]} -2 {input[2]} 2> {log} | {samtools} view -S -b -o {output} -"
+
+rule bowtie2_alignment_best:
+	input: get_ref, get_data_as_input, samtools
+	output:
+		"{path}/{{sample}}_best.bam".format(path = exp_path)
+	log:
+		"{path}/{{sample}}_best.log".format(path = exp_path)
+	threads: 20
+	shell:
+		"bowtie2 --norc -k 1 -p {threads} -I 1 -X 700 --no-mixed --no-discordant -x {input[0]} -1 {input[1]} -2 {input[2]} 2> {log} | {samtools} view -S -b -o {output} -"
+
+ruleorder: bowtie2_alignment_best > bowtie2_alignment_best_strata > bowtie2_alignment_all
+
+rule collect_data_for_plot_bias:
+	input: "exp/{sample}.bam"
+	output: "exp/{sample}.bias"
+	shell:
+		"/home/bli/PROBer_paper_analysis/extra/SHAPES/scripts/collect_data_for_RNAprobR {input} exp/{wildcards.sample}"
+
+rule run_PROBer:
+	input:
+		get_ref,
+		expand("{path}/{{experiment}}_{channel}.bam", path = exp_path, channel = ["plus", "minus"]),
+		PROBer
+	output:
+		expand("{path}/{{experiment}}_PROBer.{suffix}", path = exp_path, suffix = ["beta", "gamma", "expr"]),
+		expand("{path}/{{experiment}}_PROBer.stat/{{experiment}}_PROBer_{channel}.{suffix}",
+			path = exp_path, channel = ["minus", "plus"], suffix = ["read_model", "theta"])
+	threads: 20
+	shell:
+		"{PROBer} estimate --paired-end -p {threads} --size-selection-min 18 --size-selection-max 700 {input[0]} {exp_path}/{wildcards.experiment}_PROBer --alignments {input[1]} {input[2]}"
+
+def get_score_input(wildcards):
+	name = wildcards.experiment
+	channels = ["minus", "plus"]
+
+	input_list = expand("{path}/{name}_{channel}_{method}.counts", 
+						path = exp_path, name = name, channel = channels, method = wildcards.method)
+	if wildcards.method == "icSHAPE":
+		input_list.append("{path}/{name}_{channel}_icSHAPE.density".format(
+			path = exp_path, name = name, channel = channels[0]))
+
+	return input_list
+
+rule extract_count_vector_StructureFold:
+	input:
+		"{path}/{{sample}}_best_strata.bam".format(path = exp_path),
+		get_ref
+	output:
+		"{path}/{{sample}}_StructureFold.counts".format(path = exp_path)
+	shell:
+		"{script_path}/extractCountVectors {input[0]} {input[1]}.grp {output} all"
+
+rule calculate_StructureFold_score:
+	input: get_score_input
+	output:
+		"{path}/{{experiment}}_{{method,StructureFold}}.scores".format(path = exp_path)
+	shell:
+		"{script_path}/calcStructureFold {input} {output}"
+
+rule extract_count_vector_Modseq:
+	input:
+		"{path}/{{sample}}_best.bam".format(path = exp_path)
+	output:
+		"{path}/{{sample}}_Modseq.counts".format(path = exp_path)
+	shell:
+		"{script_path}/extractCountVectors {input} None {output} all"
+
+rule calculate_Modseq_score:
+	input: get_score_input
+	output:
+		"{path}/{{experiment}}_{{method,Modseq}}.scores".format(path = exp_path)
+	shell:
+		"{script_path}/calcModseq {input} {output}"
+
+rule extract_count_vector_icSHAPE_or_Pseudoseq:
+	input:
+		"{path}/{{sample}}_best_strata.bam".format(path = exp_path)
+	output:
+		"{path}/{{sample}}_{{method,(icSHAPE|Pseudoseq)}}.counts".format(path = exp_path)
+	shell:
+		"{script_path}/extractCountVectors {input} None {output} all"
+
+rule calculate_base_density_icSHAPE:
+	input:
+		"{path}/{{sample}}_best_strata.bam".format(path = exp_path)
+	output:
+		"{path}/{{sample}}_icSHAPE.density".format(path = exp_path)
+	shell:
+		"{script_path}/calcBaseDensity {input} {output} all"
+
+rule calculate_icSHAPE_score:
+	input: get_score_input
+	output:
+		"{path}/{{experiment}}_{{method,icSHAPE}}.scores".format(path = exp_path)
+	shell:
+		"{script_path}/calc_icSHAPE {input} {output}"
