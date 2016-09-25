@@ -1,0 +1,42 @@
+#!/usr/bin/env python
+
+import gzip
+from sys import argv, exit
+
+if len(argv) != 4:
+	print("Usage: trim_first_nt input_1.fastq.gz input_2.fastq.gz output_name")
+	exit(-1)
+
+with gzip.open(argv[1], "rt") as fin1, gzip.open(argv[2], "rt") as fin2, \
+	 open(argv[3] + "_1.fastq", "w") as fout1, open(argv[3] + "_2.fastq", "w") as fout2:
+	 for tag1 in fin1:
+	 	seq1 = next(fin1).strip()
+	 	tmp = next(fin1)
+	 	qual1 = next(fin1).strip()
+
+	 	pos = tag1.index("##")
+	 	umi = tag1[pos + 2 : pos + 8] + seq1[0]
+	 	tag1 = '@' + umi + ':' + tag1[1:pos] + "/1"
+	 	
+	 	seq1 = seq1[1:]
+	 	qual1 = qual1[1:]
+
+	 	if len(seq1) != len(qual1):
+	 		assert len(seq1) + 2 == len(qual1) and qual1[-2:] == "/1"
+	 		qual1 = qual1[:-2]
+
+	 	fout1.write("{0}\n{1}\n+\n{2}\n".format(tag1, seq1, qual1))
+
+	 	tag2 = next(fin2).strip()
+	 	seq2 = next(fin2).strip()
+	 	tmp = next(fin2)
+	 	qual2 = next(fin2).strip()
+
+	 	if len(seq2) != len(qual2):
+	 		assert len(seq2) + 2 == len(qual2) and qual2[-2:] == "/2"
+	 		n2 += 1
+	 		qual2 = qual2[:-2]
+
+	 	fout2.write("{0}\n{1}\n+\n{2}\n".format('@' + umi + ':' + tag2[1:], seq2, qual2))
+
+
