@@ -68,7 +68,7 @@ for aread in sam_in:
         if not aread.is_paired:
             alignments.append((aread.reference_id, aread.reference_start, aread.reference_end))
         else:
-            alignments.append((aread.reference_id, aread.reference_start, aread.reference_start + aread.template_length))
+            alignments.append((aread.reference_id, aread.reference_start, aread.reference_start + abs(aread.template_length)))
             
     cnt += 1
     if cnt % 1000000 == 0:

@@ -10,47 +10,58 @@ def get_ref(wildcards):
 
 def get_data_as_input(wildcards):
 	if wildcards.sample.find("plus") >= 0:
-		return expand("{path}/DMS_averages_2_cleaned_{mate}.fastq", path = data_path, mate = ["1", "2"])
+		return expand("{path}/DMS_averages_{rep}_cleaned_{mate}.fastq", path = data_path, rep = ["1", "2", "3"], mate = ["1", "2"])
 	else:
-		return expand("{path}/Control_averages_2_cleaned_{mate}.fastq", path = data_path, mate = ["1", "2"])
+		return expand("{path}/Control_averages_{rep}_cleaned_{mate}.fastq", path = data_path, rep = ["1", "2", "3"], mate = ["1", "2"])
+
+def get_mate1(wildcards):
+	fmt = "{path}/{type}_averages_{{rep}}_cleaned_1.fastq".format(path = data_path, type = "DMS" if wildcards.sample.find("plus") >= 0 else "Control")
+	return ",".join([fmt.format(rep = rep) for rep in ["1", "2", "3"]])
+
+def get_mate2(wildcards):
+	fmt = "{path}/{type}_averages_{{rep}}_cleaned_2.fastq".format(path = data_path, type = "DMS" if wildcards.sample.find("plus") >= 0 else "Control")
+	return ",".join([fmt.format(rep = rep) for rep in ["1", "2", "3"]])
 
 rule bowtie2_alignment_all:
 	input: get_ref, get_data_as_input, samtools
+	params: mate1=get_mate1, mate2=get_mate2
 	output:
 		"{path}/{{sample}}.bam".format(path = exp_path)
 	log:
 		"{path}/{{sample}}.log".format(path = exp_path)
 	threads: 20
 	shell:
-		"bowtie2 --norc -a -p {threads} -I 1 -X 700 --no-mixed --no-discordant -x {input[0]} -1 {input[1]} -2 {input[2]} 2> {log} | {samtools} view -S -b -o {output} -"
+		"bowtie2 --norc -a -p {threads} -I 1 -X 700 --no-mixed --no-discordant -x {input[0]} -1 {params.mate1} -2 {params.mate2} 2> {log} | {samtools} view -S -b -o {output} -"
 
 rule bowtie2_alignment_best_strata:
 	input: get_ref, get_data_as_input, samtools
+	params: mate1=get_mate1, mate2=get_mate2
 	output:
 		"{path}/{{sample}}_best_strata.bam".format(path = exp_path)
 	log:
 		"{path}/{{sample}}_best_strata.log".format(path = exp_path)
 	threads: 20
 	shell:
-		"bowtie2 --norc -p {threads} -I 1 -X 700 --no-mixed --no-discordant -x {input[0]} -1 {input[1]} -2 {input[2]} 2> {log} | {samtools} view -S -b -o {output} -"
+		"bowtie2 --norc -p {threads} -I 1 -X 700 --no-mixed --no-discordant -x {input[0]} -1 {params.mate1} -2 {params.mate2} 2> {log} | {samtools} view -S -b -o {output} -"
 
 rule bowtie2_alignment_best:
 	input: get_ref, get_data_as_input, samtools
+	params: mate1=get_mate1, mate2=get_mate2
 	output:
 		"{path}/{{sample}}_best.bam".format(path = exp_path)
 	log:
 		"{path}/{{sample}}_best.log".format(path = exp_path)
 	threads: 20
 	shell:
-		"bowtie2 --norc -k 1 -p {threads} -I 1 -X 700 --no-mixed --no-discordant -x {input[0]} -1 {input[1]} -2 {input[2]} 2> {log} | {samtools} view -S -b -o {output} -"
+		"bowtie2 --norc -k 1 -p {threads} -I 1 -X 700 --no-mixed --no-discordant -x {input[0]} -1 {params.mate1} -2 {params.mate2} 2> {log} | {samtools} view -S -b -o {output} -"
 
 ruleorder: bowtie2_alignment_best > bowtie2_alignment_best_strata > bowtie2_alignment_all
 
-rule collect_data_for_plot_bias:
+rule collect_bias_data:
 	input: "exp/{sample}.bam"
 	output: "exp/{sample}.bias"
 	shell:
-		"/home/bli/PROBer_paper_analysis/extra/SHAPES/scripts/collect_data_for_RNAprobR {input} exp/{wildcards.sample}"
+		"scripts/collect_bias_data {input} {output}"
 
 rule run_PROBer:
 	input:

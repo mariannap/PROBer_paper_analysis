@@ -1,3 +1,13 @@
+### Sept 28, 2016
+
+// Download human 18S @ human
+wget http://www.rna.icmb.utexas.edu/RNA/Structures/d.16.e.H.sapiens.bpseq
+
+../../../scripts/extractInfoFromBPSeq d.16.e.H.sapiens.bpseq human_18S human_18S
+
+// @lucille
+bowtie2 -I 1 -X 1000 --no-mixed --no-discordant -p 60 -x ref/human_18S --no-unal -1 data/SRR493366_1.fastq -2 data/SRR493366_2.fastq 2> results/LFB_scramble_hiseq_repA_18S.log | samtools view -b -S -o results/LFB_scramble_hiseq_repA_18S.bam -
+
 ### Sept 14, 2016
 
 // Download reads to data

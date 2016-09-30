@@ -2,38 +2,30 @@
 
 from sys import argv, exit
 import pysam
-from collections import Counter
+from collections import namedtuple
 
-def update(reads, data, primingC):
-	global cnt, upper_bound
+BiasVec = namedtuple('BiasVec', ['name', 'length', 'c'])
 
-	if len(reads) <= 0 or cnt >= upper_bound:
+def update(reads, bvecs):
+	if len(reads) <= 0:
 		return
 
 	frac = 1.0 / len(reads)
 	for read in reads:
-		data[(read.reference_start + 1, read.reference_start + abs(read.template_length))] += frac
-		primingC[read.reference_start + abs(read.template_length) - 1] += frac
-
-	cnt += 1
+		bvecs[read.reference_id].c[read.reference_start + abs(read.template_length) - 1] += frac
 
 
 		
-if len(argv) < 3 or len(argv) > 4:
-	print("Usage: collect_data_for_RNAprobR input.bam output_name [counts]")
+if len(argv) != 3:
+	print("Usage: collect_bias_data input.bam output_name.bias")
 	exit(-1)
 
-upper_bound = 1e20
-if len(argv) == 4:
-	upper_bound = int(argv[3])
 
 sam_in = pysam.AlignmentFile(argv[1])
-refname = sam_in.references[0]
+bvecs = []
+for name, length in zip(sam_in.references, sam_in.lengths):
+	bvecs.append(BiasVec(name = name, length = length, c = [0.0] * length))
 
-data = Counter()
-primingC = [0.0] * sam_in.lengths[0]
-
-cnt = 0
 
 cname = ""
 reads = []
@@ -41,16 +33,13 @@ for read1 in sam_in:
 	read2 = next(sam_in)
 	if not read1.is_unmapped:
 		if cname != read1.query_name:
-			update(reads, data, primingC)
+			update(reads, bvecs)
 			cname = read1.query_name
 			reads = []
-		reads.append(read1)
-update(reads, data, primingC)
+		reads.append(read1 if read1.reference_start <= read2.reference_start else read2)
+update(reads, bvecs)
 sam_in.close()
 
-with open(argv[2] + ".counts", "w") as fout:
-	for key, value in data.items():
-		fout.write("{0}\t{1}\t{2}\t{3:.2f}\n".format(refname, key[0], key[1], value))
-
-with open(argv[2] + ".bias", "w") as fout:
-	fout.write(" ".join(["{:.2f}".format(x) for x in primingC]) + "\n")
+with open(argv[2], "w") as fout:
+	for biasV in bvecs:
+		fout.write(biasV.name + " " + str(biasV.length) + " " + " ".join(["{:.2f}".format(x) for x in biasV.c]) + "\n")
