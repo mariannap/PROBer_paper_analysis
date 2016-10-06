@@ -2,7 +2,10 @@ RNAstructure = "export DATAPATH=/home/bli/software/RNAstructure/data_tables && /
 scorer = "/home/bli/software/RNAprob/RNAprob_src/exe/scorer"
 
 rule all:
-	input: "test.eval"
+	input: 
+		# expand("/home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/{experiment}_{rRNA}_{method}.eval", experiment = ["structure_seq"], rRNA = ["18S", "25S"], method = ["PROBer", "StructureFold", "Modseq", "icSHAPE"])
+		expand("/home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/{experiment}_{rRNA}_{method}.eval", experiment = ["mod_seq"], rRNA = ["18S", "25S"], method = ["PROBer", "Modseq", "icSHAPE"]),
+		expand("/home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/{experiment}_{rRNA}_{method}.eval", experiment = ["ChemModSeq"], rRNA = ["18S", "25S"], method = ["PROBer", "StructureFold", "Modseq", "icSHAPE"])
 
 
 rule bpseq2ct:
@@ -18,7 +21,7 @@ rule copyFasta:
 		"cp {input} {output}" 
 
 
-exp2org = {"structure_seq" : "arabidopsis", "mod_seq" : "yeast", "icSHAPE_invivo" : "mouse", "icSHAPE_invitro" : "mouse", "ChmeModSeq" : "yeast"}
+exp2org = {"structure_seq" : "arabidopsis", "mod_seq" : "yeast", "icSHAPE_invivo" : "mouse", "icSHAPE_invitro" : "mouse", "ChemModSeq" : "yeast"}
 
 def get_input(wildcards):
 	return "/home/bli/PROBer_paper_analysis/exp/{experiment}_{method}.{suffix}".format(
@@ -36,7 +39,7 @@ def get_params(wildcards):
 rule extractReactivity:
 	input:	get_input
 	params: get_params
-	output: "/home/bli/PROBer_paper_analysis/extra/structure_prediction/shape/{organism,[a-z]+}_{rRNA,\w+}_{method,(PROBer|StructureFold|Modseq|icSHAPE)}.shape"
+	output: "/home/bli/PROBer_paper_analysis/extra/structure_prediction/shape/{experiment}_{rRNA,(18S|25S|12S_Mt)}_{method,(PROBer|StructureFold|Modseq|icSHAPE)}.shape"
 	shell:
 		"scripts/beta2shape {input} {params} {output}"
 
@@ -47,8 +50,8 @@ def get_fa(wildcards):
 rule runRNAstructure:
 	input: 
 		get_fa,
-		"/home/bli/PROBer_paper_analysis/extra/structure_prediction/shape/{experiment}_{method}_{rRNA}.shape"
-	output: "/home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/{experiment}_{method,(PROBer|StructureFold|Modseq|icSHAPE)}__{rRNA,(18S|25S|12S_Mt)}.ct"
+		"/home/bli/PROBer_paper_analysis/extra/structure_prediction/shape/{experiment}_{rRNA}_{method}.shape"
+	output: "/home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/{experiment}_{rRNA,(18S|25S|12S_Mt)}_{method,(PROBer|StructureFold|Modseq|icSHAPE)}.ct"
 	shell:
 		"{RNAstructure} {input[0]} {output} -sh {input[1]}"
 
@@ -58,10 +61,10 @@ def get_ct(wildcards):
 
 rule evaluate:
 	input: 
-		"/home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/{experiment}_{method}_{rRNA}.ct",
-		"/home/bli/PROBer_paper_analysis/extra/structure_prediction/ct_sequence_file/{name}.ct"
+		"/home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/{experiment}_{rRNA}_{method}.ct",
+		get_ct
 	output:
-		"/home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/{experiment}_{method,(PROBer|StructureFold|Modseq|icSHAPE)}_{rRNA,(18S|25S|12S_Mt)}.eval"
+		"/home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/{experiment}_{rRNA,(18S|25S|12S_Mt)}_{method,(PROBer|StructureFold|Modseq|icSHAPE)}.eval"
 	shell:
 		"{scorer} {input} {output}"
 
