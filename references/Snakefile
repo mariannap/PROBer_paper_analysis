@@ -70,17 +70,29 @@ rule calculate_mappability_for_arabidopsis_filt:
     shell:
         "{input[1]} 21 {arabidopsis_filt}.transcripts.fa {output}"
 
+# rule add_spike_in_sequences_to_arabidopsis_transcripts:
+#     input:
+#         expand("{path}/{spike_in}.fa", path = gt_path, spike_in = ["RNaseP_WT", "pT181_long", "pT181_short"]),
+#         arabidopsis_filt + ".fa",
+#         gt_path + "/SHAPE.t2g",
+#         arabidopsis_filt + ".t2g"
+#     output:
+#         expand("{ref_name}.{suffix}", ref_name = arabidopsis_spike, suffix = ["fa", "t2g"])
+#     shell:
+#         "cat {input[0]} {input[1]} {input[2]} {input[3]} > {output[0]} && "
+#         "cat {input[4]} {input[5]} > {output[1]}"
+
 rule add_spike_in_sequences_to_arabidopsis_transcripts:
     input:
-        expand("{path}/{spike_in}.fa", path = gt_path, spike_in = ["RNaseP_WT", "pT181_long", "pT181_short"]),
+        expand("{path}/{spike_in}.fa", path = gt_path, spike_in = ["5S", "16S", "23S", "Group_I", "Group_II", "HCV_IRES", "TPP", "tRNAphe", "HIV-1"]),
         arabidopsis_filt + ".fa",
-        gt_path + "/SHAPE.t2g",
+        gt_path + "/SHAPE_Map.t2g",
         arabidopsis_filt + ".t2g"
     output:
         expand("{ref_name}.{suffix}", ref_name = arabidopsis_spike, suffix = ["fa", "t2g"])
     shell:
-        "cat {input[0]} {input[1]} {input[2]} {input[3]} > {output[0]} && "
-        "cat {input[4]} {input[5]} > {output[1]}"
+        "cat {input[0]} {input[1]} {input[2]} {input[3]} {input[4]} {input[5]} {input[6]} {input[7]} {input[8]} {input[9]} > {output[0]} && "
+        "cat {input[10]} {input[11]} > {output[1]}"
 
 rule generate_yeast_remove_list:
     output:

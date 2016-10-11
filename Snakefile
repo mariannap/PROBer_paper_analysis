@@ -87,4 +87,4 @@ include: "exp/Snakefile"
 include: "simulation/Snakefile"
 
 rule all:
-	input: rules.unzip_SHAPE_MaP.output #results
+	input: arabidopsis_spike #results
