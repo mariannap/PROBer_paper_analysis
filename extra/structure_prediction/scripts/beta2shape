@@ -3,8 +3,8 @@
 from sys import argv, exit
 import numpy
 
-if len(argv) != 5:
-	print("Usage: beta2shape input.[beta/score] tid(1-based) first_n_nt output.shape")
+if len(argv) < 6 or len(argv) > 7:
+	print("Usage: beta2shape input.[beta/score] output.shape tid(1-based) first_n_nt total_len [gt_pos.txt]")
 	exit(-1)
 	
 #5%-10% normalization
@@ -17,8 +17,9 @@ def calc_norm_factor(data):
 
 
 isBeta = argv[1][argv[1].rindex('.') + 1:] == "beta"
-tid = int(argv[2])
-firstn = int(argv[3])
+tid = int(argv[3])
+firstn = int(argv[4])
+totlen = int(argv[5])
 
 with open(argv[1]) as fin:
 	for i in range(tid if isBeta else tid - 1):
@@ -28,8 +29,13 @@ with open(argv[1]) as fin:
 	factor = calc_norm_factor(data)
 	data = [x / factor for x in data]
 
-with open(argv[4], "w") as fout:
+validPos = [1] * totlen
+if len(argv) == 7:
+	with open(argv[6]) as fin:
+		validPos = [int(x) for x in fin.readline().strip().split()]
+
+with open(argv[2], "w") as fout:
 	for i, x in enumerate(data):
-		fout.write("{0}\t{1}\n".format(i + 1, x))
-
-
+		fout.write("{0}\t{1}\n".format(i + 1, x if validPos[i] == 1 else -999))
+	for i in range(firstn + 1, totlen + 1):
+		fout.write("{0}\t-999\n".format(i))

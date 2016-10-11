@@ -1,12 +1,23 @@
 RNAstructure = "export DATAPATH=/home/bli/software/RNAstructure/data_tables && /home/bli/software/RNAstructure/exe/Fold"
 scorer = "/home/bli/software/RNAprob/RNAprob_src/exe/scorer"
+RNAprob = "export DATAPATH=/home/bli/software/RNAprob/RNAprob_src/data_tables && /home/bli/software/RNAprob/RNAprob_src/exe/RNAprob"
+
+
+exp_path = "/home/bli/PROBer_paper_analysis/extra/structure_prediction/exp"
+ct_path = "/home/bli/PROBer_paper_analysis/extra/structure_prediction/ct_sequence_file"
+shape_path = "/home/bli/PROBer_paper_analysis/extra/structure_prediction/shape"
 
 rule all:
-	input: 
+	input:
+		expand("/home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/{experiment}_{rRNA}_{method}.untrained.eval", experiment = ["ChemModSeq"], rRNA = ["18S", "25S"], method = ["PROBer", "StructureFold", "Modseq", "icSHAPE", "baseline"]),
+		expand("/home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/{experiment}_{rRNA}_{method}.untrained.eval", experiment = ["mod_seq"], rRNA = ["18S", "25S"], method = ["PROBer", "Modseq", "icSHAPE", "baseline"])
 		# expand("/home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/{experiment}_{rRNA}_{method}.eval", experiment = ["structure_seq"], rRNA = ["18S", "25S"], method = ["PROBer", "StructureFold", "Modseq", "icSHAPE"])
-		expand("/home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/{experiment}_{rRNA}_{method}.eval", experiment = ["mod_seq"], rRNA = ["18S", "25S"], method = ["PROBer", "Modseq", "icSHAPE"]),
-		expand("/home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/{experiment}_{rRNA}_{method}.eval", experiment = ["ChemModSeq"], rRNA = ["18S", "25S"], method = ["PROBer", "StructureFold", "Modseq", "icSHAPE"])
+		#expand("/home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/{experiment}_{rRNA}_{method}.eval", experiment = ["mod_seq"], rRNA = ["18S", "25S"], method = ["PROBer", "Modseq", "icSHAPE"]),
+		#expand("/home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/{experiment}_{rRNA}_{method}.eval", experiment = ["ChemModSeq"], rRNA = ["18S", "25S"], method = ["PROBer", "StructureFold", "Modseq", "icSHAPE"])
 
+		# expand("/home/bli/PROBer_paper_analysis/extra/structure_prediction/shape/{experiment}_{rRNA}_{method}.shape", experiment = ["structure_seq", "ChemModSeq"], rRNA = ["18S", "25S"], method = ["PROBer", "StructureFold", "Modseq", "icSHAPE"]),
+		# expand("/home/bli/PROBer_paper_analysis/extra/structure_prediction/shape/{experiment}_{rRNA}_{method}.shape", experiment = ["mod_seq"], rRNA = ["18S", "25S"], method = ["PROBer", "Modseq", "icSHAPE"]),
+		# expand("/home/bli/PROBer_paper_analysis/extra/structure_prediction/shape/{experiment}_{rRNA}_{method}.shape", experiment = ["icSHAPE_invivo", "icSHAPE_invitro"], rRNA = ["18S", "12S_Mt"], method = ["PROBer", "StructureFold", "Modseq", "icSHAPE"])
 
 rule bpseq2ct:
 	input: "/home/bli/PROBer_paper_analysis/ground_truth/{name}.bpseq"
@@ -27,11 +38,13 @@ def get_input(wildcards):
 	return "/home/bli/PROBer_paper_analysis/exp/{experiment}_{method}.{suffix}".format(
 		experiment = wildcards.experiment, method = wildcards.method, suffix = "beta" if wildcards.method == "PROBer" else "scores")
 
-er2params = {("structure_seq", "18S") : "1 1772", ("structure_seq", "25S") : "2 3339",
-			 ("mod_seq", "18S") : "1 1751", ("mod_seq", "25S") : "2 3347",
-			 ("icSHAPE_invivo", "12S_Mt") : "1 869", ("icSHAPE_invivo", "18S") : "2 1783",
-			 ("icSHAPE_invitro", "12S_Mt") : "1 869", ("icSHAPE_invitro", "18S") : "2 1783",
-			 ("ChemModSeq", "18S") : "1 1752", ("ChemModSeq", "25S") : "2 3348"}
+er2params = {("structure_seq", "18S") : "1 1772 1808", ("structure_seq", "25S") : "2 3339 3375",
+			 ("mod_seq", "18S") : "1 1751 1800 /home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/yeast_18S_valid.txt", 
+			 ("mod_seq", "25S") : "2 3347 3396 /home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/yeast_25S_valid.txt",
+			 ("icSHAPE_invivo", "12S_Mt") : "1 869 955", ("icSHAPE_invivo", "18S") : "2 1783 1869",
+			 ("icSHAPE_invitro", "12S_Mt") : "1 869 955", ("icSHAPE_invitro", "18S") : "2 1783 1869",
+			 ("ChemModSeq", "18S") : "1 1752 1800 /home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/yeast_18S_valid.txt", 
+			 ("ChemModSeq", "25S") : "2 3348 3396 /home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/yeast_25S_valid.txt"}
 			 
 def get_params(wildcards):
 	return er2params[(wildcards.experiment, wildcards.rRNA)]
@@ -41,7 +54,7 @@ rule extractReactivity:
 	params: get_params
 	output: "/home/bli/PROBer_paper_analysis/extra/structure_prediction/shape/{experiment}_{rRNA,(18S|25S|12S_Mt)}_{method,(PROBer|StructureFold|Modseq|icSHAPE)}.shape"
 	shell:
-		"scripts/beta2shape {input} {params} {output}"
+		"scripts/beta2shape {input} {output} {params}"
 
 def get_fa(wildcards):
 	return "/home/bli/PROBer_paper_analysis/extra/structure_prediction/ct_sequence_file/{organism}_{rRNA}.fa".format(
@@ -51,20 +64,64 @@ rule runRNAstructure:
 	input: 
 		get_fa,
 		"/home/bli/PROBer_paper_analysis/extra/structure_prediction/shape/{experiment}_{rRNA}_{method}.shape"
-	output: "/home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/{experiment}_{rRNA,(18S|25S|12S_Mt)}_{method,(PROBer|StructureFold|Modseq|icSHAPE)}.ct"
+	output: "/home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/{experiment}_{rRNA,(18S|25S|12S_Mt)}_{method,(PROBer|StructureFold|Modseq|icSHAPE)}.untrained.ct"
 	shell:
 		"{RNAstructure} {input[0]} {output} -sh {input[1]}"
 
+rule runRNAstructure_baseline:
+	input: get_fa
+	output: "/home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/{experiment}_{rRNA,(18S|25S|12S_Mt)}_baseline.untrained.ct"
+	shell:
+		"{RNAstructure} {input[0]} {output}"
+
 def get_ct(wildcards):
-	return "/home/bli/PROBer_paper_analysis/extra/structure_prediction/ct_sequence_file/{organism}_{rRNA}.ct".format(
-		organism = exp2org[wildcards.experiment], rRNA = wildcards.rRNA)
+	return "{path}/{organism}_{rRNA}.ct".format(path = ct_path,
+			organism = exp2org[wildcards.experiment], rRNA = wildcards.rRNA)
+
+rule trainRNAprob:
+	input:
+		get_fa,
+		get_ct,
+		"{path}/{{experiment}}_{{rRNA}}_{{method}}.shape".format(path = shape_path)
+	params:
+		"{path}/{{experiment}}_{{rRNA}}_{{method}}.RNAprob.config".format(path = exp_path)
+	output: 
+		"{path}/{{experiment}}_{{rRNA,(18S|25S|12S_Mt)}}_{{method,(PROBer|StructureFold|Modseq|icSHAPE)}}.RNAprob.params".format(path = exp_path)
+	run:
+		with open(params[0], "w") as fout:
+			fout.write("{organism}_{rRNA}\t{experiment}_{rRNA}_{method}\n".format(
+				organism = exp2org[wildcards.experiment], rRNA = wildcards.rRNA,
+				experiment = wildcards.experiment, method = wildcards.method))
+		shell("scripts/train_RNAprob_binned {ct_path} {shape_path} {params} {output}")
+
+
+er2train = {("structure_seq", "18S") : "25S", ("structure_seq", "25S") : "18S",
+			 ("mod_seq", "18S") : "25S", ("mod_seq", "25S") : "18S",
+			 ("icSHAPE_invivo", "12S_Mt") : "18S", ("icSHAPE_invivo", "18S") : "12S_Mt",
+			 ("icSHAPE_invitro", "12S_Mt") : "18S", ("icSHAPE_invitro", "18S") : "12S_Mt",
+			 ("ChemModSeq", "18S") : "25S", ("ChemModSeq", "25S") : "18S"}
+
+def get_train_param(wildcards):
+	return "{path}/{experiment}_{rRNA}_{method}.RNAprob.params".format(path = exp_path,
+			experiment = wildcards.experiment, rRNA = er2train[(wildcards.experiment, wildcards.rRNA)],
+			method = wildcards.method)
+
+rule runRNAprob:
+	input:
+		get_train_param,
+		get_fa,
+		"{path}/{{experiment}}_{{rRNA}}_{{method}}.shape".format(path = shape_path)
+	output:
+		"{path}/{{experiment}}_{{rRNA,(18S|25S|12S_Mt)}}_{{method,(PROBer|StructureFold|Modseq|icSHAPE)}}.RNAprob.ct".format(path = exp_path)
+	shell:
+		"cp -f {input[0]} /home/bli/software/RNAprob/RNAprob_src/data_tables/trainingParam/train_param.txt && "
+		"{RNAprob} {input[1]} {output} -sh {input[2]}"
 
 rule evaluate:
 	input: 
-		"/home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/{experiment}_{rRNA}_{method}.ct",
+		"{path}/{{experiment}}_{{rRNA}}_{{method}}.{{predictor}}.ct".format(path = exp_path),
 		get_ct
 	output:
-		"/home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/{experiment}_{rRNA,(18S|25S|12S_Mt)}_{method,(PROBer|StructureFold|Modseq|icSHAPE)}.eval"
+		"{path}/{{experiment}}_{{rRNA,(18S|25S|12S_Mt)}}_{{method,(PROBer|StructureFold|Modseq|icSHAPE|baseline)}}.{{predictor,(RNAstructure|RNAprob|untrained)}}.eval".format(path = exp_path)
 	shell:
 		"{scorer} {input} {output}"
-
