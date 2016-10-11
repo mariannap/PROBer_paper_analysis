@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+import numpy.random
+
+try:
+    xrange
+except NameError:
+    xrange = range
+
+if len(argv) != 6:
+    print("Usage: processSHAPEdata input.map structure_seq_PROBer.beta structure_seq_PROBer.gamma seed output_name")
+    exit(-1)
+
+# Read MaP file
+refseq = ""
+values = []
+with open(argv[1]) as fin:
+    for line in fin:
+        fields = line.strip().split()
+        refseq += fields[3] if fields[3] != 'U' else 'T'
+        values.append(float(fields[1]))
+
+# Generate fasta file
+reflen = len(refseq)
+with open(argv[5] + ".fa", "w") as fout:
+    fout.write(">00_{0}\n{1}\n".format(argv[5], refseq))
+
+# Load 18S gamma
+gammas = []
+with open(argv[3]) as fin:
+    fin.readline()
+    fields = fin.readline().strip().split()
+    gammas = [float(x) for x in fields[2:]]
+
+# Generate gamma file
+numpy.random.seed(int(argv[4]))
+with open(argv[5] + ".gamma", "w") as fout:
+    fout.write("00_{0}\t{1}\t{2}\n".format(argv[5], reflen, "\t".join(["{0:.10g}".format(x) for x in numpy.random.choice(gammas, size = reflen)])))
+
+# Load 18S gamma
+betas = []
+with open(argv[2]) as fin:
+    fin.readline()
+    fields = fin.readline().strip().split()
+    betas = [float(x) for x in fields[2:]]
+
+# Generate beta file
+factor = max(betas) / max(values)
+with open(argv[5] + ".beta", "w") as fout:
+    values = [x * factor if x > 0.0 else 0.0 for x in values]
+    fout.write("00_{0}\t{1}\t{2}\n".format(argv[5], reflen, "\t".join(["{0:.10g}".format(x) for x in values])))
