@@ -84,7 +84,7 @@ rule calculate_mappability_for_arabidopsis_filt:
 
 rule add_spike_in_sequences_to_arabidopsis_transcripts:
     input:
-        expand("{path}/{spike_in}.fa", path = gt_path, spike_in = ["5S", "16S", "23S", "Group_I", "Group_II", "HCV_IRES", "TPP", "tRNAphe", "HIV-1"]),
+        expand("{path}/{spike_in}.fa", path = gt_path, spike_in = spike_ins),
         arabidopsis_filt + ".fa",
         gt_path + "/SHAPE_MaP.t2g",
         arabidopsis_filt + ".t2g"

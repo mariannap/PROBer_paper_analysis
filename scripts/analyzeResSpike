@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+import scipy.stats
+import math
+
+def calcPearson(a, b):
+	res = scipy.stats.pearsonr(a, b)[0]
+	if math.isnan(res):
+		res = 0.0
+	return res
+
+def calcSpearman(a, b):
+	res = scipy.stats.spearmanr(a, b)[0]
+	if math.isnan(res):
+		res = 0.0
+	return res
+
+if len(argv) != 6:
+	print("Usage: analyzeResSpike output_name corr_type('pearson' or 'spearman') min_frag ground_truth.beta num_spikes")
+	exit(-1)
+
+corr_type = 0 if argv[2] == "pearson" else 1
+min_frag = int(argv[3])
+num_spikes = int(argv[5])
+
+# Load ground truth
+gt = []
+with open(argv[4]) as fin:
+	next(fin)
+	for i in range(num_spikes):
+		fields = next(fin).strip().split()
+		gt.append([float(x) for x in fields[2:]])
+
+# Generate output file
+with open(argv[1] + "_melt.txt", "w") as fout:
+	fout.write("Transcript_id\tLength\tTPM\tRange\tPROBer\tStructureFold\tModseq\ticSHAPE\n")
+	for i, TPM in enumerate(["1e5", "1e4", "1e3", "1e2"]):
+		rows = []
+		with open("{0}_{1}_PROBer.beta".format(argv[1], TPM)) as fin:
+			next(fin)
+			for j in range(num_spikes):
+				fields = next(fin).strip().split()
+				tlen = int(fields[1]) + 6
+				ub = tlen - min_frag
+				values = [float(x) for x in fields[2:]]
+				rows.append([fields[0], tlen, TPM, i, (calcPearson(gt[j][:ub], values[:ub]), calcSpearman(gt[j][:ub], values[:ub]))])
+
+		for method in ["StructureFold.scores", "Modseq.scores", "icSHAPE.scores"]:
+			with open("{0}_{1}_{2}".format(argv[1], TPM, method)) as fin:
+				for j in range(num_spikes):
+					values = [float(x) for x in next(fin).strip().split()]
+					ub = rows[j][1] - min_frag
+					rows[j].append((calcPearson(gt[j][:ub], values[:ub]), calcSpearman(gt[j][:ub], values[:ub])))
+		for j in range(num_spikes):
+			fout.write("{0}\t{1}\t{2}\t{3}\t{4:.2f}\t{5:.2f}\t{6:.2f}\t{7:.2f}\n".format(rows[j][0], rows[j][1], rows[j][2], rows[j][3],
+				rows[j][4][corr_type], rows[j][5][corr_type], rows[j][6][corr_type], rows[j][7][corr_type]))

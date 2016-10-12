@@ -315,15 +315,25 @@ rule produce_boxplot_pdf:
 
 ## digital spike-in results
 
+# rule produce_digital_spike_in_results:
+# 	input:
+# 		"{path}/ground_truth_spikes.beta".format(path = sim_path),
+# 		expand("{path}/structure_seq_spikes_{TPM}_{method_suffix}", path = exp_path, TPM = ["1e2", "1e3", "1e4", "1e5"],
+# 			method_suffix = ["PROBer.beta", "StructureFold.scores", "Modseq.scores", "icSHAPE.scores"])
+# 	output:
+# 		"{path}/digital_spike_in.txt".format(path = result_path)
+# 	shell:
+# 		"{script_path}/analyzeSpikes {input[0]} {exp_path}/structure_seq_spikes 36 {output}"
+
 rule produce_digital_spike_in_results:
 	input:
 		"{path}/ground_truth_spikes.beta".format(path = sim_path),
 		expand("{path}/structure_seq_spikes_{TPM}_{method_suffix}", path = exp_path, TPM = ["1e2", "1e3", "1e4", "1e5"],
 			method_suffix = ["PROBer.beta", "StructureFold.scores", "Modseq.scores", "icSHAPE.scores"])
 	output:
-		"{path}/digital_spike_in.txt".format(path = result_path)
+		"{path}/structure_seq_spikes_melt.txt".format(path = exp_path)
 	shell:
-		"{script_path}/analyzeSpikes {input[0]} {exp_path}/structure_seq_spikes 36 {output}"
+		"{script_path}/analyzeResSpike {exp_path}/structure_seq_spikes pearson 36 {input[0]} 9"
 
 
 ## expression results

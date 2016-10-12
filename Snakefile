@@ -23,7 +23,8 @@ PROBer_full_model = "{path}/PROBer_full_model/build/src/PROBer".format(path = to
 
 ### ground truth
 gt_path = "ground_truth"
-spike_ins = ["RNaseP_WT", "pT181_long", "pT181_short"]
+# spike_ins = ["RNaseP_WT", "pT181_long", "pT181_short"]
+spike_ins = ["16S", "23S", "5S", "Group_I", "Group_II", "HCV_IRES", "HIV-1", "TPP", "tRNAphe"]
 
 ### references
 ref_path = "references"
@@ -87,4 +88,6 @@ include: "exp/Snakefile"
 include: "simulation/Snakefile"
 
 rule all:
-	input: arabidopsis_spike #results
+	input: "{path}/structure_seq_spikes_melt.txt".format(path = exp_path)
+	
+	 #results

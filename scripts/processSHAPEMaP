@@ -44,7 +44,7 @@ with open(argv[3]) as fin:
 # Generate gamma file
 numpy.random.seed(int(argv[4]))
 with open(argv[5] + ".gamma", "w") as fout:
-    fout.write("00_{0}\t{1}\t{2}\n".format(seqname, reflen, "\t".join(["{0:.10g}".format(x) for x in numpy.random.choice(gammas, size = reflen)])))
+    fout.write("00_{0}\t{1}\t{2}\n".format(seqname, reflen - 6, "\t".join(["{0:.10g}".format(x) for x in numpy.random.choice(gammas, size = reflen - 6)])))
 
 # Load 18S gamma
 betas = []
@@ -57,4 +57,4 @@ with open(argv[2]) as fin:
 factor = max(betas) / max(values)
 with open(argv[5] + ".beta", "w") as fout:
     values = [x * factor if x > 0.0 else 0.0 for x in values]
-    fout.write("00_{0}\t{1}\t{2}\n".format(seqname, reflen, "\t".join(["{0:.10g}".format(x) for x in values])))
+    fout.write("00_{0}\t{1}\t{2}\n".format(seqname, reflen - 6, "\t".join(["{0:.10g}".format(x) for x in values[:-6]])))
