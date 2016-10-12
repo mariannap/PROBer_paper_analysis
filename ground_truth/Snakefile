@@ -81,7 +81,7 @@ rule unzip_SHAPE_MaP:
 	output:
 		expand("{path}/{name}.1m7.map", path = gt_path, name = ["5S", "16S", "23S", "Group_I", "Group_II", "HCV_IRES", "TPP", "tRNAphe", "HIV-1"])
 	shell:
-		"unzip {input} -d {gt_path} && touch {output}"
+		"unzip -u {input} -d {gt_path} && touch {output}"
 
 rule process_SHAPE_MaP:
 	input:

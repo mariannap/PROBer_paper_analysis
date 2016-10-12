@@ -12,19 +12,27 @@ if len(argv) != 6:
     print("Usage: processSHAPEdata input.map structure_seq_PROBer.beta structure_seq_PROBer.gamma seed output_name")
     exit(-1)
 
+seqname = argv[5][argv[5].rfind('/') + 1 : ]
+
 # Read MaP file
 refseq = ""
 values = []
 with open(argv[1]) as fin:
+    cnt = 0
     for line in fin:
         fields = line.strip().split()
         refseq += fields[3] if fields[3] != 'U' else 'T'
+
+        cnt += 1
+        if fields[1] == 'G':
+            print(cnt)
+            print(line)
         values.append(float(fields[1]))
 
 # Generate fasta file
 reflen = len(refseq)
 with open(argv[5] + ".fa", "w") as fout:
-    fout.write(">00_{0}\n{1}\n".format(argv[5], refseq))
+    fout.write(">00_{0}\n{1}\n".format(seqname, refseq))
 
 # Load 18S gamma
 gammas = []
@@ -36,7 +44,7 @@ with open(argv[3]) as fin:
 # Generate gamma file
 numpy.random.seed(int(argv[4]))
 with open(argv[5] + ".gamma", "w") as fout:
-    fout.write("00_{0}\t{1}\t{2}\n".format(argv[5], reflen, "\t".join(["{0:.10g}".format(x) for x in numpy.random.choice(gammas, size = reflen)])))
+    fout.write("00_{0}\t{1}\t{2}\n".format(seqname, reflen, "\t".join(["{0:.10g}".format(x) for x in numpy.random.choice(gammas, size = reflen)])))
 
 # Load 18S gamma
 betas = []
@@ -49,4 +57,4 @@ with open(argv[2]) as fin:
 factor = max(betas) / max(values)
 with open(argv[5] + ".beta", "w") as fout:
     values = [x * factor if x > 0.0 else 0.0 for x in values]
-    fout.write("00_{0}\t{1}\t{2}\n".format(argv[5], reflen, "\t".join(["{0:.10g}".format(x) for x in values])))
+    fout.write("00_{0}\t{1}\t{2}\n".format(seqname, reflen, "\t".join(["{0:.10g}".format(x) for x in values])))

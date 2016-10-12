@@ -8,4 +8,7 @@ SHAPE.t2g
 spikes_info.txt
 *.truth
 *~
+*.map
+*.beta
+*.gamma
 

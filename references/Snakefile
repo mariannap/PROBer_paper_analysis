@@ -86,7 +86,7 @@ rule add_spike_in_sequences_to_arabidopsis_transcripts:
     input:
         expand("{path}/{spike_in}.fa", path = gt_path, spike_in = ["5S", "16S", "23S", "Group_I", "Group_II", "HCV_IRES", "TPP", "tRNAphe", "HIV-1"]),
         arabidopsis_filt + ".fa",
-        gt_path + "/SHAPE_Map.t2g",
+        gt_path + "/SHAPE_MaP.t2g",
         arabidopsis_filt + ".t2g"
     output:
         expand("{ref_name}.{suffix}", ref_name = arabidopsis_spike, suffix = ["fa", "t2g"])
