@@ -2,7 +2,7 @@
 
 argv = commandArgs(TRUE)
 if (length(argv) != 5) {
-	 cat("Usage: plot_ROC_sasa ground_truth_dir row_list(',') exclude_bp experiment_prefix output_name\n")
+	 cat("Usage: plot_PR_ROC_sasa ground_truth_dir row_list(',') exclude_bp experiment_prefix output_name\n")
 	 q(status = 1)
 }
 
@@ -98,7 +98,7 @@ plotPR = function(id, output_name, rRNAs, PROBerPrs, StructureFoldPrs, ModseqPrs
 	if (!is.null(StructureFoldPrs)) colors = c(colors, "blue")
 	colors = c(colors, "green", "orange")
 
-	legend("bottomright", legend = legends, lty = 1, col = colors)
+	legend("topright", legend = legends, lty = 1, col = colors)
 
 	null = dev.off()
 
