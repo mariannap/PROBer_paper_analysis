@@ -3,45 +3,11 @@
 from sys import argv, exit
 import pysam
 
-
-try:
-    xrange
-except NameError:
-    xrange = range
-
-
-def loadMap(map_file):
-    genes = []
-
-    with open(map_file) as fin:
-        prev = curr = gid = -1
-        for line in fin:
-            curr = int(line[:-1])
-            if gid >= 0:
-                genes.extend([gid] * (curr - prev))
-            prev = curr
-            gid += 1
-
-    return genes
-
-
-def gene_multi(alignments):
-    if len(alignments) <= 1:
-        return False
-
-    gid = genes[alignments[0][0]]
-    for i in xrange(1, len(alignments)):
-        if gid != genes[alignments[i][0]]:
-            return True
-
-    return False
-
-
 def update(alignments):
-    if len(alignments) == 0 or len(genes) > 0 and gene_multi(alignments):
+    if len(alignments) == 0 or choice == 0 and len(alignments) > 1:
         return
 
-    frac = 1.0 / len(alignments) if len(genes) == 0 else 1.0
+    frac = 1.0 / len(alignments) if choice == 2 else 1.0
     for (tid, pos) in alignments:
         i = tid if requireAll else tid2num.get(tid, -1)
         if i >= 0:
@@ -49,15 +15,11 @@ def update(alignments):
 
 
 if len(argv) < 5:
-    print("Usage: extractCountVectors input.bam <ref_name.grp/None> output.txt [all | name1 name2 ...]")
+    print("Usage: extractCountVectors input.bam output.txt multi-read-option(0, unique only; 1, full weight; 2, distribute evenly) [all | name1 name2 ...]")
     exit(-1)
 
 sam_in = pysam.AlignmentFile(argv[1], "rb")
-
-genes = []
-if argv[2] != "None":
-    genes = loadMap(argv[2])
-
+choice = int(argv[3])
 
 vectors = []
 tid2num = dict()
@@ -67,11 +29,11 @@ requireAll = False
 if argv[4] == "all":
     requireAll = True
     M = sam_in.nreferences
-    for i in xrange(M):
+    for i in range(M):
         vector = [0] * sam_in.lengths[i]
         vectors.append(vector)
 else:
-    for i in xrange(4, len(argv)):
+    for i in range(4, len(argv)):
         if argv[i] in sam_in.references:
             tid = sam_in.references.index(argv[i])
             vector = [0] * sam_in.lengths[tid]
@@ -103,8 +65,8 @@ for aread in sam_in:
 update(alignments)
 
 print("Begin to generate outputs.")
-fout = open(argv[3], "w")
-for i in xrange(len(vectors)):
+fout = open(argv[2], "w")
+for i in range(len(vectors)):
     fout.write(" ".join(["{:.6f}".format(x) for x in vectors[i]]) + "\n")
 fout.close()
 print("Done.")

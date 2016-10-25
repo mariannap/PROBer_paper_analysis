@@ -88,6 +88,6 @@ include: "exp/Snakefile"
 include: "simulation/Snakefile"
 
 rule all:
-	input: "{path}/structure_seq_spikes_melt.txt".format(path = exp_path)
+	input: "{path}/pseudoU_PR.pdf".format(path = result_path)
 	
 	 #results

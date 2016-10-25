@@ -1,3 +1,8 @@
+### Oct 17, 2016
+@extra/GrannemanLab/exp
+
+~/PROBer_paper_analysis/scripts/plot_PR_ROC_sasa ~/PROBer_paper_analysis/ground_truth 1,2 48 ChemModSeq ChemModSeq
+
 ### Sept 28, 2016
 
 // Download human 18S @ human

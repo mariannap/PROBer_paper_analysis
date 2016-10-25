@@ -60,7 +60,7 @@ pr_icSHAPE = pr.curve(icSHAPE, weights.class0 = truth, curve = T)
 
 pdf(sprintf("%s_PR.pdf", argv[4]))
 
-plot(pr_PROBer, lwd = 1, col = "red", auc.main = F)
+plot(pr_PROBer, lwd = 1, col = "red", auc.main = F, main = "")
 plot(pr_Pseudoseq, lwd = 1, col = "blue", add = T)
 plot(pr_StructureFold, lwd = 1, col = "green", add = T)
 plot(pr_Modseq, lwd = 1, col = "orange", add = T)
