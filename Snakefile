@@ -88,6 +88,9 @@ include: "exp/Snakefile"
 include: "simulation/Snakefile"
 
 rule all:
-	input: "{path}/pseudoU_PR.pdf".format(path = result_path)
+	input: expand("{path}/yeast_{rRNA}.sasa", path = gt_path, rRNA = ["18S", "25S"]), gt_path + "/ecoli_16S.sasa"
+
+
+	#"{path}/pseudoU_PR.pdf".format(path = result_path)
 	
 	 #results

@@ -14,6 +14,13 @@ rule extract_info_from_bpseq:
 	shell:
 		"{script_path}/extractInfoFromBPSeq {input} {params.output_name} {wildcards.rRNA}_rRNA"
 
+rule download_pdb:
+	output:
+		expand("{path}/{{name}}.pdb", path = gt_path)
+	shell:
+		"wget -O {output} http://www.rcsb.org/pdb/files/{wildcards.name}.pdb"
+
+
 rule generate_arabidopsis_bpseq:
 	input:
 		expand("{path}/d.{number}.e.A.thaliana.bpseq", path = gt_path, number = ["16", "23"])
@@ -40,6 +47,44 @@ rule generate_yeast_bpseq:
 		"cp {input[0]} {output[0]} && "
         "head -n 4 {input[1]} > {output[1]} && tail -n 3396 {input[1]} >> {output[1]}"
 
+
+def get_chain(wildcards):
+	""" 25S: 1; 18S: 2; 5S: 3; 5.8S: 4 """
+	if wildcards.rRNA == "18S":
+		return "2";
+	else:
+		assert wildcards.rRNA == "25S"
+		return "1"
+
+rule calculate_yeast_solvent_accessible_surface_areas:
+	input:
+		expand("{path}/{name}.pdb", path = gt_path, name = ["3u5b", "3u5c", "3u5d", "3u5e"])
+	params: chain=get_chain
+	output:
+		expand("{path}/yeast_{{rRNA,(18S|25S)}}.sasa", path = gt_path)
+	threads: 20
+	shell:
+		"{script_path}/calc_sasa_rRNA_pymol_yeast {gt_path} {wildcards.rRNA} {params.chain} {threads}"
+
+
+rule generate_ecoli_bpseq:
+	input:
+		expand("{path}/d.16.b.E.coli.bpseq", path = gt_path)
+	output:
+		expand("{path}/ecoli_16S.bpseq", path = gt_path)
+	shell:
+		"cp {input} {output}"
+
+rule calculate_ecoli_solvent_accessible_surface_areas:
+	input:
+		expand("{path}/{name}.pdb", path = gt_path, name = ["3ofa", "3ofc"])
+	output:
+		expand("{path}/ecoli_16S.sasa", path = gt_path)
+	threads: 20
+	shell:
+		"{script_path}/calc_sasa_rRNA_pymol_ecoli {gt_path} {threads}"
+
+
 rule generate_mouse_bpseq:
 	input:
 		expand("{path}/d.16.{type}.M.musculus.bpseq", path = gt_path, type = ["e", "m"])
@@ -56,24 +101,7 @@ rule generate_mouse_rRNAs_fa:
 	shell:
 		"cat {input} > {output}"
 
-# rule unzip_SHAPE_data:
-# 	input: 
-# 		expand("{path}/SHAPE_data.zip", path = gt_path)
-# 	output: 
-# 		expand("{path}/{name}.adducts", path = gt_path, name = spike_ins),
-# 		expand("{path}/{file}", path = gt_path, file = ["SHAPE.t2g", "spikes_info.txt"])
-# 	shell:
-# 		"unzip {input} -d {gt_path} && touch {output}"
 
-# rule process_SHAPE_data:
-# 	input:
-# 		expand("{path}/{{shape_name}}.adducts", path = gt_path)
-# 	params:
-# 		output_name = "{path}/{{shape_name}}".format(path = gt_path)
-# 	output:
-# 		expand("{path}/{{shape_name}}.{suffix}", path = gt_path, suffix = ["fa", "gamma", "beta"])
-# 	shell:
-# 		"{script_path}/processSHAPEdata {input} {params.output_name}"
 
 rule unzip_SHAPE_MaP:
 	input:

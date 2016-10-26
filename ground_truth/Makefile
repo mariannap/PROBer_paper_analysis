@@ -1,5 +1,5 @@
 .PHONY : clean
 
 clean:
-	rm -rf *.bpseq *.structure *.fa *.isac pT181* RNaseP_WT* SHAPE.t2g spikes_info.txt *.truth *~
+	rm -rf *.bpseq *.structure *.fa *.isac *.sasa *.truth *.gamma *.beta *.map *~
 
