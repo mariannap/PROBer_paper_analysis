@@ -1,0 +1,89 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+import os
+import subprocess
+
+icSHAPE_path = os.path.dirname(os.path.abspath(__file__)) + "/icSHAPE"
+
+
+if len(argv) != 6:
+	print("Usage: run_icSHAPE samtools minus_bam plus_bam translist_file output_name")
+	exit(-1)
+
+
+def runProg(command, command2 = None):
+	try:
+		if command2 == None:
+			subprocess.check_call(command)
+		else:
+			p1 = subprocess.Popen(command, stdout = subprocess.PIPE)
+			subprocess.check_call(command2, stdin = p1.stdout)
+			p1.stdout.close()
+	except subprocess.CalledProcessError as error:
+		print("Command failed!")
+		exit(-1)
+
+def generate_scores_file(transList, inpF, outF):
+	tid2score = {}
+	with open(inpF) as fin:
+		for line in fin:
+			fields = line.strip().split('\t')
+			tid2score[fields[0]] = (int(fields[1]), " ".join([x if x != "NULL" else "0.000" for x in fields[3:]]))
+
+	with open(transList) as ftrans, open(outF, "w") as fout:
+		for line in ftrans:
+			fields = line.strip().split('\t')
+			tid = fields[0]
+			tlen = int(fields[1])
+			if tid in tid2score:
+				vlen, vstr = tid2score[tid]
+				assert tlen == vlen
+				fout.write(vstr + '\n')
+			else:
+				fout.write(" ".join(["0.000"] * tlen) + '\n')
+
+
+tmp_files = list(map(lambda name: argv[5] + name, ["_minus.rpkm", "_plus.rpkm", "_minus.rt", "_plus.rt", "_minus.normalized.rt", "_plus.normalized.rt", ".tmp.icSHAPE"]))
+out_files = list(map(lambda name: argv[5] + name, [".icSHAPE", ".scores"]))
+
+# RPKM
+command = [argv[1], 'view', '-h', argv[2]]
+command2 = [icSHAPE_path + '/estimateRPKM.pl', '-i', '-', '-o', tmp_files[0]]
+runProg(command, command2)
+
+command = [argv[1], 'view', '-h', argv[3]]
+command2 = [icSHAPE_path + '/estimateRPKM.pl', '-i', '-', '-o', tmp_files[1]]
+runProg(command, command2)
+
+# RT
+command = [argv[1], 'view', '-h', argv[2]]
+command2 = [icSHAPE_path + '/calcRT.pl', '-i', '-', '-o', tmp_files[2], '-r', tmp_files[0], '-c', '5']
+runProg(command, command2)
+
+command = [argv[1], 'view', '-h', argv[3]]
+command2 = [icSHAPE_path + '/calcRT.pl', '-i', '-', '-o', tmp_files[3], '-r', tmp_files[1], '-c', '5']
+runProg(command, command2)
+
+# Normalization
+command = [icSHAPE_path + '/normalizeRTfile.pl', '-i', tmp_files[2], '-o', tmp_files[4], '-m', 'mean:vigintile2', '-d', '5', '-l', '30']
+runProg(command)
+
+command = [icSHAPE_path + '/normalizeRTfile.pl', '-i', tmp_files[3], '-o', tmp_files[5], '-m', 'mean:vigintile2', '-d', '5', '-l', '30']
+runProg(command)
+
+# Calculate enrichment
+command = [icSHAPE_path + '/calcEnrich.pl', '-f', tmp_files[5], '-b', tmp_files[4], '-o', tmp_files[6], '-w', 'factor5:scaling1', '-y', '10', '-x', '0.25']
+runProg(command)
+
+# Filter enrichment
+command = [icSHAPE_path + '/filterEnrich.pl', '-i', tmp_files[6], '-o', out_files[0], '-t', '200', '-T', '2', '-s', '5', '-e', '30']
+runProg(command)
+
+# Convert to PROBer_paper_analysis format
+generate_scores_file(argv[4], *out_files)
+
+# Delete tmp files
+command = ['rm', '-f']
+command.extend(tmp_files)
+runProg(command)
