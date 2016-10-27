@@ -118,6 +118,24 @@ rule extract_yeast_transcripts:
         "gunzip -c {ref_yeast}/Saccharomyces_cerevisiae.R64-1-1.84.gtf.gz > {output[1]} && "
         "{script_path}/genome_to_transcript_set {output[0]} {output[1]} {input[2]} None {yeast_filt}"
 
+rule generate_yeast_rRNAs_fa:
+    input:
+        expand("{path}/yeast_{rRNA}.fa", path = gt_path, rRNA = ["18S", "25S"])
+    output:
+        expand("{path}/yeast_rRNAs.fa", path = ref_yeast)
+    shell:
+        "cat {input} > {output}"
+
+rule build_PROBer_and_Bowtie2_indices_for_yeast_rRNAs_fa:
+    input: 
+        "{path}/yeast_rRNAs.fa".format(path = ref_yeast), 
+        PROBer, Bowtie2
+    output: 
+        touch(yeast_rRNAs)
+    shell:
+        "{PROBer} prepare --bowtie2 --bowtie2-path {bowtie2_path} {input[0]} {output}"
+
+
 rule download_mouse_genome:
     # input:
     #     FTP.remote("ftp.ensembl.org/pub/release-74/fasta/mus_musculus/dna/Mus_musculus.GRCm38.74.dna.primary_assembly.fa.gz")

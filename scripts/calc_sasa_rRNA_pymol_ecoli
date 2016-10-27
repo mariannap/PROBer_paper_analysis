@@ -1,0 +1,57 @@
+#!/usr/bin/env python2
+
+import os
+from sys import argv, exit
+import threading
+import subprocess
+
+import pymol
+from pymol import cmd, stored
+pymol.pymol_argv = ['pymol', '-qc']
+pymol.finish_launching()
+
+
+def calc_sasa(prog, pdb_path, resiList, thread_id, results):
+	results[thread_id] = subprocess.check_output([prog, pdb_path, ','.join(resiList)]).replace(' ', '\t')
+
+def calc_sasa_parallel(prog, pdb_path, resiList, num_threads):
+	threads = []
+	results = [""] * num_threads
+	q = len(resiList) / num_threads
+	r = len(resiList) % num_threads
+
+	lb = ub = 0
+	for i in xrange(num_threads):
+		ub = lb + q + (1 if i < r else 0)
+		threads.append(threading.Thread(target = calc_sasa, args = (prog, pdb_path, resiList[lb:ub], i, results)))
+		threads[-1].start()
+		lb = ub
+
+	for thread in threads:
+		thread.join()
+
+	return "".join(results)
+
+
+if len(argv) != 3:
+	print("Usage: calc_sasa_rRNA_pymol gt_path num_threads")
+	exit(-1)
+
+prog = os.path.dirname(os.path.abspath(__file__)) + "/calc_sasa_pymol_ecoli"
+gt_path = argv[1]
+num_threads = int(argv[2])
+
+# Load pdbs
+cmd.load(gt_path + "/3ofa.pdb")
+cmd.load(gt_path + "/3ofc.pdb")
+cmd.alter("/3ofc//A", "chain='SA'")
+
+# Create ribosome complex
+cmd.create("mycomp", "3ofa 3ofc")
+
+
+with open(gt_path + "/ecoli_16S.sasa", "w") as fout:
+	# Obtain resi
+	stored.residues = []
+	cmd.iterate("mycomp//A//O2'", "stored.residues.append(resi)")
+	fout.write(calc_sasa_parallel(prog, gt_path, stored.residues, num_threads))

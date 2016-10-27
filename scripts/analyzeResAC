@@ -39,12 +39,16 @@ def loadMappability(mappability_file, trans):
     fin.close()
 
 def calcPearson(a, b):
+    if sum(a) == 0.0 or sum(b) == 0.0:
+        return 0.0
     res = scipy.stats.pearsonr(a, b)[0]
     if math.isnan(res):
         res = 0.0
     return res
 
 def calcSpearman(a, b):
+    if sum(a) == 0.0 or sum(b) == 0.0:
+        return 0.0
     res = scipy.stats.spearmanr(a, b)[0]
     if math.isnan(res):
         res = 0.0

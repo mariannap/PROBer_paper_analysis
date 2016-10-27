@@ -14,6 +14,8 @@ def get_ref(wildcards):
 		ref_name = yeast_filt
 	elif name.startswith("icSHAPE"):
 		ref_name = mouse_filt
+	elif name.startswith("ChemModSeq"):
+		ref_name = yeast_rRNAs
 	else:
 		assert False
 
@@ -37,9 +39,9 @@ rule bowtie_alignment_all:
 	input: get_ref, get_data_as_input, Bowtie, Samtools
 	params: bowtie = get_bowtie_params, data = get_data_as_param
 	output:
-		"{path}/{{sample}}.bam".format(path = exp_path)
+		"{path}/{{sample,(structure_seq|mod_seq|pseudo_seq|icSHAPE)\w+}}_all.bam".format(path = exp_path)
 	log:
-		"{path}/{{sample}}.log".format(path = exp_path)
+		"{path}/{{sample}}_all.log".format(path = exp_path)
 	threads: 20
 	shell:
 		"{Bowtie} --norc {params.bowtie} -a -m 200 -p {threads} -S {input[0]} {params.data} 2> {log} | {Samtools} view -S -b -o {output} -"
@@ -48,7 +50,7 @@ rule bowtie_alignment_best_strata:
 	input: get_ref, get_data_as_input, Bowtie, Samtools
 	params: bowtie = get_bowtie_params, data = get_data_as_param
 	output:
-		"{path}/{{sample}}_best_strata.bam".format(path = exp_path)
+		"{path}/{{sample,(structure_seq|mod_seq|pseudo_seq|icSHAPE)\w+}}_best_strata.bam".format(path = exp_path)
 	log:
 		"{path}/{{sample}}_best_strata.log".format(path = exp_path)
 	threads: 20
@@ -59,14 +61,61 @@ rule bowtie_alignment_best:
 	input: get_ref, get_data_as_input, Bowtie, Samtools
 	params: bowtie = get_bowtie_params, data = get_data_as_param
 	output:
-		"{path}/{{sample}}_best.bam".format(path = exp_path)
+		"{path}/{{sample,(structure_seq|mod_seq|pseudo_seq|icSHAPE)\w+}}_best.bam".format(path = exp_path)
 	log:
 		"{path}/{{sample}}_best.log".format(path = exp_path)
 	threads: 20
 	shell:
 		"{Bowtie} --norc {params.bowtie} --best -p {threads} -S {input[0]} {params.data} 2> {log} | {Samtools} view -S -b -o {output} -"
 
-ruleorder: sort_bam_by_name > bowtie_alignment_best > bowtie_alignment_best_strata > bowtie_alignment_all
+
+def get_mate1(wildcards):
+	if wildcards.sample == "ChemModSeq_minus":
+		return ",".join(["{path}/{run}_cleaned_1.fq".format(path = GrannemanLab, run = run) for run in ["SRR1041324", "SRR1041325", "SRR1041326"]])
+	else:
+		return ",".join(["{path}/{run}_cleaned_1.fq".format(path = GrannemanLab, run = run) for run in ["SRR1041327", "SRR1041328", "SRR1041329"]])
+
+def get_mate2(wildcards):
+	if wildcards.sample == "ChemModSeq_minus":
+		return ",".join(["{path}/{run}_cleaned_2.fq".format(path = GrannemanLab, run = run) for run in ["SRR1041324", "SRR1041325", "SRR1041326"]])
+	else:
+		return ",".join(["{path}/{run}_cleaned_2.fq".format(path = GrannemanLab, run = run) for run in ["SRR1041327", "SRR1041328", "SRR1041329"]])
+
+rule bowtie2_alignment_all:
+	input: get_ref, get_data_as_input, Bowtie2, Samtools
+	params: mate1 = get_mate1, mate2 = get_mate2
+	output:
+		"{path}/{{sample,ChemModSeq\w+}}_all.bam".format(path = exp_path)
+	log:
+		"{path}/{{sample}}_all.log".format(path = exp_path)
+	threads: 20
+	shell:
+		"bowtie2 --norc -a -p {threads} -I 1 -X 700 --no-mixed --no-discordant -x {input[0]} -1 {params.mate1} -2 {params.mate2} 2> {log} | {Samtools} view -S -b -o {output} -"
+
+rule bowtie2_alignment_best_strata:
+	input: get_ref, get_data_as_input, Bowtie2, Samtools
+	params: mate1 = get_mate1, mate2 = get_mate2
+	output:
+		"{path}/{{sample,ChemModSeq\w+}}_best_strata.bam".format(path = exp_path)
+	log:
+		"{path}/{{sample}}_best_strata.log".format(path = exp_path)
+	threads: 20
+	shell:
+		"bowtie2 --norc -p {threads} -I 1 -X 700 --no-mixed --no-discordant -x {input[0]} -1 {params.mate1} -2 {params.mate2} 2> {log} | {Samtools} view -S -b -o {output} -"
+
+rule bowtie2_alignment_best:
+	input: get_ref, get_data_as_input, Bowtie2, Samtools
+	params: mate1 = get_mate1, mate2 = get_mate2
+	output:
+		"{path}/{{sample,ChemModSeq\w+}}_best.bam".format(path = exp_path)
+	log:
+		"{path}/{{sample}}_best.log".format(path = exp_path)
+	threads: 20
+	shell:
+		"bowtie2 --norc -k 1 -p {threads} -I 1 -X 700 --no-mixed --no-discordant -x {input[0]} -1 {params.mate1} -2 {params.mate2} 2> {log} | {Samtools} view -S -b -o {output} -"
+
+
+ruleorder: sort_bam_by_name > bowtie_alignment_all
 
 
 def get_PROBer_params(wildcards):
@@ -77,6 +126,8 @@ def get_PROBer_params(wildcards):
 		params = "--primer-length 0 --size-selection-min 23 --size-selection-max 220 --read-length 50"
 	elif wildcards.experiment.startswith("pseudo_seq"):
 		params = "--primer-length 0 --size-selection-min 18 --size-selection-max 130 --read-length 41"
+	elif wildcards.experiment.startswith("ChemModSeq"):
+		params = "--paired-end --size-selection-min 18 --size-selection-max 700"
 	else:
 		assert False
 
@@ -86,7 +137,7 @@ def get_PROBer_params(wildcards):
 rule run_PROBer:
 	input:
 		get_ref,
-		expand("{path}/{{experiment}}_{channel}.bam", path = exp_path, channel = ["plus", "minus"]),
+		expand("{path}/{{experiment}}_{channel}_all.bam", path = exp_path, channel = ["plus", "minus"]),
 		PROBer
 	params: get_PROBer_params
 	output:
@@ -100,7 +151,7 @@ rule run_PROBer:
 rule run_PROBer_icSHAPE:
 	input:
 		mouse_filt,
-		expand("{path}/icSHAPE_{{condition}}.bam", path = exp_path),
+		expand("{path}/icSHAPE_{{condition}}_all.bam", path = exp_path),
 		PROBer
 	params:
 		"{path}/icSHAPE_{{condition}}_PROBer".format(path = exp_path)
@@ -160,7 +211,6 @@ rule calculate_Modseq_score:
 		"{script_path}/calcModseeker {input} {output}"
 
 
-
 def get_icSHAPE_input(wildcards):
 	name = wildcards.experiment
 	input_list = []
@@ -172,10 +222,12 @@ def get_icSHAPE_input(wildcards):
 	else:
 		input_list = expand("{path}/{name}_{channel}_best_strata.bam", path = exp_path, name = name, channel = ["minus", "plus"])
 
-	if name == "structure_seq":
+	if name.startswith("structure_seq"):
 		input_list.append(arabidopsis_filt + ".translist")
 	elif name == "mod_seq" or name == "pseudo_seq":
 		input_list.append(yeast_filt + ".translist")
+	elif name == "ChemModSeq":
+		input_list.append(yeast_rRNAs + ".translist")
 	else:
 		input_list.append(mouse_filt + ".translist")
 
@@ -203,10 +255,10 @@ rule calculate_Pseudoseq_score:
 
 rule sort_bam_by_name: # Sort Bowtie alignments by name to avoid slightly different downstream analysis results
 	input:
-		"{path}/structure_seq_{{channel}}.bam".format(path = exp_path),
+		"{path}/structure_seq_{{channel}}_all.bam".format(path = exp_path),
 		RSEM_calculate
 	output:
-		"{path}/structure_seq_sorted_{{channel,(minus|plus)}}.bam".format(path = exp_path)
+		"{path}/structure_seq_sorted_{{channel,(minus|plus)}}_all.bam".format(path = exp_path)
 	threads: 20
 	shell:
 		"{rsem_path}/samtools-1.3/samtools sort -n -@ {threads} -o {output} {input[0]}"
@@ -216,7 +268,7 @@ rule sort_bam_by_name: # Sort Bowtie alignments by name to avoid slightly differ
 
 rule extract_mapping_statistics:
 	input:
-		"{path}/structure_seq_sorted_{{channel}}.bam".format(path = exp_path),
+		"{path}/structure_seq_sorted_{{channel}}_all.bam".format(path = exp_path),
 		"{path}/rRNA_list.txt".format(path = gt_path)
 	output:
 		"{path}/structure_seq_sorted_{{channel}}.stats.txt".format(path = exp_path)
@@ -266,7 +318,7 @@ rule generate_time_and_memory_table:
 rule run_PROBer_full_model:
 	input:
 		arabidopsis_filt,
-		expand("{path}/structure_seq_sim{{digit}}_{channel}.bam", path = exp_path, channel = ["minus", "plus"]),
+		expand("{path}/structure_seq_sim{{digit}}_{channel}_all.bam", path = exp_path, channel = ["minus", "plus"]),
 		PROBer_full_model
 	params:
 		"{path}/structure_seq_sim{{digit}}_full".format(path = exp_path)
@@ -279,7 +331,7 @@ rule run_PROBer_full_model:
 rule run_RSEM_PROBer_star_pipeline:
 	input:
 		arabidopsis_filt_rsem,
-		expand("{path}/structure_seq_sim{{digit}}_{channel}.bam", path = exp_path, channel = ["minus", "plus"]),
+		expand("{path}/structure_seq_sim{{digit}}_{channel}_all.bam", path = exp_path, channel = ["minus", "plus"]),
 		"{path}/input_list_boxplot.txt".format(path = sim_path),
 		PROBer_single, RSEM_calculate
 	params: "{path}/structure_seq_sim{{digit}}_pipeline".format(path = exp_path)
@@ -296,15 +348,18 @@ rule produce_simulation_results:
 		expand("{path}/ground_truth.{suffix}", path = sim_path, suffix = ["expr", "beta"]),
 		expand("{path}/structure_seq_sim{{digit}}_{program}.beta", path = exp_path, program = ["PROBer", "full", "pipeline"]),
 		expand("{path}/structure_seq_sim{{digit}}_{method}.scores", path = exp_path,
-			method = ["StructureFold", "Modseq", "icSHAPE"])
+			method = ["StructureFold", "Modseeker", "icSHAPE"])
 	params: "{path}/structure_seq_sim{{digit}}".format(path = exp_path)
 	output:
-		expand("{path}/structure_seq_sim{{digit,\d}}_{name}_melt.txt",
-			path = exp_path, name = ["vs_full", "vs_pipeline", "main"])
+		expand("{path}/structure_seq_sim{{digit,\d}}_{name}_{method}_melt.txt",
+			path = exp_path, name = ["vs_full", "vs_pipeline", "main"], method = ["pearson", "spearman"])
 	shell:
-		"{script_path}/analyzeResAC {params}_vs_full plot pearson 36 {input[0]}.transcripts.fa {input[1]} {input[2]} {input[3]} {input[4]} {input[5]} && "
-		"{script_path}/analyzeResAC {params}_vs_pipeline plot pearson 36 {input[0]}.transcripts.fa {input[1]} {input[2]} {input[3]} {input[4]} {input[6]} && "
-		"{script_path}/analyzeResAC {params}_main plot pearson 36 {input[0]}.transcripts.fa {input[1]} {input[2]} {input[3]} {input[4]} {input[7]} {input[8]} {input[9]}"
+		"{script_path}/analyzeResAC {params}_vs_full_pearson plot pearson 36 {input[0]}.transcripts.fa {input[1]} {input[2]} {input[3]} {input[4]} {input[5]} && "
+		"{script_path}/analyzeResAC {params}_vs_pipeline_pearson plot pearson 36 {input[0]}.transcripts.fa {input[1]} {input[2]} {input[3]} {input[4]} {input[6]} && "
+		"{script_path}/analyzeResAC {params}_main_pearson plot pearson 36 {input[0]}.transcripts.fa {input[1]} {input[2]} {input[3]} {input[4]} {input[7]} {input[8]} {input[9]} && "
+		"{script_path}/analyzeResAC {params}_vs_full_spearman plot spearman 36 {input[0]}.transcripts.fa {input[1]} {input[2]} {input[3]} {input[4]} {input[5]} && "
+		"{script_path}/analyzeResAC {params}_vs_pipeline_spearman plot spearman 36 {input[0]}.transcripts.fa {input[1]} {input[2]} {input[3]} {input[4]} {input[6]} && "
+		"{script_path}/analyzeResAC {params}_main_spearman plot spearman 36 {input[0]}.transcripts.fa {input[1]} {input[2]} {input[3]} {input[4]} {input[7]} {input[8]} {input[9]}"
 
 rule produce_boxplot_pdf:
 	input:
@@ -343,7 +398,7 @@ rule produce_digital_spike_in_results:
 rule run_RSEM_for_scatter_plots:
 	input:
 		arabidopsis_filt_rsem,
-		"{path}/structure_seq_simrsem.bam".format(path = exp_path),
+		"{path}/structure_seq_simrsem_all.bam".format(path = exp_path),
 		RSEM_calculate
 	params: "{path}/structure_seq_simrsem_RSEM".format(path = exp_path)
 	output: 
@@ -375,7 +430,17 @@ rule generate_mod_seq_PR_ROC_sasa:
 	shell:
 		"{script_path}/plot_PR_ROC_sasa {gt_path} 36,37 49 {exp_path}/mod_seq {result_path}/mod_seq"
 
-## ROC curves for a variaty of data sets
+# mate length is 49 nt
+rule generate_ChemModSeq_PR_ROC_sasa:
+	input:
+		expand("{path}/yeast_{rRNA}.{suffix}", path = gt_path, rRNA = ["18S", "25S"], suffix = ["structure", "isac", "sasa"]),
+		expand("{path}/ChemModSeq_{method_suffix}", path = exp_path, method_suffix = ["PROBer.beta", "StructureFold.scores", "Modseeker.scores", "icSHAPE.scores"])
+	output:
+		expand("{path}/ChemModSeq_{type}_{rRNA}.pdf", path = result_path, type = ["pr", "roc"], rRNA = ["18S", "25S"])
+	shell:
+		"{script_path}/plot_PR_ROC_sasa {gt_path} 1,2 48 {exp_path}/ChemModSeq {result_path}/ChemModSeq"
+
+## ROC curves for a variety of data sets
 
 ### structure-seq data
 # rule generate_structure_seq_ROC_plots:

@@ -18,14 +18,14 @@ data_long = melt(data, id.vars = vars[1:5], measure.vars = vars[6:m], variable.n
 data_long[,"method"] = factor(data_long[,"method"])
 data_long[,"Range"] = factor(3 - data_long[,"Range"])
 
-
+ylab = ifelse(grepl("pearson", input_data), "Pearson's correlation coefficient", "Spearman's rank correlation coefficient")
 
 intervals = expression(paste("[", 50, ", ", 100, "]"), paste("(", 10^2, ", ", 10^3, "]"), paste("(", 10^3, ", ", 10^4, "]"), paste("(", 10^4, ", ", 10^6, "]"))
 
-if (grepl("main", argv[1])) {
+if (grepl("main", input_data)) {
 	cols = c("red", "dodgerblue", "green2", "yellow2")
 	boxcols = rep(cols, 4)
-	methods = c("PROBer", "StructureFold", "Mod-seq", "icSHAPE")
+	methods = c("PROBer", "StructureFold", "Mod-seeker", "icSHAPE")
 	
 	pdf(output_file, width = 10, height = 6)
 	par(mar = c(5, 5, 0, 0) + 0.1)
@@ -33,9 +33,9 @@ if (grepl("main", argv[1])) {
 	legend("topright", fill = cols, legend = methods)
 	mtext(intervals, side = 1, line = 1.5, at = c(2.5, 8.5, 14.5, 20.5), cex = 1.2)
 	mtext("Transcripts per million range", side = 1, line = 3.5, cex = 1.5)
-	mtext("Pearson correlation coefficient", side = 2, line = 3, cex = 1.5)
+	mtext(ylab, side = 2, line = 3, cex = 1.5)
 	dev.off()		
-} else if (grepl("vs_full", argv[1])) {
+} else if (grepl("vs_full", input_data)) {
 	cols = c("red", "cyan")
 	boxcols = rep(cols, 4)
 	methods = c("PROBer", "Full model")
@@ -46,10 +46,10 @@ if (grepl("main", argv[1])) {
 	legend("bottomright", fill = cols, legend = methods)
 	mtext(intervals, side = 1, line = 1.5, at = c(1.5, 5.5, 9.5, 13.5), cex = 1.2)
 	mtext("Transcripts per million range", side = 1, line = 3.5, cex = 1.5)
-	mtext("Pearson correlation coefficient", side = 2, line = 3, cex = 1.5)
+	mtext(ylab, side = 2, line = 3, cex = 1.5)
 	dev.off()				
 } else {
-	stopifnot(grepl("vs_pipeline", argv[1]))
+	stopifnot(grepl("vs_pipeline", input_data))
 
 	cols = c("red", "green")
 	boxcols = rep(cols, 4)
@@ -61,6 +61,6 @@ if (grepl("main", argv[1])) {
 	legend("bottomright", fill = cols, legend = methods)
 	mtext(intervals, side = 1, line = 1.5, at = c(1.5, 5.5, 9.5, 13.5), cex = 1.2)
 	mtext("Transcripts per million range", side = 1, line = 3.5, cex = 1.5)
-	mtext("Pearson correlation coefficient", side = 2, line = 3, cex = 1.5)
+	mtext(ylab, side = 2, line = 3, cex = 1.5)
 	dev.off()	
 }

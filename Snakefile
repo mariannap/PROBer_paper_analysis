@@ -38,6 +38,7 @@ arabidopsis_filt = "{path}/arabidopsis_filt".format(path = ref_arabidopsis)
 arabidopsis_filt_rsem = arabidopsis_filt + "_rsem"
 arabidopsis_spike = "{path}/arabidopsis_spike".format(path = ref_arabidopsis)
 yeast_filt = "{path}/yeast_filt".format(path = ref_yeast)
+yeast_rRNAs = "{path}/yeast_rRNAs".format(path = ref_yeast)
 mouse_filt = "{path}/mouse_filt".format(path = ref_mouse)
 human_ref = "{path}/human_ref".format(path = ref_human)
 
@@ -58,6 +59,8 @@ sample_name_to_data["icSHAPE_invitro"] = ["{path}/SRR1534955_cleaned.fq".format(
 sample_name_to_data["icSHAPE_invivo"] = ["{path}/SRR1534957_cleaned.fq".format(path = ChangLab)]
 sample_name_to_data["pseudo_seq_minus"] = expand("{path}/{run}_trimmed.fq", path = GilbertLab, run = ["SRR1327186", "SRR1327187"])
 sample_name_to_data["pseudo_seq_plus"] = expand("{path}/{run}_trimmed.fq", path = GilbertLab, run = ["SRR1327188", "SRR1327189"])
+sample_name_to_data["ChemModSeq_minus"] = expand("{path}/{run}_cleaned_{mate}.fq", path = GrannemanLab, run = ["SRR1041324", "SRR1041325", "SRR1041326"], mate = ["1", "2"])
+sample_name_to_data["ChemModSeq_plus"] = expand("{path}/{run}_cleaned_{mate}.fq", path = GrannemanLab, run = ["SRR1041327", "SRR1041328", "SRR1041329"], mate = ["1", "2"])
 
 ### exp
 exp_path = "exp"
@@ -68,15 +71,16 @@ sim_path = "simulation"
 ### results
 result_path = "results"
 
-results = expand("{path}/structure_seq_sim{digit}_{name}_boxplot.pdf", path = result_path, digit = ['1', '2'], name = ["vs_full", "vs_pipeline", "main"])
-results.extend(expand("{path}/{name}", path = result_path, name = ["digital_spike_in.txt", "scatters.pdf", "mapping_statistics_table.txt"]))#, "time_and_memory_table.txt"]))
-results.extend(expand("{path}/{name}_seq_roc_{rRNA}.pdf", path = result_path, name = ["structure", "mod"], rRNA = ["18S", "25S"]))
-results.extend(expand("{path}/icSHAPE_{condition}_roc_{rRNA}.pdf", path = result_path, condition = ["invitro", "invivo"], rRNA = ["18S", "12S_Mt"]))
-results.extend(expand("{path}/pseudoU_{type}.pdf", path = result_path, type = ["PR", "ROC"]))
-results.append("{path}/pseudoU_18S.pdf".format(path = result_path))
-results.extend(expand("{path}/{name}.txt", path = result_path, name = ["RBFOX2_iCLIP_table", "iCLIP_mapping_statistics"]))
-#results.extend(expand("{path}/{name}.bedGraph", path = result_path, name = ["SRGAP2B", "SRGAP2D"]))
-results.extend(expand("{path}/{name}.bedGraph", path = result_path, name = "NUP133"))
+results = expand("{path}/structure_seq_sim{digit}_{name}_{method}_boxplot.pdf", path = result_path, digit = ['1', '2'], name = ["vs_full", "vs_pipeline", "main"], method = ["pearson", "spearman"])
+results.extend(expand("{path}/{exp}_{type}_{rRNA}.pdf", path = result_path, exp = ["mod_seq", "ChemModSeq"], type = ["pr", "roc"], rRNA = ["18S", "25S"]))
+# results.extend(expand("{path}/{name}", path = result_path, name = ["digital_spike_in.txt", "scatters.pdf", "mapping_statistics_table.txt"]))#, "time_and_memory_table.txt"]))
+# results.extend(expand("{path}/{name}_seq_roc_{rRNA}.pdf", path = result_path, name = ["structure", "mod"], rRNA = ["18S", "25S"]))
+# results.extend(expand("{path}/icSHAPE_{condition}_roc_{rRNA}.pdf", path = result_path, condition = ["invitro", "invivo"], rRNA = ["18S", "12S_Mt"]))
+# results.extend(expand("{path}/pseudoU_{type}.pdf", path = result_path, type = ["PR", "ROC"]))
+# results.append("{path}/pseudoU_18S.pdf".format(path = result_path))
+# results.extend(expand("{path}/{name}.txt", path = result_path, name = ["RBFOX2_iCLIP_table", "iCLIP_mapping_statistics"]))
+# #results.extend(expand("{path}/{name}.bedGraph", path = result_path, name = ["SRGAP2B", "SRGAP2D"]))
+# results.extend(expand("{path}/{name}.bedGraph", path = result_path, name = "NUP133"))
 
 ## Import Snakemake modules
 
@@ -89,11 +93,11 @@ include: "exp/Snakefile"
 include: "simulation/Snakefile"
 
 rule all:
-	input: 
-		expand("{path}/{run}_cleaned_{mate}.fq", path = GrannemanLab, run = ["SRR1041324", "SRR1041325", "SRR1041326", "SRR1041327", "SRR1041328", "SRR1041329"], mate = ["1", "2"])
+	input: results
 
-	#expand("{path}/mod_seq_{type}_{rRNA}.pdf", path = result_path, type = ["pr", "roc"], rRNA = ["18S", "25S"])
+		#expand("{path}/{run}_cleaned_{mate}.fq", path = GrannemanLab, run = ["SRR1041324", "SRR1041325", "SRR1041326", "SRR1041327", "SRR1041328", "SRR1041329"], mate = ["1", "2"])
 
+	
 
 	#"{path}/pseudoU_PR.pdf".format(path = result_path)
 	
