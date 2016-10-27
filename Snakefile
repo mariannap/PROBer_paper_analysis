@@ -22,6 +22,9 @@ RSEM_prepare, RSEM_simulate, RSEM_calculate = expand("{path}/{cmd}", path = rsem
 PROBer, PROBer_single = expand("{path}/PROBer-0.2.0/build/src/{cmd}", path = tool_path, cmd = ["PROBer", "PROBer-single-batch-estimate"])
 PROBer_full_model = "{path}/PROBer_full_model/build/src/PROBer".format(path = tool_path)
 
+Fold, scorer = expand("{path}/RNAstructure/exe/{cmd}", path = tool_path, cmd = ["Fold", "scorer"])
+RNAstructure_data_path = "{path}/RNAstructure/data_tables".format(path = tool_path)
+
 ### ground truth
 gt_path = "ground_truth"
 # spike_ins = ["RNaseP_WT", "pT181_long", "pT181_short"]

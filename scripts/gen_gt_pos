@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+
+if len(argv) != 5:
+	print("Usage: gen_gt_pos gt.structure gt.isac gt.sasa output")
+	exit(-1)
+
+stru = []
+isac = []
+sasa = []
+
+with open(argv[1]) as fin:
+	stru = [int(x) for x in fin.readline().strip().split()]
+
+with open(argv[2]) as fin:
+	isac = [int(x) for x in fin.readline().strip().split()]
+
+n = len(stru)
+sasa = [-1.0] * n
+with open(argv[3]) as fin:
+	for line in fin:
+		fields = line.strip().split()
+		sasa[int(fields[0]) - 1] = float(fields[2])
+
+out = ["1" if (isac[i] == 1 and (stru[i] == 0 or (stru[i] == 1 and sasa[i] > 2.0))) else "0" for i in range(n)]
+with open(argv[4], "w") as fout:
+	fout.write(" ".join(out) + "\n")

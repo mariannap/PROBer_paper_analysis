@@ -1,0 +1,75 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+import numpy
+
+if len(argv) != 6:
+	print("Usage: score2shape input.[beta/score/icSHAPE] output.shape tid(1-based)|rRNA_name exclude_bp gt_pos.txt")
+	exit(-1)
+
+# Implementation of the normalization procedure in Sloma and Mathews paper
+def normalize(orig_data):
+	data = sorted(orig_data, reverse = True)
+	s = len(data)
+
+	# step 1, find candidate outliers
+	Qu = numpy.percentile(data, 75)
+	Ql = numpy.percentile(data, 25)
+	threshold = Qu + 1.5 * (Qu - Ql)
+	n_outlier = sum([1 if x > threshold else 0 for x in data])
+	# step 2, remove outliers; no more than 10% if length > 100, no more than 5% otherwise
+	n_outlier = min(n_outlier, int(float(s) * 0.1) if s > 100 else int(float(s) * 0.05))
+	# step 3, normalize data
+	R_max = numpy.mean(data[n_outlier: n_outlier + int(float(s - n_outlier) * 0.1)])
+
+	print("R_max = {:.3f}".format(R_max))
+
+	# return normalized data
+	return [x / R_max for x in orig_data]
+
+
+def loadRawReactivity(inpF, tid, posv):
+	suf = inpF[inpF.rindex('.') + 1:]
+	data = []
+	
+	if suf != "icSHAPE":
+		tid = int(tid)
+		with open(inpF) as fin:
+			for i in range(tid if suf == "beta" else tid - 1):
+				fin.readline()
+			start = 2 if suf == "beta" else 0
+			values = fin.readline().strip().split()[start:]
+			data = [float(values[x]) for x in posv]
+	else:
+		with open(inpF) as fin:
+			for line in fin:
+				fields = line.strip().split('\t')
+				if fields[0] == tid:
+					break
+		assert fields[0] == tid
+		values = fields[3:]
+		posv = [pos for pos in posv if values[pos] != "NULL"]
+		data = [float(values[x]) for x in posv]
+
+	return data, posv
+
+
+validPos = []
+with open(argv[5]) as fin:
+	validPos = [int(x) for x in fin.readline().strip().split()]
+
+totlen = len(validPos)
+exclude_bp = int(argv[4])
+posv = [i for i in range(totlen - exclude_bp) if validPos[i] == 1]
+
+data, posv = loadRawReactivity(argv[1], argv[3], posv)
+
+data = normalize(data)
+
+out = ["-999"] * totlen
+for i, pos in enumerate(posv):
+	out[pos] = str(float("{:.3f}".format(data[i])))
+
+with open(argv[2], "w") as fout:
+	for i, value in enumerate(out):
+		fout.write("{0}\t{1}\n".format(i + 1, value))

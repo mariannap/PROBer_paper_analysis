@@ -440,6 +440,69 @@ rule generate_ChemModSeq_PR_ROC_sasa:
 	shell:
 		"{script_path}/plot_PR_ROC_sasa {gt_path} 1,2 48 {exp_path}/ChemModSeq {result_path}/ChemModSeq"
 
+## Structure prediction using RNAstructure for yeast data sets
+
+method2suf_SP = {"PROBer" : "beta", "StructureFold" : "scores", "Modseeker" : "scores", "icSHAPE" : "icSHAPE"}
+
+def get_input_SP(wildcards):
+	return "{path}/{experiment}_{method}.{suffix}".format(path = exp_path, 
+		experiment = wildcards.experiment, method = wildcards.method, suffix = method2suf_SP[wildcards.method])
+
+exp2ebp_SP = {"mod_seq" : "49", "ChemModSeq" : "48"}
+er2tid_SP = {("mod_seq", "18S") : "36", ("mod_seq", "25S") : "37",
+			 ("ChemModSeq", "18S") : "1", ("ChemModSeq", "25S") : "2"}
+er2RNA_SP = {("mod_seq", "18S") : "RDN18-1", ("mod_seq", "25S") : "RDN25-1",
+			 ("ChemModSeq", "18S") : "18S_rRNA", ("ChemModSeq", "25S") : "25S_rRNA"}
+
+def get_params_SP(wildcards):
+	res = ""
+	if wildcards.method != "icSHAPE":
+		res = er2tid_SP[wildcards.experiment, wildcards.rRNA]
+	else:
+		res = er2RNA_SP[wildcards.experiment, wildcards.rRNA]
+	res += " " + exp2ebp_SP[wildcards.experiment]
+
+	return res
+
+rule extractReactivity:
+	input:	
+		get_input_SP,
+		"{path}/yeast_{{rRNA}}.valid".format(path = gt_path)
+	params: get_params_SP
+	output: 
+		"{path}/{{experiment}}_{{rRNA,(18S|25S)}}_{{method,(PROBer|StructureFold|Modseeker|icSHAPE)}}.shape".format(path = exp_path)
+	shell:
+		"{script_path}/score2shape {input[0]} {output} {params} {input[1]}"
+
+rule runRNAstructure:
+	input:
+		"{path}/yeast_{{rRNA}}.fa".format(path = gt_path),
+		"{path}/{{experiment}}_{{rRNA}}_{{method}}.shape".format(path = exp_path),
+		Fold
+	output: 
+		"{path}/{{experiment}}_{{rRNA,(18S|25S)}}_{{method,(PROBer|StructureFold|Modseeker|icSHAPE)}}.ct"
+	shell:
+		"export DATAPATH={RNAstructure_data_path} && {Fold} {input[0]} {output} -sh {input[1]}"
+
+rule runRNAstructure_baseline:
+	input:
+		"{path}/yeast_{{rRNA}}.fa".format(path = gt_path),
+		Fold
+	output: 
+		"{path}/yeast_{{rRNA,(18S|25S)}}_baseline.ct".format(path = exp_path)
+	shell:
+		"export DATAPATH={RNAstructure_data_path} && {Fold} {input[0]} {output}"
+
+rule evaluate_structure:
+	input: 
+		"{path}/{{experiment}}_{{rRNA}}_{{method}}.ct".format(path = exp_path),
+		"{path}/yeast_{{rRNA}}.ct".format(path = gt_path)
+	output:
+		"{path}/{{experiment}}_{{rRNA,(18S|25S)}}_{{method,(PROBer|StructureFold|Modseeker|icSHAPE|baseline)}}.eval".format(path = exp_path)
+	shell:
+		"{scorer} {input} {output}"
+
+
 ## ROC curves for a variety of data sets
 
 ### structure-seq data

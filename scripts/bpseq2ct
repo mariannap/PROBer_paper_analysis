@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+
+if len(argv) != 3:
+	print("Usage: bpseq2ct input.bpseq output.ct")
+	exit(-1)
+
+with open(argv[1]) as fin, open(argv[2], "w") as fout:
+	for i in range(4):
+		next(fin)
+	nid = 0
+	outputs = []
+	for line in fin:
+		nid += 1
+		fields = line.strip().split()
+		offset = int(fields[0]) - nid
+		paired = max(int(fields[2]) - offset, 0)
+		outputs.append("{0}\t{1}\t{2}\t{3}\t{4}\t{0}\n".format(nid, fields[1], nid - 1, nid + 1, paired))
+	
+	fout.write("{0}\t{1}\n".format(len(outputs), argv[1][argv[1].rfind('/') + 1 : argv[1].index('.')]))
+	fout.write("".join(outputs))
+

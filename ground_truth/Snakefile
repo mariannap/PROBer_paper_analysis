@@ -102,6 +102,17 @@ rule generate_mouse_rRNAs_fa:
 		"cat {input} > {output}"
 
 
+rule generate_ct_file_from_bpseq:
+	input: "{path}/{{name}}.bpseq".format(path = gt_path)
+	output: "{path}/{{name}}.ct".format(path = gt_path)
+	shell:
+		"{script_path}/bpseq2ct {input} {output}"
+
+rule calc_yeast_valid:
+	input:	expand("{path}/{{name}}.{suffix}", path = gt_path, suffix = ["structure", "isac", "sasa"])
+	output: "{path}/{{name}}.valid".format(path = gt_path)
+	shell:
+		"{script_path}/gen_gt_pos {input} {output}"
 
 rule unzip_SHAPE_MaP:
 	input:

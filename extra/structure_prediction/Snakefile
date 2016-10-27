@@ -38,34 +38,37 @@ rule calc_yeast_valid:
 		"scripts/gen_gt_pos {input} {output}"
 
 
-exp2org = {"structure_seq" : "arabidopsis", "mod_seq" : "yeast", "icSHAPE_invivo" : "mouse", "icSHAPE_invitro" : "mouse", "ChemModSeq" : "yeast"}
+method2suf = {"PROBer" : "beta", "StructureFold" : "scores", "Modseeker" : "scores", "icSHAPE" : "icSHAPE"}
 
 def get_input(wildcards):
 	return "/home/bli/PROBer_paper_analysis/exp/{experiment}_{method}.{suffix}".format(
-		experiment = wildcards.experiment, method = wildcards.method, suffix = "beta" if wildcards.method == "PROBer" else "scores")
+		experiment = wildcards.experiment, method = wildcards.method, suffix = method2suf[wildcards.method])
 
-er2params = {("mod_seq", "18S") : "36 1751 1800", ("mod_seq", "25S") : "37 3347 3396",
-			 ("ChemModSeq", "18S") : "1 1752 1800", ("ChemModSeq", "25S") : "2 3348 3396"}
+exp2ebp = {"mod_seq" : "49", "ChemModSeq" : "48"}
+er2tid = {("mod_seq", "18S") : "36", ("mod_seq", "25S") : "37",
+			 ("ChemModSeq", "18S") : "1", ("ChemModSeq", "25S") : "2"}
+er2RNA = {("mod_seq", "18S") : "RDN18-1", ("mod_seq", "25S") : "RDN25-1",
+			 ("ChemModSeq", "18S") : "18S_rRNA", ("ChemModSeq", "25S") : "25S_rRNA"}
+
 
 def get_params(wildcards):
-	return er2params[(wildcards.experiment, wildcards.rRNA)]
+	res = ""
+	if wildcards.method != "icSHAPE":
+		res = er2tid[wildcards.experiment, wildcards.rRNA]
+	else:
+		res = er2RNA[wildcards.experiment, wildcards.rRNA]
+	res += " " + exp2ebp[wildcards.experiment]
+
+	return res
 
 rule extractReactivity:
 	input:	get_input, exp_path + "/yeast_{rRNA}_valid.txt"
 	params: get_params
-	output: "/home/bli/PROBer_paper_analysis/extra/structure_prediction/shape/{experiment}_{rRNA,(18S|25S)}_{method,(PROBer|StructureFold|Modseeker)}.shape"
+	output: "/home/bli/PROBer_paper_analysis/extra/structure_prediction/shape/{experiment}_{rRNA,(18S|25S)}_{method,(PROBer|StructureFold|Modseeker|icSHAPE)}.shape"
 	shell:
-		"scripts/beta2shape {input[0]} {output} {params} {input[1]}"
+		"scripts/score2shape {input[0]} {output} {params} {input[1]}"
 
-rule extractReactivity_icSHAPE:
-	input:
-		"/home/bli/PROBer_paper_analysis/exp/{experiment}_icSHAPE.icSHAPE",	
-		exp_path + "/yeast_{rRNA}_valid.txt"
-	params: get_params
-	output: "/home/bli/PROBer_paper_analysis/extra/structure_prediction/shape/{experiment}_{rRNA,(18S|25S)}_icSHAPE.shape"
-	shell:
-		"scripts/icSHAPE2shape {input[0]} {output} {params} {input[1]}"
-
+exp2org = {"structure_seq" : "arabidopsis", "mod_seq" : "yeast", "icSHAPE_invivo" : "mouse", "icSHAPE_invitro" : "mouse", "ChemModSeq" : "yeast"}
 
 def get_fa(wildcards):
 	return "/home/bli/PROBer_paper_analysis/extra/structure_prediction/ct_sequence_file/{organism}_{rRNA}.fa".format(
@@ -84,6 +87,10 @@ rule runRNAstructure_baseline:
 	output: "/home/bli/PROBer_paper_analysis/extra/structure_prediction/exp/{experiment}_{rRNA,(18S|25S|12S_Mt)}_baseline.untrained.ct"
 	shell:
 		"{RNAstructure} {input[0]} {output}"
+
+def get_ct(wildcards):
+	return "{path}/{organism}_{rRNA}.ct".format(path = ct_path,
+			organism = exp2org[wildcards.experiment], rRNA = wildcards.rRNA)
 
 rule evaluate:
 	input: 
@@ -108,9 +115,6 @@ rule evaluate:
 # def get_params(wildcards):
 # 	return er2params[(wildcards.experiment, wildcards.rRNA)]
 
-# def get_ct(wildcards):
-# 	return "{path}/{organism}_{rRNA}.ct".format(path = ct_path,
-# 			organism = exp2org[wildcards.experiment], rRNA = wildcards.rRNA)
 
 # rule trainRNAprob:
 # 	input:

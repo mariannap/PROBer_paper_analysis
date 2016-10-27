@@ -51,3 +51,10 @@ rule build_PROBer:
 	shell:
 		"tar -C {tool_path} -xzf {input} && "
 		"mkdir -p {wildcards.name}/build && cd {wildcards.name}/build && cmake .. && make"
+
+rule build_RNAstructure:
+	input: "{name}Source.tgz"
+	output: touch(expand("{{name}}/exe/{cmd}", cmd = ["Fold", "scorer"]))
+	shell:
+		"tar -C {tool_path} -xzf {input} && "
+		"cd {wildcards.name} && make Fold && make scorer"
