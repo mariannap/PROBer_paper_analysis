@@ -13,7 +13,7 @@ collectTruth = function(name, ground_truth_dir, exclude_bp) {
 	isAC = scan(sprintf("%s/yeast_%s.isac", ground_truth_dir, name), what = 0)
 	
 	# load sasa
-	data = read.table(sprintf("%s/yeast_%s.silvi.sasa", ground_truth_dir, name))
+	data = read.table(sprintf("%s/yeast_%s.sasa", ground_truth_dir, name))
 	sasa = rep(-1.0, length(truth))
 	sasa[data[,1]] = data[,3]
 
@@ -49,13 +49,13 @@ calculatePR = function(id, estList, truthList) {
 	pr.curve(estList[[id]][pos], weights.class0 = truth[pos], curve = T)
 }
 
-plotROC = function(id, output_name, rRNAs, PROBerRocs, StructureFoldRocs, ModseqRocs, icSHAPERocs) {
-	pdf(sprintf("%s_%s_ROC.pdf", output_name, rRNAs[id]))
+plotROC = function(id, output_name, rRNAs, PROBerRocs, StructureFoldRocs, ModseekerRocs, icSHAPERocs) {
+	pdf(sprintf("%s_roc_%s.pdf", output_name, rRNAs[id]))
 
 	par(oma = c(0, 0, 0, 0), mar = c(5, 4, 0, 0) + 0.1)
 	plot(PROBerRocs[[id]], lwd = 1, col = "red", auc.main = F, main = "") #rRNAs[id])
 	if (!is.null(StructureFoldRocs)) plot(StructureFoldRocs[[id]], lwd = 1, col = "blue", add = T)
-	plot(ModseqRocs[[id]], lwd = 1, col = "green", add = T)
+	plot(ModseekerRocs[[id]], lwd = 1, col = "green", add = T)
 	plot(icSHAPERocs[[id]], lwd = 1, col = "orange", add = T)
 
 
@@ -63,7 +63,7 @@ plotROC = function(id, output_name, rRNAs, PROBerRocs, StructureFoldRocs, Modseq
 	if (!is.null(StructureFoldRocs)) {
 		legends = c(legends, as.expression(bquote(paste("StructureFold, AUC = ", .(sprintf("%.2f", StructureFoldRocs[[id]]$auc))))))
 	}
-	legends = c(legends, as.expression(bquote(paste("Mod-seq, AUC = ", .(sprintf("%.2f", ModseqRocs[[id]]$auc))))),
+	legends = c(legends, as.expression(bquote(paste("Mod-seeker, AUC = ", .(sprintf("%.2f", ModseekerRocs[[id]]$auc))))),
 							as.expression(bquote(paste("icSHAPE, AUC = ", .(sprintf("%.2f", icSHAPERocs[[id]]$auc))))))
 
 	colors = "red"
@@ -77,13 +77,13 @@ plotROC = function(id, output_name, rRNAs, PROBerRocs, StructureFoldRocs, Modseq
 	return(NULL)
 }
 
-plotPR = function(id, output_name, rRNAs, PROBerPrs, StructureFoldPrs, ModseqPrs, icSHAPEPrs) {
-	pdf(sprintf("%s_%s_PR.pdf", output_name, rRNAs[id]))
+plotPR = function(id, output_name, rRNAs, PROBerPrs, StructureFoldPrs, ModseekerPrs, icSHAPEPrs) {
+	pdf(sprintf("%s_pr_%s.pdf", output_name, rRNAs[id]))
 
 	par(oma = c(0, 0, 0, 0), mar = c(5, 4, 0, 0) + 0.1)
 	plot(PROBerPrs[[id]], lwd = 1, col = "red", auc.main = F, main = "") #rRNAs[id])
 	if (!is.null(StructureFoldPrs)) plot(StructureFoldPrs[[id]], lwd = 1, col = "blue", add = T)
-	plot(ModseqPrs[[id]], lwd = 1, col = "green", add = T)
+	plot(ModseekerPrs[[id]], lwd = 1, col = "green", add = T)
 	plot(icSHAPEPrs[[id]], lwd = 1, col = "orange", add = T)
 
 
@@ -91,7 +91,7 @@ plotPR = function(id, output_name, rRNAs, PROBerPrs, StructureFoldPrs, ModseqPrs
 	if (!is.null(StructureFoldPrs)) {
 		legends = c(legends, as.expression(bquote(paste("StructureFold, AUC = ", .(sprintf("%.2f", StructureFoldPrs[[id]]$auc.integral))))))
 	}
-	legends = c(legends, as.expression(bquote(paste("Mod-seq, AUC = ", .(sprintf("%.2f", ModseqPrs[[id]]$auc.integral))))),
+	legends = c(legends, as.expression(bquote(paste("Mod-seeker, AUC = ", .(sprintf("%.2f", ModseekerPrs[[id]]$auc.integral))))),
 							as.expression(bquote(paste("icSHAPE, AUC = ", .(sprintf("%.2f", icSHAPEPrs[[id]]$auc.integral))))))
 
 	colors = "red"
@@ -105,7 +105,7 @@ plotPR = function(id, output_name, rRNAs, PROBerPrs, StructureFoldPrs, ModseqPrs
 	return(NULL)
 }
 
-fileList = c(sprintf("%s_PROBer.beta", argv[4]), sprintf("%s_%s.scores", argv[4], c("StructureFold", "Modseq", "icSHAPE")))
+fileList = c(sprintf("%s_PROBer.beta", argv[4]), sprintf("%s_%s.scores", argv[4], c("StructureFold", "Modseeker", "icSHAPE")))
 
 rRNAs = c("18S", "25S")
 rowList = as.numeric(unlist(strsplit(argv[2], split = ",")))
@@ -115,23 +115,23 @@ truthList = lapply(rRNAs, collectTruth, argv[1], as.numeric(argv[3]))
 PROBerList = lapply(rowList, collectPROBer, fileList[1])
 StructureFoldList = NULL
 if (file.exists(fileList[2])) StructureFoldList = lapply(rowList, collectScore, fileList[2])
-ModseqList = lapply(rowList, collectScore, fileList[3])
+ModseekerList = lapply(rowList, collectScore, fileList[3])
 icSHAPEList = lapply(rowList, collectScore, fileList[4])
 
 PROBerRocs = lapply(1:2, calculateROC, PROBerList, truthList)
 StructureFoldRocs = NULL
 if (!is.null(StructureFoldList)) StructureFoldRocs = lapply(1:2, calculateROC, StructureFoldList, truthList)
-ModseqRocs = lapply(1:2, calculateROC, ModseqList, truthList)
+ModseekerRocs = lapply(1:2, calculateROC, ModseekerList, truthList)
 icSHAPERocs = lapply(1:2, calculateROC, icSHAPEList, truthList)
 
 
 PROBerPrs = lapply(1:2, calculatePR, PROBerList, truthList)
 StructureFoldPrs = NULL
 if (!is.null(StructureFoldList)) StructureFoldPrs = lapply(1:2, calculatePR, StructureFoldList, truthList)
-ModseqPrs = lapply(1:2, calculatePR, ModseqList, truthList)
+ModseekerPrs = lapply(1:2, calculatePR, ModseekerList, truthList)
 icSHAPEPrs = lapply(1:2, calculatePR, icSHAPEList, truthList)
 
 cat("ROCs\n")
-null_vec = lapply(1:2, plotROC, argv[5], rRNAs, PROBerRocs, StructureFoldRocs, ModseqRocs, icSHAPERocs)
+null_vec = lapply(1:2, plotROC, argv[5], rRNAs, PROBerRocs, StructureFoldRocs, ModseekerRocs, icSHAPERocs)
 cat("PRs\n")
-null_vec = lapply(1:2, plotPR, argv[5], rRNAs, PROBerPrs, StructureFoldPrs, ModseqPrs, icSHAPEPrs)
+null_vec = lapply(1:2, plotPR, argv[5], rRNAs, PROBerPrs, StructureFoldPrs, ModseekerPrs, icSHAPEPrs)

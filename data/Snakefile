@@ -9,16 +9,12 @@ rule dump_to_FASTQ:
 	output: "{path}/{run,SRR\d+}.fastq"
 	shell: "{fastq_dump} --split-spot -O {wildcards.path} {input[0]}"
 
-rule dump_to_FASTQ_100M:
-	input: 
-		"{path}/{{run}}.sra".format(path = ChangLab), 
-		fastq_dump
-	output: 
-		"{path}/{{run,SRR\d+}}.fastq".format(path = ChangLab)
-	shell: 
-		"{fastq_dump} --split-spot -X 100000000 -O {ChangLab} {input[0]}"
+rule dump_to_FASTQ_PE:
+	input: "{path}/{run}.sra", fastq_dump
+	output: expand("{{path,data/(GrannemanLab)}}/{{run,SRR\d+}}_{mate}.fastq", mate = ["1", "2"])
+	shell: "{fastq_dump} --split-spot --split-3 -O {wildcards.path} {input[0]}"
 
-ruleorder: dump_to_FASTQ_100M > dump_to_FASTQ
+ruleorder: dump_to_FASTQ_PE > dump_to_FASTQ
 
 
 rule remove_adaptor_AssmannLab:
@@ -126,3 +122,54 @@ rule remove_PCR_duplicate_YeoLab:
 		"{path}/{{run}}_cleaned.fq".format(path = YeoLab)
 	shell:
 		"{script_path}/remove_dup {input} 9 {output}"
+
+
+rule download_info_GrannemanLab:
+	output:
+		expand("{path}/{run}.info", path = GrannemanLab, run = ["SRR1041324", "SRR1041325", "SRR1041326", "SRR1041327", "SRR1041328", "SRR1041329"])
+	shell:
+		"wget -O {GrannemanLab}/GrannemanLab_info.zip https://www.dropbox.com/s/3vfio4em3irzern/GrannemanLab_info.zip?dl=0 ; "
+		"unzip -d {GrannemanLab} {GrannemanLab}/GrannemanLab_info.zip"
+
+rule integrate_umi_and_trim_first_nucleotide_GrannemanLab:
+	input:
+		expand("{path}/{{run}}.info", path = GrannemanLab),
+		expand("{path}/{{run}}_{mate}.fastq", path = GrannemanLab, mate = ["1", "2"])
+	output:
+		expand("{path}/{{run}}_umi_{mate}.fastq", path = GrannemanLab, mate = ["1", "2"])
+	shell:
+		"{script_path}/integrate_umi_info_GrannemanLab {input[0]} {GrannemanLab}/{wildcards.run} {GrannemanLab}/{wildcards.run}_umi"
+
+inline_barcodes_GrannemanLab = ["CGTGAT", "ACATCG", "GCCTAA"]
+data2barcodes_GrannemanLab = {
+	"SRR1041324" : inline_barcodes_GrannemanLab[0], 
+	"SRR1041325" : inline_barcodes_GrannemanLab[0],
+	"SRR1041326" : inline_barcodes_GrannemanLab[1],
+	"SRR1041327" : inline_barcodes_GrannemanLab[2],
+	"SRR1041328" : inline_barcodes_GrannemanLab[0], 
+	"SRR1041329" : inline_barcodes_GrannemanLab[2]
+}
+
+def get_adapter_seq_for_mate2_GrannemanLab(wildcards):
+	return 'N' + data2barcodes_GrannemanLab[wildcards.run] + 'N' * 6 + "AGATCGGAAGAGCGTCGTGTAGGG"
+
+rule trim_adapter_GrannemanLab:
+	input:
+		expand("{path}/{{run}}_umi_{mate}.fastq", path = GrannemanLab, mate = ["1", "2"]),
+		Cutadapt
+	params: get_adapter_seq_for_mate2_GrannemanLab
+	output: 
+		expand("{path}/{{run}}_trimmed_{mate}.fq", path = GrannemanLab, mate = ["1", "2"])
+	log: "{path}/{{run}}_trimmed.log".format(path = GrannemanLab)
+	shell:
+		"{Cutadapt} -a AGATCGGAAGAGCACACG -A {params} -m 18 -o {output[0]} -p {output[1]} {input[0]} {input[1]} > {log}"
+
+rule remove_PCR_duplicate_GrannemanLab:
+	input: 
+		expand("{path}/{{run}}_trimmed_{mate}.fq", path = GrannemanLab, mate = ["1", "2"])
+	output: 
+		expand("{path}/{{run}}_cleaned_{mate}.fq", path = GrannemanLab, mate = ["1", "2"])
+	log: 
+		"{path}/{{run}}_cleaned.log".format(path = GrannemanLab)
+	shell:
+		"{script_path}/remove_PCR_dup_PE 25 {input} {output} > {log}"

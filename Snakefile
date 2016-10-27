@@ -10,9 +10,10 @@ script_path = "scripts"
 ### tools
 tool_path = "tools"
 
-fastq_dump, Cutadapt, Samtools, Bowtie = expand("{path}/{program}", path = tool_path, 
-	program = ["sratoolkit.2.6.3-ubuntu64/bin/fastq-dump", "cutadapt-1.10/bin/cutadapt", "samtools-1.3.1/samtools", "bowtie-1.1.2/bowtie"])
+fastq_dump, Cutadapt, Samtools, Bowtie, Bowtie2 = expand("{path}/{program}", path = tool_path, 
+	program = ["sratoolkit.2.6.3-ubuntu64/bin/fastq-dump", "cutadapt-1.10/bin/cutadapt", "samtools-1.3.1/samtools", "bowtie-1.1.2/bowtie", "bowtie2-2.2.9/bowtie2"])
 bowtie_path = tool_path + "/bowtie-1.1.2"
+bowtie2_path = tool_path + "/bowtie2-2.2.9"
 
 rsem_path = tool_path + "/RSEM-1.2.31"
 RSEM_prepare, RSEM_simulate, RSEM_calculate = expand("{path}/{cmd}", path = rsem_path, 
@@ -43,9 +44,9 @@ human_ref = "{path}/human_ref".format(path = ref_human)
 ### data
 data_path = "data"
 
-AssmannLab, McmanusLab, ChangLab, GilbertLab, YeoLab = expand("{path}/{lab}", path = data_path, 
-	lab = ["AssmannLab", "McmanusLab", "ChangLab", "GilbertLab", "YeoLab"])
-makedirs([AssmannLab, McmanusLab, ChangLab, GilbertLab, YeoLab])
+AssmannLab, McmanusLab, ChangLab, GilbertLab, YeoLab, GrannemanLab = expand("{path}/{lab}", path = data_path, 
+	lab = ["AssmannLab", "McmanusLab", "ChangLab", "GilbertLab", "YeoLab", "GrannemanLab"])
+makedirs([AssmannLab, McmanusLab, ChangLab, GilbertLab, YeoLab, GrannemanLab])
 
 sample_name_to_data = {}
 sample_name_to_data["structure_seq_minus"] = expand("{path}/{run}_trimmed.fq", path = AssmannLab, run = ["SRR933551", "SRR933557"])
@@ -88,7 +89,10 @@ include: "exp/Snakefile"
 include: "simulation/Snakefile"
 
 rule all:
-	input: expand("{path}/yeast_{rRNA}.sasa", path = gt_path, rRNA = ["18S", "25S"]), gt_path + "/ecoli_16S.sasa"
+	input: 
+		expand("{path}/{run}_cleaned_{mate}.fq", path = GrannemanLab, run = ["SRR1041324", "SRR1041325", "SRR1041326", "SRR1041327", "SRR1041328", "SRR1041329"], mate = ["1", "2"])
+
+	#expand("{path}/mod_seq_{type}_{rRNA}.pdf", path = result_path, type = ["pr", "roc"], rRNA = ["18S", "25S"])
 
 
 	#"{path}/pseudoU_PR.pdf".format(path = result_path)

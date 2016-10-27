@@ -31,6 +31,13 @@ rule build_bowtie:
 		"unzip -d {tool_path} {input} && "
 		"cd {wildcards.name} && make"
 
+rule build_bowtie2:
+	input: "{name}-source.zip"
+	output: touch("{name}/bowtie2")
+	shell:
+		"unzip -d {tool_path} {input} && "
+		"cd {wildcards.name} && make"
+
 rule build_rsem:
 	input: "{name}.tar.gz"
 	output: touch(expand("{{name}}/{cmd}", cmd = ["rsem-prepare-reference", "rsem-simulate-reads", "rsem-calculate-expression"]))

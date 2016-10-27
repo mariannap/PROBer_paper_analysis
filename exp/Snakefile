@@ -125,21 +125,17 @@ def get_score_input(wildcards):
 
 	input_list = expand("{path}/{name}_{channel}_{method}.counts", 
 						path = exp_path, name = name, channel = channels, method = wildcards.method)
-	if wildcards.method == "icSHAPE":
-		input_list.append("{path}/{name}_{channel}_icSHAPE.density".format(
-			path = exp_path, name = name, channel = channels[0]))
 
 	return input_list
 
 
-rule extract_count_vector_StructureFold:
+rule extract_count_vector_StructureFold_or_Pseudoseq:
 	input:
-		"{path}/{{sample}}_best_strata.bam".format(path = exp_path),
-		get_ref
+		"{path}/{{sample}}_best_strata.bam".format(path = exp_path)
 	output:
-		"{path}/{{sample}}_StructureFold.counts".format(path = exp_path)
+		"{path}/{{sample}}_{{method,(StructureFold|Pseudoseq)}}.counts".format(path = exp_path)
 	shell:
-		"{script_path}/extractCountVectors {input[0]} {input[1]}.grp {output} all"
+		"{script_path}/extractCountVectors {input} {output} 1 all"
 
 rule calculate_StructureFold_score:
 	input: get_score_input
@@ -148,43 +144,49 @@ rule calculate_StructureFold_score:
 	shell:
 		"{script_path}/calcStructureFold {input} {output}"
 
-rule extract_count_vector_Modseq:
+rule extract_count_vector_Modseeker:
 	input:
 		"{path}/{{sample}}_best.bam".format(path = exp_path)
 	output:
-		"{path}/{{sample}}_Modseq.counts".format(path = exp_path)
+		"{path}/{{sample}}_Modseeker.counts".format(path = exp_path)
 	shell:
-		"{script_path}/extractCountVectors {input} None {output} all"
+		"{script_path}/extractCountVectors {input} {output} 0 all"
 
 rule calculate_Modseq_score:
 	input: get_score_input
 	output:
-		"{path}/{{experiment}}_{{method,Modseq}}.scores".format(path = exp_path)
+		"{path}/{{experiment}}_{{method,Modseeker}}.scores".format(path = exp_path)
 	shell:
-		"{script_path}/calcModseq {input} {output}"
+		"{script_path}/calcModseeker {input} {output}"
 
-rule extract_count_vector_icSHAPE_or_Pseudoseq:
-	input:
-		"{path}/{{sample}}_best_strata.bam".format(path = exp_path)
-	output:
-		"{path}/{{sample}}_{{method,(icSHAPE|Pseudoseq)}}.counts".format(path = exp_path)
-	shell:
-		"{script_path}/extractCountVectors {input} None {output} all"
 
-rule calculate_base_density_icSHAPE:
-	input:
-		"{path}/{{sample}}_best_strata.bam".format(path = exp_path)
-	output:
-		"{path}/{{sample}}_icSHAPE.density".format(path = exp_path)
-	shell:
-		"{script_path}/calcBaseDensity {input} {output} all"
+
+def get_icSHAPE_input(wildcards):
+	name = wildcards.experiment
+	input_list = []
+
+	if name == "icSHAPE_invitro":
+		input_list = expand("{path}/{name}_{channel}_best_strata.bam", path = exp_path, name = "icSHAPE", channel = ["dmso", "invitro"])
+	elif name == "icSHAPE_invivo":
+		input_list = expand("{path}/{name}_{channel}_best_strata.bam", path = exp_path, name = "icSHAPE", channel = ["dmso", "invivo"])
+	else:
+		input_list = expand("{path}/{name}_{channel}_best_strata.bam", path = exp_path, name = name, channel = ["minus", "plus"])
+
+	if name == "structure_seq":
+		input_list.append(arabidopsis_filt + ".translist")
+	elif name == "mod_seq" or name == "pseudo_seq":
+		input_list.append(yeast_filt + ".translist")
+	else:
+		input_list.append(mouse_filt + ".translist")
+
+	return input_list
 
 rule calculate_icSHAPE_score:
-	input: get_score_input
+	input: Samtools, get_icSHAPE_input
 	output:
-		"{path}/{{experiment}}_{{method,icSHAPE}}.scores".format(path = exp_path)
+		"{path}/{{experiment}}_icSHAPE.scores".format(path = exp_path)
 	shell:
-		"{script_path}/calc_icSHAPE {input} {output}"
+		"{script_path}/run_icSHAPE {input} {exp_path}/{wildcards.experiment}_icSHAPE"
 
 rule calculate_Pseudoseq_score:
 	input: get_score_input
@@ -361,40 +363,52 @@ rule generate_expression_scatter_plots:
 	shell:
 		"{script_path}/genExprScatterPlots {input} {output}"
 
+
+## PR, ROC curves for yeast data sets
+
+rule generate_mod_seq_PR_ROC_sasa:
+	input:
+		expand("{path}/yeast_{rRNA}.{suffix}", path = gt_path, rRNA = ["18S", "25S"], suffix = ["structure", "isac", "sasa"]),
+		expand("{path}/mod_seq_{method_suffix}", path = exp_path, method_suffix = ["PROBer.beta", "Modseeker.scores", "icSHAPE.scores"])
+	output:
+		expand("{path}/mod_seq_{type}_{rRNA}.pdf", path = result_path, type = ["pr", "roc"], rRNA = ["18S", "25S"])
+	shell:
+		"{script_path}/plot_PR_ROC_sasa {gt_path} 36,37 49 {exp_path}/mod_seq {result_path}/mod_seq"
+
 ## ROC curves for a variaty of data sets
 
 ### structure-seq data
-rule generate_structure_seq_ROC_plots:
-	input:
-		expand("{path}/arabidopsis_{name}.{suffix}", path = gt_path, name = ["18S", "25S"], suffix = ["structure", "isac"]),
-		expand("{path}/structure_seq_{method_suffix}", path = exp_path,
-			method_suffix = ["sorted_PROBer.beta", "StructureFold.scores", "Modseq.scores", "icSHAPE.scores"])
-	output:
-		expand("{path}/structure_seq_roc_{name}.pdf", path = result_path, name = ["18S", "25S"])
-	shell:
-		"{script_path}/plotROC {gt_path} 36 {exp_path}/structure_seq {result_path}/structure_seq_roc"
+# rule generate_structure_seq_ROC_plots:
+# 	input:
+# 		expand("{path}/arabidopsis_{name}.{suffix}", path = gt_path, name = ["18S", "25S"], suffix = ["structure", "isac"]),
+# 		expand("{path}/structure_seq_{method_suffix}", path = exp_path,
+# 			method_suffix = ["sorted_PROBer.beta", "StructureFold.scores", "Modseq.scores", "icSHAPE.scores"])
+# 	output:
+# 		expand("{path}/structure_seq_roc_{name}.pdf", path = result_path, name = ["18S", "25S"])
+# 	shell:
+# 		"{script_path}/plotROC {gt_path} 36 {exp_path}/structure_seq {result_path}/structure_seq_roc"
 
-### Mod-seq data
-rule generate_mod_seq_ROC_plots:
-	input:
-		expand("{path}/yeast_{name}.{suffix}", path = gt_path, name = ["18S", "25S"], suffix = ["structure", "isac"]),
-		expand("{path}/mod_seq_{method_suffix}", path = exp_path,
-			method_suffix = ["PROBer.beta", "Modseq.scores", "icSHAPE.scores"])
-	output:
-		expand("{path}/mod_seq_roc_{name}.pdf", path = result_path, name = ["18S", "25S"])
-	shell:
-		"{script_path}/plotROC {gt_path} 49 {exp_path}/mod_seq {result_path}/mod_seq_roc"
+# ### Mod-seq data
+# rule generate_mod_seq_ROC_plots:
+# 	input:
+# 		expand("{path}/yeast_{name}.{suffix}", path = gt_path, name = ["18S", "25S"], suffix = ["structure", "isac"]),
+# 		expand("{path}/mod_seq_{method_suffix}", path = exp_path,
+# 			method_suffix = ["PROBer.beta", "Modseq.scores", "icSHAPE.scores"])
+# 	output:
+# 		expand("{path}/mod_seq_roc_{name}.pdf", path = result_path, name = ["18S", "25S"])
+# 	shell:
+# 		"{script_path}/plotROC {gt_path} 49 {exp_path}/mod_seq {result_path}/mod_seq_roc"
 
-### icSHAPE data
-rule generate_icSHAPE_ROC_plots:
-	input:
-		expand("{path}/mouse_{name}.{suffix}", path = gt_path, name = ["18S", "12S_Mt"], suffix = ["structure", "isac"]),
-		expand("{path}/icSHAPE_{{condition}}_{method_suffix}", path = exp_path,
-			method_suffix = ["PROBer.beta", "StructureFold.scores", "Modseq.scores", "icSHAPE.scores"])
-	output:
-		expand("{path}/icSHAPE_{{condition,(invitro|invivo)}}_roc_{name}.pdf", path = result_path, name = ["18S", "12S_Mt"])
-	shell:
-		"{script_path}/plotROC {gt_path} 86 {exp_path}/icSHAPE_{wildcards.condition} {result_path}/icSHAPE_{wildcards.condition}_roc"
+# ### icSHAPE data
+# rule generate_icSHAPE_ROC_plots:
+# 	input:
+# 		expand("{path}/mouse_{name}.{suffix}", path = gt_path, name = ["18S", "12S_Mt"], suffix = ["structure", "isac"]),
+# 		expand("{path}/icSHAPE_{{condition}}_{method_suffix}", path = exp_path,
+# 			method_suffix = ["PROBer.beta", "StructureFold.scores", "Modseq.scores", "icSHAPE.scores"])
+# 	output:
+# 		expand("{path}/icSHAPE_{{condition,(invitro|invivo)}}_roc_{name}.pdf", path = result_path, name = ["18S", "12S_Mt"])
+# 	shell:
+# 		"{script_path}/plotROC {gt_path} 86 {exp_path}/icSHAPE_{wildcards.condition} {result_path}/icSHAPE_{wildcards.condition}_roc"
 
 
 

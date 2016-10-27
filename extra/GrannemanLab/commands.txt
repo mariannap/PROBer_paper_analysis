@@ -1,3 +1,13 @@
+### Oct 26, 2016
+
+@data
+../scripts/condense_info Control_averages_1 SRR1041324.info
+../scripts/condense_info Control_averages_2 SRR1041325.info
+../scripts/condense_info Control_averages_3 SRR1041326.info
+../scripts/condense_info DMS_averages_1 SRR1041327.info
+../scripts/condense_info DMS_averages_2 SRR1041328.info
+../scripts/condense_info DMS_averages_3 SRR1041329.info
+
 ### Oct 17, 2016
 @extra/GrannemanLab/exp
 

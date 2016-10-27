@@ -1,0 +1,140 @@
+#!/usr/bin/env python3
+
+from sys import argv, exit, stderr
+from collections import defaultdict
+
+if len(argv) != 6:
+	print("Usage: remove_PCR_dup_PE snippet_length input_1.fastq input_2.fastq output_1.fastq output_2.fastq")
+	exit(-1)
+
+offset_5 = 5 # 5' offset to avoid low quality bases
+slen = int(argv[1])
+olen = slen + offset_5 # overall len
+error_rate = 0.1 # error rate
+umi_key_len = 5 # last 5 nt of umi is used as key
+
+class ReadType:
+	def __init__(self, umi = "", seqstr = "", rid = -1):
+		self.set(umi, seqstr, rid)
+
+	def set(self, umi, seqstr, rid):
+		self.umi = umi
+		self.seqstr = seqstr
+		self.rid = rid
+		self.count = 1
+
+def extract_snippet(seq):
+	global offset_5, slen, olen
+	if len(seq) <= olen:
+		return (seq[-slen:], seq[:-slen])
+	else:
+		return (seq[offset_5:olen], seq[:offset_5] + seq[olen:])
+
+def hamming(seqstr1, seqstr2):
+	dis = 0.0
+	for c1, c2 in zip(seqstr1, seqstr2):
+		numN = (c1 == 'N') + (c2 == 'N')
+		dis += (0.9375 if numN == 2 else (0.75 if numN == 1 else (1.0 if c1 != c2 else 0.0)))
+	return dis
+
+def push(rec_list, rec):
+	global error_rate, umi_thr
+	threshold = error_rate * len(rec.seqstr)
+
+	for arec in rec_list:
+		hdis_umi = hamming(arec.umi, rec.umi)
+		hdis = hamming(arec.seqstr, rec.seqstr)
+		if hdis_umi <= umi_thr and hdis <= threshold:
+			if hdis_umi < 1e-6 and hdis < 1e-6:
+				arec.count += 1
+			else:
+				arec.count -= 1
+				if arec.count == 0:
+					arec.set(rec.umi, rec.seqstr, rec.rid)
+			return 0
+
+	rec_list.append(ReadType(rec.umi, rec.seqstr, rec.rid))
+	return 1
+
+
+umi_len = -1
+umi_thr = 0.0
+
+ntot = npass = 0
+hash_table = defaultdict(list)
+rec = ReadType()
+with open(argv[2]) as fin1:
+	with open(argv[3]) as fin2:
+		for tag1 in fin1:
+			seq1 = next(fin1).strip()
+			tmp = next(fin1)
+			qual1 = next(fin1)
+
+			tag2 = next(fin2)
+			seq2 = next(fin2).strip()
+			tmp = next(fin2)
+			qual2 = next(fin2)
+
+			if umi_len < 0:
+				umi_len = tag1.find(':', 1) - 1
+				assert umi_len > 0
+				umi_thr = umi_len * error_rate
+
+			umi = tag1[1 : umi_len + 1]
+
+			snippet1, seqstr1 = extract_snippet(seq1)
+			snippet2, seqstr2 = extract_snippet(seq2)
+			hash_key = "{},{},{},{},{}".format(umi[-umi_key_len:], len(seq1), len(seq2), snippet1, snippet2)
+			rec.set(umi[:-umi_key_len], seqstr1 + seqstr2, ntot)
+			npass += push(hash_table[hash_key], rec)
+
+			ntot += 1
+			if ntot % 1000000 == 0:
+				print("FIN {}, npass = {}, pass_rate = {:.2f}%".format(ntot, npass, npass * 100.0 / ntot), file = stderr)
+
+print("npass = {}, ntot = {}, pass_rate = {:.2f}%, dup_rate = {:.2f}%.".format(npass, ntot, npass * 100.0 / ntot, 100.0 - npass * 100.0 / ntot))
+
+rids = []
+for rec_list in hash_table.values():
+	for rec in rec_list:
+		rids.append(rec.rid)
+rids.sort()
+
+rlen = len(rids)
+ntot = nr = 0
+with open(argv[2]) as fin1:
+	with open(argv[3]) as fin2:
+		with open(argv[4], "w") as fout1:
+			with open(argv[5], "w") as fout2:
+				for tag1 in fin1:
+					seq1 = next(fin1)
+					tmp = next(fin1)
+					qual1 = next(fin1)
+
+					tag2 = next(fin2)
+					seq2 = next(fin2)
+					tmp = next(fin2)
+					qual2 = next(fin2)
+
+					assert ntot <= rids[nr]
+					if ntot == rids[nr]:
+						fout1.write(tag1)
+						fout1.write(seq1)
+						fout1.write("+\n") 
+						fout1.write(qual1)
+
+						fout2.write(tag2)
+						fout2.write(seq2)
+						fout2.write("+\n")
+						fout2.write(qual2)
+
+						nr += 1
+						if nr >= rlen:
+							break
+
+					ntot += 1
+					if ntot % 1000000 == 0:
+						print("Processed {} reads.".format(ntot), file = stderr)
+
+assert nr >= rlen
+print("Finished.", file = stderr)
