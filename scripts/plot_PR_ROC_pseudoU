@@ -2,7 +2,7 @@
 
 argv = commandArgs(TRUE)
 if (length(argv) != 4) {
-	cat("Usage: plot_PR_ROC ref.transcripts.fa ground_truth_path experiment_prefix output_name\n")
+	cat("Usage: plot_PR_ROC_pseudoU ref.transcripts.fa ground_truth_path experiment_prefix output_name\n")
 	q(status = 1)
 }
 
@@ -32,7 +32,7 @@ collectTruth = function(id, truth_files, posList) {
 
 truth = unlist(lapply(1:5, collectTruth, truth_files, posList))
 
-files = sprintf("%s_%s", argv[3], c("PROBer.beta", "Pseudoseq.scores", "StructureFold.scores", "Modseq.scores", "icSHAPE.scores"))
+files = sprintf("%s_%s", argv[3], c("PROBer.beta", "Pseudoseq.scores", "StructureFold.scores", "Modseeker.scores", "icSHAPE.scores"))
 
 collectProber = function(id, prober_file, seq_pos, posList) {
 	prober = scan(prober_file, what = "", skip = seq_pos[id], nlines = 1)
@@ -49,27 +49,27 @@ collectScore = function(id, score_file, seq_pos, posList) {
 
 Pseudoseq = unlist(lapply(1:5, collectScore, files[2], seq_pos, posList))
 StructureFold = unlist(lapply(1:5, collectScore, files[3], seq_pos, posList))
-Modseq = unlist(lapply(1:5, collectScore, files[4], seq_pos, posList))
+Modseeker = unlist(lapply(1:5, collectScore, files[4], seq_pos, posList))
 icSHAPE = unlist(lapply(1:5, collectScore, files[5], seq_pos, posList))
 
 pr_PROBer = pr.curve(PROBer, weights.class0 = truth, curve = T)
 pr_Pseudoseq = pr.curve(Pseudoseq, weights.class0 = truth, curve = T)
 pr_StructureFold = pr.curve(StructureFold, weights.class0 = truth, curve = T)
-pr_Modseq = pr.curve(Modseq, weights.class0 = truth, curve = T)
+pr_Modseeker = pr.curve(Modseeker, weights.class0 = truth, curve = T)
 pr_icSHAPE = pr.curve(icSHAPE, weights.class0 = truth, curve = T)
 
-pdf(sprintf("%s_PR.pdf", argv[4]))
+pdf(sprintf("%s_pr.pdf", argv[4]))
 
 plot(pr_PROBer, lwd = 1, col = "red", auc.main = F, main = "")
 plot(pr_Pseudoseq, lwd = 1, col = "blue", add = T)
 plot(pr_StructureFold, lwd = 1, col = "green", add = T)
-plot(pr_Modseq, lwd = 1, col = "orange", add = T)
+plot(pr_Modseeker, lwd = 1, col = "orange", add = T)
 plot(pr_icSHAPE, lwd = 1, col = "purple", add = T)
 
 legends = c(as.expression(bquote(paste("PROBer, AUC = ", .(sprintf("%.2f", pr_PROBer$auc.integral))))), 
 			as.expression(bquote(paste("Pseudo-seq, AUC = ", .(sprintf("%.2f", pr_Pseudoseq$auc.integral))))),
 			as.expression(bquote(paste("StructureFold, AUC = ", .(sprintf("%.2f", pr_StructureFold$auc.integral))))),
-			as.expression(bquote(paste("Mod-seq, AUC = ", .(sprintf("%.2f", pr_Modseq$auc.integral))))),
+			as.expression(bquote(paste("Mod-seeker, AUC = ", .(sprintf("%.2f", pr_Modseeker$auc.integral))))),
 			as.expression(bquote(paste("icSHAPE, AUC = ", .(sprintf("%.2f", pr_icSHAPE$auc.integral))))))
 						
 legend(x = 0.1, y = 0.6, legend=legends, lty=1, col=c("red", "blue", "green", "orange", "purple"))
@@ -80,21 +80,21 @@ dev.off()
 roc_PROBer = roc.curve(PROBer, weights.class0 = truth, curve = T)
 roc_Pseudoseq = roc.curve(Pseudoseq, weights.class0 = truth, curve = T)
 roc_StructureFold = roc.curve(StructureFold, weights.class0 = truth, curve = T)
-roc_Modseq = roc.curve(Modseq, weights.class0 = truth, curve = T)
+roc_Modseeker = roc.curve(Modseeker, weights.class0 = truth, curve = T)
 roc_icSHAPE = roc.curve(icSHAPE, weights.class0 = truth, curve = T)
 
-pdf(sprintf("%s_ROC.pdf", argv[4]))
+pdf(sprintf("%s_roc.pdf", argv[4]))
 
 plot(roc_PROBer, lwd = 1, col = "red", auc.main = F)
 plot(roc_Pseudoseq, lwd = 1, col = "blue", add = T)
 plot(roc_StructureFold, lwd = 1, col = "green", add = T)
-plot(roc_Modseq, lwd = 1, col = "orange", add = T)
+plot(roc_Modseeker, lwd = 1, col = "orange", add = T)
 plot(roc_icSHAPE, lwd = 1, col = "purple", add = T)
 
 legends = c(as.expression(bquote(paste("PROBer, AUC = ", .(sprintf("%.2f", roc_PROBer$auc))))), 
 			as.expression(bquote(paste("Pseudo-seq, AUC = ", .(sprintf("%.2f", roc_Pseudoseq$auc))))),
 			as.expression(bquote(paste("StructureFold, AUC = ", .(sprintf("%.2f", roc_StructureFold$auc))))),
-			as.expression(bquote(paste("Mod-seq, AUC = ", .(sprintf("%.2f", roc_Modseq$auc))))),
+			as.expression(bquote(paste("Mod-seeker, AUC = ", .(sprintf("%.2f", roc_Modseeker$auc))))),
 			as.expression(bquote(paste("icSHAPE, AUC = ", .(sprintf("%.2f", roc_icSHAPE$auc))))))
 
 legend("bottomright", legend=legends, lty=1, col=c("red", "blue", "green", "orange", "purple"))

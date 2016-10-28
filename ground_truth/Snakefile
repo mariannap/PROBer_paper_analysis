@@ -134,6 +134,8 @@ rule process_SHAPE_MaP:
 	shell:
 		"{script_path}/processSHAPEMaP {input} {params.seed} {params.output_name}"
 
+
+
 rule generate_pseudoU_ground_truth:
 	output:
 		expand("{path}/{name}.truth", path = gt_path, name = ["18S", "25S", "5S", "58S", "LSR1"])

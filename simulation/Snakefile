@@ -54,7 +54,6 @@ rule generate_spike_in_ground_truth:
 	output:
 		"{path}/ground_truth_spikes.{{suffix,(beta|gamma)}}".format(path = sim_path)
 	shell:
-		# "{script_path}/insertBetaGamma {input[0]} {output} {input[1]} {input[2]} {input[3]}"
 		"{script_path}/insertBetaGamma {input[0]} {output} {input[1]} {input[2]} {input[3]} {input[4]} {input[5]} {input[6]} {input[7]} {input[8]} {input[9]}"
 
 rule build_spike_in_simulation:

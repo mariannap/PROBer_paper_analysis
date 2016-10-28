@@ -551,17 +551,17 @@ rule generate_pseudoU_PR_ROC_plots:
 		yeast_filt,
 		expand("{path}/{name}.truth", path = gt_path, name = ["18S", "25S", "5S", "58S", "LSR1"]),
 		expand("{path}/pseudo_seq_{method_suffix}", path = exp_path,
-			method_suffix = ["PROBer.beta", "Pseudoseq.scores", "StructureFold.scores", "Modseq.scores", "icSHAPE.scores"])
+			method_suffix = ["PROBer.beta", "Pseudoseq.scores", "StructureFold.scores", "Modseeker.scores", "icSHAPE.scores"])
 	output:
-		expand("{path}/pseudoU_{type}.pdf", path = result_path, type = ["PR", "ROC"])
+		expand("{path}/pseudoU_{type}.pdf", path = result_path, type = ["pr", "roc"])
 	shell:
-		"{script_path}/plot_PR_ROC {input[0]}.transcripts.fa {gt_path} {exp_path}/pseudo_seq {result_path}/pseudoU"
+		"{script_path}/plot_PR_ROC_pseudoU {input[0]}.transcripts.fa {gt_path} {exp_path}/pseudo_seq {result_path}/pseudoU"
 
 rule visualize_18S_for_pseudoU_experiment:
 	input:
 		"{path}/18S.truth".format(path = gt_path),
 		"{path}/pseudo_seq_PROBer.beta".format(path = exp_path),
-		expand("{path}/pseudo_seq_{method}.scores", path = exp_path, method = ["Pseudoseq", "StructureFold", "Modseq", "icSHAPE"])
+		expand("{path}/pseudo_seq_{method}.scores", path = exp_path, method = ["Pseudoseq", "StructureFold", "Modseeker", "icSHAPE"])
 	output:
 		"{path}/pseudoU_18S.pdf".format(path = result_path)
 	shell:
