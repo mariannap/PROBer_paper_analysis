@@ -1,0 +1,81 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+
+if len(argv) != 18:
+	print("Usage: generate_structure_prediction_table output_table.txt *.eval")
+	exit(-1)
+
+def process_file(inpF):
+	global results
+
+	fn = inpF[inpF.rfind('/') + 1 : inpF.index('.')]
+	pos = fn.rindex('_')
+	method = fn[pos + 1 :]
+	fn = fn[: pos]
+	pos = fn.rindex('_')
+	rRNA = fn[pos + 1 :]
+	exp = fn[: pos]
+
+	with open(inpF) as fin:
+		for i in range(3):
+			next(fin)
+		line = next(fin)
+		value = line[line.index('=') + 1 : ].strip()[:-1] + "\\%"
+		if exp != "yeast":
+			results[exp, rRNA, "Sensitivity", method] = value
+		else:
+			assert method == "baseline"
+			results["mod_seq", rRNA, "Sensitivity", method] = value
+			results["ChemModSeq", rRNA, "Sensitivity", method] = value
+		line = next(fin)
+		value = line[line.index('=') + 1 : ].strip()[:-1] + "\\%"
+		if exp != "yeast":
+			results[exp, rRNA, "PPV", method] = value
+		else:
+			assert method == "baseline"
+			results["mod_seq", rRNA, "PPV", method] = value
+			results["ChemModSeq", rRNA, "PPV", method] = value
+		
+
+results = {}
+for inpF in argv[2:]:
+	process_file(inpF)
+for rRNA in ["18S", "25S"]:
+	for metric in ["Sensitivity", "PPV"]:
+		results["mod_seq", rRNA, metric, "StructureFold"] = "NA"
+
+for exp in ["mod_seq", "ChemModSeq"]:
+	for rRNA in ["18S", "25S"]:
+		for metric in ["Sensitivity", "PPV"]:
+			best_method = "PROBer"
+			maxv = float(results[exp, rRNA, metric, "PROBer"][:-2])
+			for method in ["StructureFold", "Modseeker", "icSHAPE", "baseline"]:
+				value = results[exp, rRNA, metric, method]
+				if value != "NA" and float(value[:-2]) > maxv:
+					maxv = float(value[:-2])
+					best_method = method					
+			value = results[exp, rRNA, metric, best_method]
+			results[exp, rRNA, metric, best_method] = "\\textbf{" + value + "}"
+
+method2name = {"PROBer" : "PROBer", "StructureFold" : "StructureFold", "Modseeker" : "Mod-seeker", "icSHAPE" : "icSHAPE", "baseline" : "Baseline"}
+
+with open(argv[1], "w") as fout:
+	fout.write("\\begin{tabular}{l|*{4}c|*{4}c}\n")
+	fout.write("\hline\n")
+	fout.write("\\multirow{3}{*}{Method} & \\multicolumn{4}{c|}{Talkish \\textit{et al.}} & \\multicolumn{4}{c}{Hector \\textit{et al.}} \\\\\n")
+	fout.write("\\cline{2-9}\n")
+	fout.write(" & \\multicolumn{2}{c}{18S} & \\multicolumn{2}{c|}{25S} & \\multicolumn{2}{c}{18S} & \\multicolumn{2}{c}{25S} \\\\\n")
+	fout.write("\\cline{2-9}\n")
+	fout.write(" & {0} & {0} & {0} & {0} \\\\\n".format("Sensitivity & PPV"))
+	fout.write("\\hline\n")
+	for method in ["PROBer", "StructureFold", "Modseeker", "icSHAPE", "baseline"]:
+		outstr = method2name[method] 
+		for exp in ["mod_seq", "ChemModSeq"]:
+			for rRNA in ["18S", "25S"]:
+				for metric in ["Sensitivity", "PPV"]:
+					outstr += " & " + results[exp, rRNA, metric, method]
+		outstr += " \\\\\n"
+		fout.write(outstr)
+	fout.write("\\hline\n")
+	fout.write("\\end{tabular}\n")

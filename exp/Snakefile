@@ -372,25 +372,17 @@ rule produce_boxplot_pdf:
 
 ## digital spike-in results
 
-# rule produce_digital_spike_in_results:
-# 	input:
-# 		"{path}/ground_truth_spikes.beta".format(path = sim_path),
-# 		expand("{path}/structure_seq_spikes_{TPM}_{method_suffix}", path = exp_path, TPM = ["1e2", "1e3", "1e4", "1e5"],
-# 			method_suffix = ["PROBer.beta", "StructureFold.scores", "Modseq.scores", "icSHAPE.scores"])
-# 	output:
-# 		"{path}/digital_spike_in.txt".format(path = result_path)
-# 	shell:
-# 		"{script_path}/analyzeSpikes {input[0]} {exp_path}/structure_seq_spikes 36 {output}"
-
 rule produce_digital_spike_in_results:
 	input:
 		"{path}/ground_truth_spikes.beta".format(path = sim_path),
 		expand("{path}/structure_seq_spikes_{TPM}_{method_suffix}", path = exp_path, TPM = ["1e2", "1e3", "1e4", "1e5"],
-			method_suffix = ["PROBer.beta", "StructureFold.scores", "Modseq.scores", "icSHAPE.scores"])
+			method_suffix = ["PROBer.beta", "StructureFold.scores", "Modseeker.scores", "icSHAPE.scores"])
 	output:
-		"{path}/structure_seq_spikes_melt.txt".format(path = exp_path)
+		expand("{path}/structure_seq_spikes_{method}_melt.txt", path = exp_path, method = ["pearson", "spearman"])
 	shell:
-		"{script_path}/analyzeResSpike {exp_path}/structure_seq_spikes pearson 36 {input[0]} 9"
+		"{script_path}/analyzeResSpike {exp_path}/structure_seq_spikes pearson 36 {input[0]} 9 && "
+		"{script_path}/analyzeResSpike {exp_path}/structure_seq_spikes spearman 36 {input[0]} 9 && "
+
 
 
 ## expression results
@@ -440,6 +432,7 @@ rule generate_ChemModSeq_PR_ROC_sasa:
 	shell:
 		"{script_path}/plot_PR_ROC_sasa {gt_path} 1,2 48 {exp_path}/ChemModSeq {result_path}/ChemModSeq"
 
+
 ## Structure prediction using RNAstructure for yeast data sets
 
 method2suf_SP = {"PROBer" : "beta", "StructureFold" : "scores", "Modseeker" : "scores", "icSHAPE" : "icSHAPE"}
@@ -480,7 +473,7 @@ rule runRNAstructure:
 		"{path}/{{experiment}}_{{rRNA}}_{{method}}.shape".format(path = exp_path),
 		Fold
 	output: 
-		"{path}/{{experiment}}_{{rRNA,(18S|25S)}}_{{method,(PROBer|StructureFold|Modseeker|icSHAPE)}}.ct"
+		"{path}/{{experiment}}_{{rRNA,(18S|25S)}}_{{method,(PROBer|StructureFold|Modseeker|icSHAPE)}}.ct".format(path = exp_path)
 	shell:
 		"export DATAPATH={RNAstructure_data_path} && {Fold} {input[0]} {output} -sh {input[1]}"
 
@@ -502,6 +495,15 @@ rule evaluate_structure:
 	shell:
 		"{scorer} {input} {output}"
 
+rule generate_structure_prediction_result:
+	input:
+		expand("{path}/yeast_{rRNA}_baseline.eval", path = exp_path, rRNA = ["18S", "25S"]),
+		expand("{path}/mod_seq_{rRNA}_{method}.eval", path = exp_path, rRNA = ["18S", "25S"], method = ["PROBer", "Modseeker", "icSHAPE"]),
+		expand("{path}/ChemModSeq_{rRNA}_{method}.eval", path = exp_path, rRNA = ["18S", "25S"], method = ["PROBer", "StructureFold", "Modseeker", "icSHAPE"])
+	output:
+		"{path}/yeast_structure_prediction_table.txt".format(path = result_path)
+	shell:
+		"{script_path}/generate_structure_prediction_table {output} {input}"
 
 ## ROC curves for a variety of data sets
 

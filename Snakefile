@@ -76,6 +76,7 @@ result_path = "results"
 
 results = expand("{path}/structure_seq_sim{digit}_{name}_{method}_boxplot.pdf", path = result_path, digit = ['1', '2'], name = ["vs_full", "vs_pipeline", "main"], method = ["pearson", "spearman"])
 results.extend(expand("{path}/{exp}_{type}_{rRNA}.pdf", path = result_path, exp = ["mod_seq", "ChemModSeq"], type = ["pr", "roc"], rRNA = ["18S", "25S"]))
+results.append("{path}/yeast_structure_prediction_table.txt".format(path = result_path))
 # results.extend(expand("{path}/{name}", path = result_path, name = ["digital_spike_in.txt", "scatters.pdf", "mapping_statistics_table.txt"]))#, "time_and_memory_table.txt"]))
 # results.extend(expand("{path}/{name}_seq_roc_{rRNA}.pdf", path = result_path, name = ["structure", "mod"], rRNA = ["18S", "25S"]))
 # results.extend(expand("{path}/icSHAPE_{condition}_roc_{rRNA}.pdf", path = result_path, condition = ["invitro", "invivo"], rRNA = ["18S", "12S_Mt"]))
