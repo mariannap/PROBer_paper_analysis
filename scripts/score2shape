@@ -22,7 +22,7 @@ def normalize(orig_data):
 	# step 3, normalize data
 	R_max = numpy.mean(data[n_outlier: n_outlier + int(float(s - n_outlier) * 0.1)])
 
-	print("R_max = {:.3f}".format(R_max))
+	# print("R_max = {:.3f}".format(R_max))
 
 	# return normalized data
 	return [x / R_max for x in orig_data]

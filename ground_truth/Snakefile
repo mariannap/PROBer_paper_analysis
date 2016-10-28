@@ -125,7 +125,7 @@ rule unzip_SHAPE_MaP:
 rule process_SHAPE_MaP:
 	input:
 		expand("{path}/{{seqname}}.1m7.map", path = gt_path),
-		expand("{path}/structure_seq_sorted_PROBer.{suffix}", path = exp_path, suffix = ["beta", "gamma"])
+		expand("{path}/structure_seq_sorted_PROBer.gamma", path = exp_path)
 	params:
 		output_name = "{path}/{{seqname}}".format(path = gt_path),
 		seed = "0"

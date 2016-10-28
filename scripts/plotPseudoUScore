@@ -11,7 +11,7 @@ line_no = as.numeric(argv[7])
 PROBer = scan(argv[2], what = "", skip = line_no, nlines = 1)
 PROBer = as.numeric(PROBer[3:length(PROBer)])
 Pseudoseq = scan(argv[3], what = 0.0, skip = line_no - 1, nlines = 1)
-StructureFold = c(scan(argv[4], what = 0.0, skip = line_no - 1, nlines = 1), 0.0) # add 0 for last nucleotide
+StructureFold = scan(argv[4], what = 0.0, skip = line_no - 1, nlines = 1)
 Modseeker = scan(argv[5], what = 0.0, skip = line_no - 1, nlines = 1)
 icSHAPE = scan(argv[6], what = 0.0, skip = line_no - 1, nlines = 1)
 x = 1:length(PROBer)

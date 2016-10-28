@@ -3,16 +3,32 @@
 from sys import argv, exit
 import numpy.random
 
-try:
-    xrange
-except NameError:
-    xrange = range
-
 if len(argv) != 6:
-    print("Usage: processSHAPEdata input.map structure_seq_PROBer.beta structure_seq_PROBer.gamma seed output_name")
+    print("Usage: processSHAPEMaP input.map structure_seq_PROBer.beta structure_seq_PROBer.gamma seed output_name")
     exit(-1)
 
 seqname = argv[5][argv[5].rfind('/') + 1 : ]
+
+# Implementation of the normalization procedure in Sloma and Mathews paper
+def normalize(orig_data):
+    data = sorted(orig_data, reverse = True)
+    s = len(data)
+
+    # step 1, find candidate outliers
+    Qu = numpy.percentile(data, 75)
+    Ql = numpy.percentile(data, 25)
+    threshold = Qu + 1.5 * (Qu - Ql)
+    n_outlier = sum([1 if x > threshold else 0 for x in data])
+    # step 2, remove outliers; no more than 10% if length > 100, no more than 5% otherwise
+    n_outlier = min(n_outlier, int(float(s) * 0.1) if s > 100 else int(float(s) * 0.05))
+    # step 3, normalize data
+    R_max = numpy.mean(data[n_outlier: n_outlier + int(float(s - n_outlier) * 0.1)])
+
+    print("R_max = {:.3f}".format(R_max))
+
+    # return normalized data
+    return [x / R_max for x in orig_data]
+
 
 # Read MaP file
 refseq = ""

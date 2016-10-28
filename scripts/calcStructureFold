@@ -65,7 +65,7 @@ for rsr in RSRs:
 		outvec = [str(float("{0:.3f}".format(min(x / norm_factor, 7.0)))) for x in rsr]
 	else:
 		outvec = ["0.0"] * len(rsr)
-	fout.write(" ".join(outvec) + "\n")
+	fout.write(" ".join(outvec) + " 0.0\n")
 	cnt += 1
 	if cnt % 10000 == 0:
 		print("{} FIN!".format(cnt))
