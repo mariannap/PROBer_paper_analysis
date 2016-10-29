@@ -222,7 +222,9 @@ def get_icSHAPE_input(wildcards):
 	else:
 		input_list = expand("{path}/{name}_{channel}_best_strata.bam", path = exp_path, name = name, channel = ["minus", "plus"])
 
-	if name.startswith("structure_seq"):
+	if name.startswith("structure_seq_spikes"):
+		input_list.append(arabidopsis_spike + ".translist")
+	elif name.startswith("structure_seq"):
 		input_list.append(arabidopsis_filt + ".translist")
 	elif name == "mod_seq" or name == "pseudo_seq":
 		input_list.append(yeast_filt + ".translist")
@@ -351,8 +353,8 @@ rule produce_simulation_results:
 			method = ["StructureFold", "Modseeker", "icSHAPE"])
 	params: "{path}/structure_seq_sim{{digit}}".format(path = exp_path)
 	output:
-		expand("{path}/structure_seq_sim{{digit,\d}}_{name}_{method}_melt.txt",
-			path = exp_path, name = ["vs_full", "vs_pipeline", "main"], method = ["pearson", "spearman"])
+		expand("{path}/structure_seq_sim{{digit,\d}}_{name}_{corr}_melt.txt",
+			path = exp_path, name = ["vs_full", "vs_pipeline", "main"], corr = ["pearson", "spearman"])
 	shell:
 		"{script_path}/analyzeResAC {params}_vs_full_pearson plot pearson 36 {input[0]}.transcripts.fa {input[1]} {input[2]} {input[3]} {input[4]} {input[5]} && "
 		"{script_path}/analyzeResAC {params}_vs_pipeline_pearson plot pearson 36 {input[0]}.transcripts.fa {input[1]} {input[2]} {input[3]} {input[4]} {input[6]} && "
@@ -378,12 +380,18 @@ rule produce_digital_spike_in_results:
 		expand("{path}/structure_seq_spikes_{TPM}_{method_suffix}", path = exp_path, TPM = ["1e2", "1e3", "1e4", "1e5"],
 			method_suffix = ["PROBer.beta", "StructureFold.scores", "Modseeker.scores", "icSHAPE.scores"])
 	output:
-		expand("{path}/structure_seq_spikes_{method}_melt.txt", path = exp_path, method = ["pearson", "spearman"])
+		expand("{path}/structure_seq_spikes_{corr}_melt.txt", path = exp_path, corr = ["pearson", "spearman"])
 	shell:
 		"{script_path}/analyzeResSpike {exp_path}/structure_seq_spikes pearson 36 {input[0]} 9 && "
-		"{script_path}/analyzeResSpike {exp_path}/structure_seq_spikes spearman 36 {input[0]} 9 && "
+		"{script_path}/analyzeResSpike {exp_path}/structure_seq_spikes spearman 36 {input[0]} 9"
 
-
+rule produce_boxplot_pdf_for_spike_in_experiments:
+	input:
+		"{path}/structure_seq_spikes_{{corr}}_melt.txt".format(path = exp_path)
+	output:
+		"{path}/structure_seq_spikes_{{corr,(pearson|spearman)}}_boxplot.pdf".format(path = result_path)
+	shell:
+		"{script_path}/genBoxPlotSpikes {input} {output}"
 
 ## expression results
 
@@ -505,29 +513,29 @@ rule generate_structure_prediction_result:
 	shell:
 		"{script_path}/generate_structure_prediction_table {output} {input}"
 
-## ROC curves for a variety of data sets
+## Calculate AUC values of ROC curves for a variety of data sets
 
 ### structure-seq data
-# rule generate_structure_seq_ROC_plots:
-# 	input:
-# 		expand("{path}/arabidopsis_{name}.{suffix}", path = gt_path, name = ["18S", "25S"], suffix = ["structure", "isac"]),
-# 		expand("{path}/structure_seq_{method_suffix}", path = exp_path,
-# 			method_suffix = ["sorted_PROBer.beta", "StructureFold.scores", "Modseq.scores", "icSHAPE.scores"])
-# 	output:
-# 		expand("{path}/structure_seq_roc_{name}.pdf", path = result_path, name = ["18S", "25S"])
-# 	shell:
-# 		"{script_path}/plotROC {gt_path} 36 {exp_path}/structure_seq {result_path}/structure_seq_roc"
+rule calc_structure_seq_ROC_AUC:
+	input:
+		expand("{path}/arabidopsis_{name}.{suffix}", path = gt_path, name = ["18S", "25S"], suffix = ["structure", "isac"]),
+		expand("{path}/structure_seq_{method_suffix}", path = exp_path,
+			method_suffix = ["sorted_PROBer.beta", "StructureFold.scores", "Modseeker.scores", "icSHAPE.scores"])
+	output:
+		"{path}/structure_seq_roc_auc.txt".format(path = exp_path)
+	shell:
+		"{script_path}/calcROC {gt_path} 36 {exp_path}/structure_seq {output}"
 
-# ### Mod-seq data
-# rule generate_mod_seq_ROC_plots:
-# 	input:
-# 		expand("{path}/yeast_{name}.{suffix}", path = gt_path, name = ["18S", "25S"], suffix = ["structure", "isac"]),
-# 		expand("{path}/mod_seq_{method_suffix}", path = exp_path,
-# 			method_suffix = ["PROBer.beta", "Modseq.scores", "icSHAPE.scores"])
-# 	output:
-# 		expand("{path}/mod_seq_roc_{name}.pdf", path = result_path, name = ["18S", "25S"])
-# 	shell:
-# 		"{script_path}/plotROC {gt_path} 49 {exp_path}/mod_seq {result_path}/mod_seq_roc"
+### Mod-seq data
+rule calc_mod_seq_ROC_AUC:
+	input:
+		expand("{path}/yeast_{name}.{suffix}", path = gt_path, name = ["18S", "25S"], suffix = ["structure", "isac"]),
+		expand("{path}/mod_seq_{method_suffix}", path = exp_path,
+			method_suffix = ["PROBer.beta", "Modseeker.scores", "icSHAPE.scores"])
+	output:
+		"{path}/mod_seq_roc_auc.txt".format(path = exp_path)
+	shell:
+		"{script_path}/calcROC {gt_path} 49 {exp_path}/mod_seq {output}"
 
 # ### icSHAPE data
 # rule generate_icSHAPE_ROC_plots:
@@ -544,7 +552,6 @@ rule generate_structure_prediction_result:
 
 
 # Pseudo-seq experiments for Pseudouridine modification
-
 
 rule generate_pseudoU_PR_ROC_plots:
 	input:
@@ -566,6 +573,9 @@ rule visualize_18S_for_pseudoU_experiment:
 		"{path}/pseudoU_18S.pdf".format(path = result_path)
 	shell:
 		"{script_path}/plotPseudoUScore {input} 36 1,500,1000,1191,1500,1800 \"18S rRNA\" {output}"
+
+
+
 
 # iCLIP
 
@@ -636,20 +646,3 @@ rule calculate_motif_rate:
 		"{path}/RBFOX2_iCLIP_table.txt".format(path = result_path)
 	shell:
 		"{input[0]} 10 10.0 {input[1]} {input[2]} {input[3]} {output}"
-
-rule generate_BedGraph:
-	input:
-		rules.run_PROBer_iCLIP.output
-	output:
-		expand("{path}/{name}.bedGraph", path = result_path, name = "NUP133")
-	shell:
-		"{script_path}/generateBedGraph 1 - 229470242 229470387 {input} {output[0]}"
-
-# rule generate_BedGraph:
-# 	input:
-# 		rules.run_PROBer_iCLIP.output
-# 	output:
-# 		expand("{path}/{name}.bedGraph", path = result_path, name = ["SRGAP2B", "SRGAP2D"])
-# 	shell:
-# 		"{script_path}/generateBedGraph 1 - 145089359 145089504 {input} {output[0]} && "
-# 		"{script_path}/generateBedGraph 1 + 143978486 143978631 {input} {output[1]}"

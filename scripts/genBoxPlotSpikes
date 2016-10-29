@@ -1,0 +1,36 @@
+#!/usr/bin/env Rscript
+
+argv = commandArgs(TRUE)
+if (length(argv) != 2) {
+    cat("Usage: genBoxPlotSpikes input_data.txt output_name.pdf\n")
+    q(status = 1)
+}
+
+input_data = argv[1]
+output_file = argv[2]
+
+data = read.table(input_data, header = TRUE)
+m = dim(data)[2]
+vars = names(data)
+
+library(reshape2)
+data_long = melt(data, id.vars = vars[1:4], measure.vars = vars[5:m], variable.name = "method", value.name = "corr")
+data_long[,"method"] = factor(data_long[,"method"])
+data_long[,"Range"] = factor(3 - data_long[,"Range"])
+
+ylab = ifelse(grepl("pearson", input_data), "Pearson's correlation coefficient", "Spearman's rank correlation coefficient")
+
+TPMs = expression(100, 10^3, 10^4, 10^5)
+
+cols = c("red", "dodgerblue", "green2", "yellow2")
+boxcols = rep(cols, 4)
+methods = c("PROBer", "StructureFold", "Mod-seeker", "icSHAPE")
+
+pdf(output_file, width = 10, height = 6)
+par(mar = c(5, 5, 0, 0) + 0.1)
+boxplot(corr ~ method * Range, data = data_long, col = boxcols, outcol = boxcols, at = c(1:4, 7:10, 13:16, 19:22), names = rep("", 16), pch = 20, boxwex = 0.5, xlim = c(1, 25))
+legend("bottomright", fill = cols, legend = methods)
+mtext(TPMs, side = 1, line = 1.5, at = c(2.5, 8.5, 14.5, 20.5), cex = 1.2)
+mtext("Transcripts per million", side = 1, line = 3.5, cex = 1.5)
+mtext(ylab, side = 2, line = 3, cex = 1.5)
+dev.off()		

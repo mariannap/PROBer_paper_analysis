@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+import re
+
+if len(argv) != 3:
+	print("Usage: sra2encode_eclip input.fastq output.fastq")
+	exit(-1)
+
+rgx = re.compile("^-+")
+rgx2 = re.compile("(?<=length=)\d+")
+
+def repl(mobj, nr):
+	# global nr
+	return str(int(mobj.group()) - nr)
+
+with open(argv[1]) as fin:
+	with open(argv[2], "w") as fout:
+		for tag in fin:
+			seq = next(fin)
+			tmp = next(fin)
+			qual = next(fin)
+
+			mobj = rgx.match(qual)
+			assert mobj
+			nr = len(mobj.group())
+			assert nr == 5
+
+			tag = tag[0] + seq[0:nr] + ":" + rgx2.sub(lambda mobj: repl(mobj, nr), tag[1:])
+
+			fout.write(tag)
+			fout.write(seq[nr:])
+			fout.write("+\n")
+			fout.write(qual[nr:])

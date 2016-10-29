@@ -11,7 +11,7 @@ rule dump_to_FASTQ:
 
 rule dump_to_FASTQ_PE:
 	input: "{path}/{run}.sra", fastq_dump
-	output: expand("{{path,data/(GrannemanLab)}}/{{run,SRR\d+}}_{mate}.fastq", mate = ["1", "2"])
+	output: expand("{{path,data/(GrannemanLab|YeoLab/eCLIP)}}/{{run,SRR\d+}}_{mate}.fastq", mate = ["1", "2"])
 	shell: "{fastq_dump} --split-spot --split-3 -O {wildcards.path} {input[0]}"
 
 ruleorder: dump_to_FASTQ_PE > dump_to_FASTQ
@@ -173,3 +173,163 @@ rule remove_PCR_duplicate_GrannemanLab:
 		"{path}/{{run}}_cleaned.log".format(path = GrannemanLab)
 	shell:
 		"{script_path}/remove_PCR_dup_PE 25 {input} {output} > {log}"
+
+
+
+
+
+
+# eCLIP data
+from itertools import chain
+
+# complement of nucleotides
+complement = {'A' : 'T', 'C' : 'G', 'G' : 'C', 'T' : 'A', 'N' : 'N'}
+
+# RNA adapter sequences
+adapterDict = {"A01" : "ATTGCTT", "B06" : "ACAAGCC", "C01" : "AACTTGT", "D08" : "AGGACCA",
+			   "X1A" : "ATATAGGNNNNN", "X1B" : "AATAGCANNNNN", "X2A" : "AAGTATANNNNN", "X2B" : "AGAAGATNNNNN",
+			   "A03" : "ANNNNGGTCAT", "G07" : "ANNNNACAGGA", "A04" : "ANNNNAAGCTG", "F05" : "ANNNNGTATCC"}
+
+# reverse complements of SP1
+RiL19 = "AGATCGGAAGAGCGTCGTG"
+rcSP1 = "AGATCGGAAGAGCGTCGTGTAG"
+
+# reverse complement of SP2
+rcSP2 = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC"
+
+
+# return the reverse complement of adapter 
+def rc(adapter):
+	res = ""
+	for c in adapter:
+		res = complement[c] + res
+	return res
+
+# generate all k mers
+def generate_k_mer(adapter, k = 15):
+	res = []
+	for i in range(len(adapter) - k + 1):
+		res.append(adapter[i : i + k])
+	return res
+
+# generate k mers prefixed by adapter
+def generate_prefixed_k_mer(name, k = 15):
+	res = []
+	adapter = adapterDict[name]
+	l = len(adapter)
+	for i in range(l):
+		res.append(adapter[i:] + rcSP1[:i + k - l])
+	return res
+
+# generate cutadapt options
+def generate_cutadapt_options(data):
+	res = "-O {0} -a {1}{2}".format(3 + data[0], 'N' * data[0], rcSP2)
+
+	if data[1] is None:
+		# input
+		res += " -g " + rc(RiL19)
+		res += "".join([" -A {0}".format(kmer) for kmer in generate_k_mer(RiL19)])
+	else:
+		# biological replicates
+		res += "".join([" -g CTTCCGATCT{0}".format(rc(adapterDict[name])) for name in data[1:]])
+		res += "".join([" -A {0}".format(kmer) for kmer in chain(generate_prefixed_k_mer(data[1]), generate_prefixed_k_mer(data[2]), generate_k_mer(rcSP1))])
+
+	return res
+
+
+rule sra_to_ENCODE:
+	input: 
+		expand("{path}/{{run}}_{{mate}}.fastq", path = YeoLab_eCLIP)
+	output: 
+		expand("{path}/{{run,SRR\d+}}_s2E_{{mate,(1|2)}}.fastq", path = YeoLab_eCLIP)
+	shell:
+		"{script_path}/sra2encode_eclip {input} {output}"
+
+RBFOX2_description = {"SRR3147598" : (5, "A04", "F05"), "SRR3147599" : (5, "A04", "F05"), "SRR3147600" : (5, None, None)}
+
+def get_RBFOX2_cutadapt_options(wildcards):
+	return generate_cutadapt_options(RBFOX2_description[wildcards.run])
+
+rule cutadapt_RBFOX2:
+	input:
+		expand("{path}/{{run}}_s2E_{mate}.fastq", path = YeoLab_eCLIP, mate = ["1", "2"]),
+		Cutadapt
+	params: get_RBFOX2_cutadapt_options
+	output: 
+		expand("{path}/{{run,SRR3147(598|599|600)}}_trimmed_{mate}.fq", path = YeoLab_eCLIP, mate = ["1", "2"])
+	log: expand("{path}/{{run}}_trimmed.log", path = YeoLab_eCLIP)
+	shell:
+		"{Cutadapt} -f fastq --match-read-wildcards --times 2 -e 0.1 --quality-cutoff 6 -m 18 {params}"
+		" --length-tag 'length=' -o {output[0]} -p {output[1]} {input[0]} {input[1]} > {log}"
+
+# file_name to accession 
+fn2acc_eCLIP = {"TARDBP_K562_YeoLab_rep1_1" : "ENCFF734UEC",
+		  		"TARDBP_K562_YeoLab_rep1_2" : "ENCFF147JYD",
+		  		"TARDBP_K562_YeoLab_input_1" : "ENCFF558NTZ",
+		  		"TARDBP_K562_YeoLab_input_2" : "ENCFF333DTJ",
+		  		"PUM2_K562_YeoLab_rep1_1" : "ENCFF956TOZ",
+		  		"PUM2_K562_YeoLab_rep1_2" : "ENCFF133DNM",
+		  		"PUM2_K562_YeoLab_input_1" : "ENCFF616FCF",
+		  		"PUM2_K562_YeoLab_input_2" : "ENCFF495ZPY",
+		  		"TRA2A_K562_YeoLab_rep1_1" : "ENCFF917GQR",
+		  		"TRA2A_K562_YeoLab_rep1_2" : "ENCFF116QDH",
+		  		"TRA2A_K562_YeoLab_input_1" : "ENCFF057LEI",
+		  		"TRA2A_K562_YeoLab_input_2" : "ENCFF169EQC"}
+
+# data description
+data_description_eCLIP = {("TARDBP", "rep1") : (5, "A01", "B06"), ("TARDBP", "input") : (5, None, None),
+						  ("TRA2A", "rep1") : (5, "A01", "B06"), ("TRA2A", "input") : (5, None, None),
+						  ("PUM2", "rep1") : (10, "A03", "G07"), ("PUM2", "input") : (10, None, None)}
+
+rule download_ENCODE:
+	output: expand("{path}/{{filename,[A-Za-z0-9]+_K562_YeoLab_[^_]+_\d}}.fastq", path = YeoLab_eCLIP)
+	run:
+		acc = fn2acc_eCLIP.get(wildcards.filename, None)
+		assert acc != None
+		url = "https://www.encodeproject.org/files/{acc}/@@download/{acc}.fastq.gz".format(acc = acc)
+		shell("wget -O {YeoLab_eCLIP}/{acc}.fastq.gz {url}")
+		shell("gunzip -c {YeoLab_eCLIP}/{acc}.fastq.gz > {output}")
+
+def get_ENCODE_cutadapt_options(wildcards):
+	return generate_cutadapt_options(data_description_eCLIP[(wildcards.protein, wildcards.rep)])
+
+rule cutadapt_ENCODE:
+	input:
+		expand("{path}/{{protein}}_K562_YeoLab_{{rep}}_{mate}.fastq", path = YeoLab_eCLIP, mate = ["1", "2"]),
+		Cutadapt
+	params: get_ENCODE_cutadapt_options
+	output:
+		expand("{path}/{{protein,[A-Za-z0-9]+}}_K562_YeoLab_{{rep,(input|rep1|rep2)}}_trimmed_{mate}.fq", path = YeoLab_eCLIP, mate = ["1", "2"])
+	log: expand("{path}/{{protein}}_K562_YeoLab_{{rep}}_trimmed.log", path = YeoLab_eCLIP)
+	shell:
+		"{Cutadapt} -f fastq --match-read-wildcards --times 2 -e 0.1 --quality-cutoff 6 -m 18 {params}"
+		" -o {output[0]} -p {output[1]} {input[0]} {input[1]} > {log}"
+
+rule remove_PCR_duplicate:
+	input:
+		expand("{path}/{{run}}_trimmed_{mate}.fq", path = YeoLab_eCLIP, mate = ["1", "2"])
+	output:
+		expand("{path}/{{run}}_cleaned_{mate}.fq", path = YeoLab_eCLIP, mate = ["1", "2"])
+	log: expand("{path}/{{run}}_cleaned.log", path = YeoLab_eCLIP)
+	shell:
+		"{script_path}/remove_PCR_dup_PE 25 {input} {output} > {log}"
+
+
+
+rule build_rep_ref:
+	input: "rep_ref/homo_sapiens_repbase_extra_v2.fa"
+	output: touch("rep_ref/rep_ref")
+	shell:
+		"bowtie2-build {input} rep_ref/rep_ref"
+
+rule remove_reads_mapped_to_rep:
+	input: rules.build_rep_ref.output, expand("{{path}}/{{run}}_cleaned_{mate}.fastq", mate = ["1", "2"])
+	output: expand("{{path}}/{{run}}_reprm_{mate}.fastq", mate = ["1", "2"])
+	log: "{path}/{run}_reprm.log"
+	threads: 10
+	shell:
+		"mkdir -p {wildcards.path}/{wildcards.run}_reprm.tmp && "
+		"bowtie2 -p {threads} -k 1 -I 1 -X 1000 --no-mixed --no-discordant --un-conc {wildcards.path}/{wildcards.run}_reprm.tmp -x {input[0]} -1 {input[1]} -2 {input[2]} -S /dev/null 2> {log} && "
+		"mv {wildcards.path}/{wildcards.run}_reprm.tmp/un-conc-mate.1 {output[0]} && "
+		"mv {wildcards.path}/{wildcards.run}_reprm.tmp/un-conc-mate.2 {output[1]} && "
+		"rm -rf {wildcards.path}/{wildcards.run}_reprm.tmp"

@@ -2,7 +2,7 @@
 
 argv = commandArgs(TRUE)
 if (length(argv) != 4) {
-   cat("Usage: plotROC ground_truth_dir exclude_bp experiment_prefix output_name\n")
+   cat("Usage: calcROC ground_truth_dir exclude_bp experiment_prefix output.txt\n")
    q(status = 1)
 }
 
@@ -30,22 +30,22 @@ collectScore = function(pos, file_name) {
 }
 
 calculateROC = function(id, estList, truthList, posList) {
-  roc.curve(estList[[id]][posList[[id]]], weights.class0 = truthList[[id]][posList[[id]]], curve = T)
+  roc.curve(estList[[id]][posList[[id]]], weights.class0 = truthList[[id]][posList[[id]]])
 }
 
-plotROC = function(id, output_name, rRNAs, PROBerRocs, StructureFoldRocs, ModseqRocs, icSHAPERocs) {
+plotROC = function(id, output_name, rRNAs, PROBerRocs, StructureFoldRocs, ModseekerRocs, icSHAPERocs) {
   pdf(sprintf("%s_%s.pdf", output_name, rRNAs[id]))
 
   par(oma = c(0, 0, 0, 0), mar = c(5, 4, 0, 0) + 0.1)
   plot(PROBerRocs[[id]], lwd = 1, col = "red", auc.main = F, main = "") #rRNAs[id])
   if (!is.null(StructureFoldRocs)) plot(StructureFoldRocs[[id]], lwd = 1, col = "blue", add = T)
-  plot(ModseqRocs[[id]], lwd = 1, col = "green", add = T)
+  plot(ModseekerRocs[[id]], lwd = 1, col = "green", add = T)
   plot(icSHAPERocs[[id]], lwd = 1, col = "orange", add = T)
 
 
   legends = c(as.expression(bquote(paste("PROBer, AUC = ", .(sprintf("%.2f", PROBerRocs[[id]]$auc))))))
   if (!is.null(StructureFoldRocs)) legends = c(legends, as.expression(bquote(paste("StructureFold, AUC = ", .(sprintf("%.2f", StructureFoldRocs[[id]]$auc))))))
-  legends = c(legends, as.expression(bquote(paste("Mod-seq, AUC = ", .(sprintf("%.2f", ModseqRocs[[id]]$auc))))),
+  legends = c(legends, as.expression(bquote(paste("Mod-seq, AUC = ", .(sprintf("%.2f", ModseekerRocs[[id]]$auc))))),
               as.expression(bquote(paste("icSHAPE, AUC = ", .(sprintf("%.2f", icSHAPERocs[[id]]$auc))))))
 
   colors = c("red")
@@ -58,14 +58,14 @@ plotROC = function(id, output_name, rRNAs, PROBerRocs, StructureFoldRocs, Modseq
 
   cat(sprintf("PROBer = %.2f, ", PROBerRocs[[id]]$auc))
   if (!is.null(StructureFoldRocs)) cat(sprintf("StructureFold = %.2f, ", StructureFoldRocs[[id]]$auc))
-  cat(sprintf("Mod-seq = %.2f, icSHAPE = %.2f\n", ModseqRocs[[id]]$auc, icSHAPERocs[[id]]$auc))
+  cat(sprintf("Mod-seq = %.2f, icSHAPE = %.2f\n", ModseekerRocs[[id]]$auc, icSHAPERocs[[id]]$auc))
 
   return(NULL)
 }
 
 
 fileList = c(sprintf("%s_%sPROBer.beta", argv[3], ifelse(grepl("structre_seq$", argv[3]), "sorted_", "")), 
-             sprintf("%s_%s.scores", argv[3], c("StructureFold", "Modseq", "icSHAPE")))
+             sprintf("%s_%s.scores", argv[3], c("StructureFold", "Modseeker", "icSHAPE")))
 
 if (grepl("structure_seq$", argv[3])) {
   rRNAs = c("18S", "25S")
@@ -87,13 +87,19 @@ truthList = lapply(gtNames, collectTruth, argv[1])
 
 PROBerList = lapply(rowList, collectPROBer, fileList[1])
 if (!grepl("mod_seq", argv[3])) StructureFoldList = lapply(rowList, collectScore, fileList[2])
-ModseqList = lapply(rowList, collectScore, fileList[3])
+ModseekerList = lapply(rowList, collectScore, fileList[3])
 icSHAPEList = lapply(rowList, collectScore, fileList[4])
 
 PROBerRocs = lapply(1:2, calculateROC, PROBerList, truthList, posList)
 StructureFoldRocs = NULL
 if (!grepl("mod_seq", argv[3])) StructureFoldRocs = lapply(1:2, calculateROC, StructureFoldList, truthList, posList)
-ModseqRocs = lapply(1:2, calculateROC, ModseqList, truthList, posList)
+ModseekerRocs = lapply(1:2, calculateROC, ModseekerList, truthList, posList)
 icSHAPERocs = lapply(1:2, calculateROC, icSHAPEList, truthList, posList)
 
-null_vec = lapply(1:2, plotROC, argv[4], rRNAs, PROBerRocs, StructureFoldRocs, ModseqRocs, icSHAPERocs)
+out = data.frame(PROBer = c(sprintf("%.2f", PROBerRocs[[1]]$auc), sprintf("%.2f", PROBerRocs[[2]]$auc)),
+                 StructureFold = ifelse(is.null(StructureFoldRocs), c("NA", "NA"), 
+                                        c(sprintf("%.2f", StructureFoldRocs[[1]]$auc), sprintf("%.2f", StructureFoldRocs[[2]]$auc))),
+                 Modseeker = c(sprintf("%.2f", ModseekerRocs[[1]]$auc), sprintf("%.2f", ModseekerRocs[[2]]$auc)), 
+                 icSHAPE = c(sprintf("%.2f", icSHAPERocs[[1]]$auc), sprintf("%.2f", icSHAPERocs[[2]]$auc)))
+
+write.table(out, file = argv[4], sep = "\t", row.names = F, col.names = F, quote = F)

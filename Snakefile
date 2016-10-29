@@ -52,6 +52,10 @@ AssmannLab, McmanusLab, ChangLab, GilbertLab, YeoLab, GrannemanLab = expand("{pa
 	lab = ["AssmannLab", "McmanusLab", "ChangLab", "GilbertLab", "YeoLab", "GrannemanLab"])
 makedirs([AssmannLab, McmanusLab, ChangLab, GilbertLab, YeoLab, GrannemanLab])
 
+YeoLab_iCLIP, YeoLab_eCLIP = expand("{lab}/{type}", lab = YeoLab, type = ["iCLIP", "eCLIP"])
+makedirs([YeoLab_iCLIP, YeoLab_eCLIP])
+
+
 sample_name_to_data = {}
 sample_name_to_data["structure_seq_minus"] = expand("{path}/{run}_trimmed.fq", path = AssmannLab, run = ["SRR933551", "SRR933557"])
 sample_name_to_data["structure_seq_plus"] = expand("{path}/{run}_trimmed.fq", path = AssmannLab, run = ["SRR933552", "SRR933556"])
@@ -79,6 +83,8 @@ results.extend(expand("{path}/{exp}_{type}_{rRNA}.pdf", path = result_path, exp 
 results.append("{path}/yeast_structure_prediction_table.txt".format(path = result_path))
 results.extend(expand("{path}/pseudoU_{type}.pdf", path = result_path, type = ["pr", "roc"]))
 results.append("{path}/pseudoU_18S.pdf".format(path = result_path))
+results.extend(expand("{path}/structure_seq_spikes_{corr}_boxplot.pdf", path = result_path, corr = ["pearson", "spearman"]))
+
 # results.extend(expand("{path}/{name}", path = result_path, name = ["digital_spike_in.txt", "scatters.pdf", "mapping_statistics_table.txt"]))#, "time_and_memory_table.txt"]))
 # results.extend(expand("{path}/{name}_seq_roc_{rRNA}.pdf", path = result_path, name = ["structure", "mod"], rRNA = ["18S", "25S"]))
 # results.extend(expand("{path}/icSHAPE_{condition}_roc_{rRNA}.pdf", path = result_path, condition = ["invitro", "invivo"], rRNA = ["18S", "12S_Mt"]))
@@ -97,10 +103,10 @@ include: "exp/Snakefile"
 include: "simulation/Snakefile"
 
 rule all:
-	input: results
-
+	input: #results
+		#expand("{path}/{exp}_StructureFold.scores", path = exp_path, exp = ["ChemModSeq", "structure_seq_sim1", "structure_seq_sim2"])
 		#expand("{path}/{run}_cleaned_{mate}.fq", path = GrannemanLab, run = ["SRR1041324", "SRR1041325", "SRR1041326", "SRR1041327", "SRR1041328", "SRR1041329"], mate = ["1", "2"])
-
+		expand("{path}/structure_seq_sim{digit}_{method}.scores", path = exp_path, digit = ["1", "2"], method = ["StructureFold", "Modseeker", "icSHAPE"])
 	
 
 	#"{path}/pseudoU_PR.pdf".format(path = result_path)

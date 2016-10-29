@@ -163,6 +163,8 @@ rule extract_mouse_transcripts:
     shell:
         "{script_path}/genome_to_transcript_set {input} {mouse_filt}"
 
+
+
 rule download_human_genome:
     # input:
     #     FTP.remote("ftp.ensembl.org/pub/release-83/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz")
@@ -173,11 +175,12 @@ rule download_human_genome:
         "wget -O {ref_human}/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz ftp://ftp.ensembl.org/pub/release-83/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz && "
         "gunzip -c {ref_human}/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz > {output}"
 
-rule build_Bowtie_indices_for_iCLIP_analyses:
+rule build_Bowtie_and_Bowtie2_indices_for_iCLIP_and_eCLIP_analyses:
     input:
         rules.download_human_genome.output,
-        PROBer, Bowtie
+        PROBer, Bowtie, Bowtie2
     output:
         touch(human_ref)
     shell:
-        "{PROBer} prepare --genome --bowtie --bowtie-path {bowtie_path} {input[0]} {human_ref}"
+        "{PROBer} prepare --genome --bowtie --bowtie-path {bowtie_path} --bowtie2 --bowtie2-path {bowtie2_path} {input[0]} {human_ref}"
+
