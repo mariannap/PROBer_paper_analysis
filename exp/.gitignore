@@ -3,3 +3,5 @@
 !Snakefile
 !.gitignore
 !README.md
+!clipper_header.txt
+!GRCh38.txt

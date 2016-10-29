@@ -1,0 +1,86 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+import pysam
+
+if len(argv) != 4:
+	print("Usage: extract_CLIP_reads_from_bam clipper_header.txt input.bam[,...] output.bam")
+	exit(-1)
+
+
+def build_new_header(clipper_header, input_bam):
+	references = []
+	with open(clipper_header) as fin:
+		references = list(map(str.strip, fin.readlines()))
+	lengths = [0] * len(references)
+
+	sam_in = pysam.AlignmentFile(input_bam, "rb")
+	old2new = [-1] * len(sam_in.references)
+	for tid in range(len(sam_in.references)):
+		chrn = sam_in.references[tid]
+		chrl = sam_in.lengths[tid]
+
+		if chrn.find('.') >= 0:
+			chrn = chrn.replace('.', 'v')
+		elif chrn == "MT":
+			chrn = "chrM"
+		else:
+			chrn = "chr" + chrn
+
+		new_id = -1
+		for i, name in enumerate(references):
+			if name.find(chrn) >= 0:
+				new_id = i
+				break
+
+		old2new[tid] = new_id
+		if new_id >= 0:
+			lengths[new_id] = chrl
+
+	sam_in.close()
+
+	return (references, lengths, old2new)
+
+
+
+inputs = argv[2].split(",")
+references, lengths, old2new = build_new_header(argv[1], inputs[0])
+bam_out = pysam.AlignmentFile(argv[3], "wb", reference_names = references, reference_lengths = lengths)
+
+tot = 0
+
+for input_bam in inputs:
+	sam_in = pysam.AlignmentFile(input_bam, "rb")
+	cur_read = None
+	n_align = 0
+
+	cnt = 0
+
+	for aread in sam_in:
+		if (aread.is_paired and aread.is_read2 or not aread.is_paired) and not aread.is_unmapped and not aread.has_tag("ZF"):
+			if cur_read is None or cur_read.query_name != aread.query_name:
+				if n_align == 1 and old2new[cur_read.reference_id] >= 0:
+					cur_read.reference_id = cur_read.next_reference_id = old2new[cur_read.reference_id]
+					bam_out.write(cur_read)
+					tot += 1
+
+				cur_read = aread
+				n_align = 0
+
+			n_align += 1
+
+		cnt += 1
+		if cnt % 2000000 == 0:
+			print("FIN {}, tot = {}.".format(cnt, tot))
+
+	if n_align == 1 and old2new[cur_read.reference_id] >= 0:
+		cur_read.reference_id = cur_read.next_reference_id = old2new[cur_read.reference_id]
+		bam_out.write(cur_read)
+		tot += 1
+
+	sam_in.close()
+	print("{} is processed.".format(input_bam))
+
+bam_out.close()
+
+print("{} reads are written.".format(tot))

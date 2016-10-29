@@ -19,7 +19,7 @@ rsem_path = tool_path + "/RSEM-1.2.31"
 RSEM_prepare, RSEM_simulate, RSEM_calculate = expand("{path}/{cmd}", path = rsem_path, 
 	cmd = ["rsem-prepare-reference", "rsem-simulate-reads", "rsem-calculate-expression"])
 
-PROBer, PROBer_single = expand("{path}/PROBer-0.2.0/build/src/{cmd}", path = tool_path, cmd = ["PROBer", "PROBer-single-batch-estimate"])
+PROBer, PROBer_single, PROBer_sampler = expand("{path}/PROBer-0.2.0/build/src/{cmd}", path = tool_path, cmd = ["PROBer", "PROBer-single-batch-estimate", "PROBer-sample-iCLIP"])
 PROBer_full_model = "{path}/PROBer_full_model/build/src/PROBer".format(path = tool_path)
 
 Fold, scorer = expand("{path}/RNAstructure/exe/{cmd}", path = tool_path, cmd = ["Fold", "scorer"])
@@ -44,6 +44,7 @@ yeast_filt = "{path}/yeast_filt".format(path = ref_yeast)
 yeast_rRNAs = "{path}/yeast_rRNAs".format(path = ref_yeast)
 mouse_filt = "{path}/mouse_filt".format(path = ref_mouse)
 human_ref = "{path}/human_ref".format(path = ref_human)
+rep_ref = "{path}/rep_ref".format(path = ref_human)
 
 ### data
 data_path = "data"
@@ -103,10 +104,11 @@ include: "exp/Snakefile"
 include: "simulation/Snakefile"
 
 rule all:
-	input: #results
+	input: # results
+		expand("{path}/SRR3147{number}_reprm_{mate}.fq", path = YeoLab_eCLIP, number = ["598", "599", "600"], mate = ["1", "2"]),
+		expand("{path}/{protein}_K562_YeoLab_{rep}_reprm_{mate}.fq", path = YeoLab_eCLIP, protein = ["PUM2", "TARDBP", "TRA2A"], rep = ["rep1", "input"], mate = ["1", "2"])
 		#expand("{path}/{exp}_StructureFold.scores", path = exp_path, exp = ["ChemModSeq", "structure_seq_sim1", "structure_seq_sim2"])
 		#expand("{path}/{run}_cleaned_{mate}.fq", path = GrannemanLab, run = ["SRR1041324", "SRR1041325", "SRR1041326", "SRR1041327", "SRR1041328", "SRR1041329"], mate = ["1", "2"])
-		expand("{path}/structure_seq_sim{digit}_{method}.scores", path = exp_path, digit = ["1", "2"], method = ["StructureFold", "Modseeker", "icSHAPE"])
 	
 
 	#"{path}/pseudoU_PR.pdf".format(path = result_path)

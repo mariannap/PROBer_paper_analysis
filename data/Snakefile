@@ -237,7 +237,7 @@ def generate_cutadapt_options(data):
 	return res
 
 
-rule sra_to_ENCODE:
+rule sra_to_ENCODE_eCLIP:
 	input: 
 		expand("{path}/{{run}}_{{mate}}.fastq", path = YeoLab_eCLIP)
 	output: 
@@ -250,7 +250,7 @@ RBFOX2_description = {"SRR3147598" : (5, "A04", "F05"), "SRR3147599" : (5, "A04"
 def get_RBFOX2_cutadapt_options(wildcards):
 	return generate_cutadapt_options(RBFOX2_description[wildcards.run])
 
-rule cutadapt_RBFOX2:
+rule cutadapt_RBFOX2_eCLIP:
 	input:
 		expand("{path}/{{run}}_s2E_{mate}.fastq", path = YeoLab_eCLIP, mate = ["1", "2"]),
 		Cutadapt
@@ -281,7 +281,7 @@ data_description_eCLIP = {("TARDBP", "rep1") : (5, "A01", "B06"), ("TARDBP", "in
 						  ("TRA2A", "rep1") : (5, "A01", "B06"), ("TRA2A", "input") : (5, None, None),
 						  ("PUM2", "rep1") : (10, "A03", "G07"), ("PUM2", "input") : (10, None, None)}
 
-rule download_ENCODE:
+rule download_ENCODE_eCLIP:
 	output: expand("{path}/{{filename,[A-Za-z0-9]+_K562_YeoLab_[^_]+_\d}}.fastq", path = YeoLab_eCLIP)
 	run:
 		acc = fn2acc_eCLIP.get(wildcards.filename, None)
@@ -293,19 +293,19 @@ rule download_ENCODE:
 def get_ENCODE_cutadapt_options(wildcards):
 	return generate_cutadapt_options(data_description_eCLIP[(wildcards.protein, wildcards.rep)])
 
-rule cutadapt_ENCODE:
+rule cutadapt_ENCODE_eCLIP:
 	input:
 		expand("{path}/{{protein}}_K562_YeoLab_{{rep}}_{mate}.fastq", path = YeoLab_eCLIP, mate = ["1", "2"]),
 		Cutadapt
 	params: get_ENCODE_cutadapt_options
 	output:
-		expand("{path}/{{protein,[A-Za-z0-9]+}}_K562_YeoLab_{{rep,(input|rep1|rep2)}}_trimmed_{mate}.fq", path = YeoLab_eCLIP, mate = ["1", "2"])
+		expand("{path}/{{protein,[A-Za-z0-9]+}}_K562_YeoLab_{{rep,(input|rep1)}}_trimmed_{mate}.fq", path = YeoLab_eCLIP, mate = ["1", "2"])
 	log: expand("{path}/{{protein}}_K562_YeoLab_{{rep}}_trimmed.log", path = YeoLab_eCLIP)
 	shell:
 		"{Cutadapt} -f fastq --match-read-wildcards --times 2 -e 0.1 --quality-cutoff 6 -m 18 {params}"
 		" -o {output[0]} -p {output[1]} {input[0]} {input[1]} > {log}"
 
-rule remove_PCR_duplicate:
+rule remove_PCR_duplicate_eCLIP:
 	input:
 		expand("{path}/{{run}}_trimmed_{mate}.fq", path = YeoLab_eCLIP, mate = ["1", "2"])
 	output:
@@ -314,22 +314,18 @@ rule remove_PCR_duplicate:
 	shell:
 		"{script_path}/remove_PCR_dup_PE 25 {input} {output} > {log}"
 
-
-
-rule build_rep_ref:
-	input: "rep_ref/homo_sapiens_repbase_extra_v2.fa"
-	output: touch("rep_ref/rep_ref")
-	shell:
-		"bowtie2-build {input} rep_ref/rep_ref"
-
-rule remove_reads_mapped_to_rep:
-	input: rules.build_rep_ref.output, expand("{{path}}/{{run}}_cleaned_{mate}.fastq", mate = ["1", "2"])
-	output: expand("{{path}}/{{run}}_reprm_{mate}.fastq", mate = ["1", "2"])
-	log: "{path}/{run}_reprm.log"
+rule remove_reads_mapped_to_rep_eCLIP:
+	input:
+		rep_ref,
+		expand("{path}/{{run}}_cleaned_{mate}.fq", path = YeoLab_eCLIP, mate = ["1", "2"]),
+		Bowtie2
+	output:
+		expand("{path}/{{run}}_reprm_{mate}.fq", path = YeoLab_eCLIP, mate = ["1", "2"])
+	log: expand("{path}/{{run}}_reprm.log", path = YeoLab_eCLIP)
 	threads: 10
 	shell:
-		"mkdir -p {wildcards.path}/{wildcards.run}_reprm.tmp && "
-		"bowtie2 -p {threads} -k 1 -I 1 -X 1000 --no-mixed --no-discordant --un-conc {wildcards.path}/{wildcards.run}_reprm.tmp -x {input[0]} -1 {input[1]} -2 {input[2]} -S /dev/null 2> {log} && "
-		"mv {wildcards.path}/{wildcards.run}_reprm.tmp/un-conc-mate.1 {output[0]} && "
-		"mv {wildcards.path}/{wildcards.run}_reprm.tmp/un-conc-mate.2 {output[1]} && "
-		"rm -rf {wildcards.path}/{wildcards.run}_reprm.tmp"
+		"mkdir -p {YeoLab_eCLIP}/{wildcards.run}_reprm.tmp && "
+		"{Bowtie2} -p {threads} -k 1 -I 1 -X 1000 --no-mixed --no-discordant --un-conc {YeoLab_eCLIP}/{wildcards.run}_reprm.tmp -x {input[0]} -1 {input[1]} -2 {input[2]} -S /dev/null 2> {log} && "
+		"mv {YeoLab_eCLIP}/{wildcards.run}_reprm.tmp/un-conc-mate.1 {output[0]} && "
+		"mv {YeoLab_eCLIP}/{wildcards.run}_reprm.tmp/un-conc-mate.2 {output[1]} && "
+		"rm -rf {YeoLab_eCLIP}/{wildcards.run}_reprm.tmp"

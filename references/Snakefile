@@ -184,3 +184,10 @@ rule build_Bowtie_and_Bowtie2_indices_for_iCLIP_and_eCLIP_analyses:
     shell:
         "{PROBer} prepare --genome --bowtie --bowtie-path {bowtie_path} --bowtie2 --bowtie2-path {bowtie2_path} {input[0]} {human_ref}"
 
+rule build_rep_ref:
+    input: 
+        expand("{path}/homo_sapiens_repbase_extra_v2.fa", path = ref_path),
+        PROBer, Bowtie, Bowtie2
+    output: touch(rep_ref)
+    shell:
+        "{PROBer} prepare --genome --bowtie --bowtie-path {bowtie_path} --bowtie2 --bowtie2-path {bowtie2_path} {input[0]} {rep_ref}"
