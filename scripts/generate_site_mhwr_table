@@ -1,0 +1,68 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+
+if len(argv) < 5:
+	print("Usage: generate_site_mhwr_table data_type output.txt w1,w2,.. input.w.site_info * N")
+	exit(-1)
+
+
+protein2pid_iCLIP = {"RBFOX2" : 0, "hnRNPC" : 1}
+proteins_iCLIP = ["RBFOX2", "hnRNP C"]
+
+protein2pid_eCLIP = {"RBFOX2" : 0, "TARDBP" : 1, "TRA2A" : 2, "PUM2" : 3}
+proteins_eCLIP = ["RBFOX2", "TARDBP", "TRA2A", "PUM2"]
+
+protein2pid = protein2pid_iCLIP if argv[1] == "iCLIP" else protein2pid_eCLIP
+proteins = proteins_iCLIP if argv[1] == "iCLIP" else proteins_eCLIP
+
+def parse_ws(input_str):
+	ws = input_str.split(',')
+	w2wid = {}
+	for i, w in enumerate(ws):
+		w2wid[w] = i
+
+	return len(ws), ws, w2wid
+
+
+nw, ws, w2wid = parse_ws(argv[3])
+assert len(argv) == nw * len(proteins) * 2 + 4
+
+outputs = []
+for i in range(len(proteins)):
+	outputs.append([])
+	for j in range(2):
+		outputs[i].append([""] * nw)
+
+for inpF in argv[4:]:
+	start = inpF.rfind('/') + 1
+	end = inpF.index('_', start)
+	i = protein2pid[inpF[start : end]]
+	j = 0 if inpF.find("naive", end + 1) < 0 else 1
+	k = w2wid[inpF[inpF.index('.', end + 1) + 1 : inpF.rindex('.')]]
+	with open(inpF) as fin:
+		outputs[i][j][k] = fin.readline().split()[0][:-1]
+
+for i in range(len(proteins)):
+	for k in range(nw):
+		if float(outputs[i][0][k]) > float(outputs[i][1][k]):
+			outputs[i][0][k] = "\\textbf{" + outputs[i][0][k] + "\\%}"
+			outputs[i][1][k] += "\\%"
+		elif float(outputs[i][0][k]) < float(outputs[i][1][k]):
+			outputs[i][0][k] += "\\%"
+			outputs[i][1][k] = "\\textbf{" + outputs[i][1][k] + "\\%}"
+		else:
+			outputs[i][0][k] += "\\%"
+			outputs[i][1][k] += "\\%"
+
+with open(argv[2], "w") as fout:
+	fout.write("\\begin{tabular}{*{" + str(nw + 1) + "}c}\n")
+	for i, protein in enumerate(proteins):
+		fout.write("\\hline\n")
+		fout.write(protein + " & " + " & ".join(ws) + " \\\\\n")
+		fout.write("\\hline\n")
+		fout.write("PROBer & " + " & ".join(outputs[i][0]) + "\\\\\n")
+		fout.write("baseline & " + " & ".join(outputs[i][1]) + "\\\\\n")
+		fout.write("\\hline\n")
+	fout.write("\\end{tabular}\n")
+

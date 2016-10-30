@@ -17,7 +17,7 @@ rule dump_to_FASTQ_PE:
 ruleorder: dump_to_FASTQ_PE > dump_to_FASTQ
 
 
-rule remove_adaptor_AssmannLab:
+rule remove_adapter_AssmannLab:
 	input:
 		"{path}/{{run}}.fastq".format(path = AssmannLab),
 		Cutadapt
@@ -29,7 +29,7 @@ rule remove_adaptor_AssmannLab:
 		"{Cutadapt} -u 3 -a GATCGGAAGAGCACACGTCTGAACTCCAGTCAC -m 21 -o {output} {input[0]} > {log}"
 
 
-rule remove_3_prime_adaptor_McmanusLab:
+rule remove_3_prime_adapter_McmanusLab:
 	input:
 		"{path}/{{run}}.fastq".format(path = McmanusLab),
 		Cutadapt
@@ -40,7 +40,7 @@ rule remove_3_prime_adaptor_McmanusLab:
 	shell:
 		"{Cutadapt} -a CTGTAGGCACCATCAAT -m 25 -o {output} {input[0]} > {log}"
 
-rule remove_5_prime_adaptor_McmanusLab:
+rule remove_5_prime_adapter_McmanusLab:
 	input:
 		"{path}/{{run}}_trimmed.fq".format(path = McmanusLab),
 		Cutadapt
@@ -72,7 +72,7 @@ rule trim_mismatches_McmanusLab:
 		"{script_path}/trimMismatch {input} {output}"
 
 
-rule remove_adaptor_ChangLab:
+rule remove_adapter_ChangLab:
 	input:
 		"{path}/{{run}}.fastq".format(path = ChangLab),
 		Cutadapt
@@ -89,10 +89,10 @@ rule remove_PCR_duplicate_ChangLab:
 	output:
 		"{path}/{{run}}_cleaned.fq".format(path = ChangLab)
 	shell:
-		"{script_path}/remove_dup {input} 13 {output}"
+		"{script_path}/remove_PCR_dup_SE {input} 13 {output}"
 
 
-rule remove_adaptor_GilbertLab:
+rule remove_adapter_GilbertLab:
 	input:
 		"{path}/{{run}}.fastq".format(path = GilbertLab),
 		Cutadapt
@@ -102,26 +102,6 @@ rule remove_adaptor_GilbertLab:
 		"{path}/{{run}}_trimmed.log".format(path = GilbertLab)
 	shell:
 		"{Cutadapt} -a TGGAATTCTCGGGTGCCAAGG -m 18 -o {output} {input[0]} > {log}"
-
-
-rule remove_adaptor_YeoLab:
-	input:
-		"{path}/{{run}}.fastq".format(path = YeoLab),
-		Cutadapt
-	output:
-		"{path}/{{run}}_trimmed.fq".format(path = YeoLab)
-	log:
-		"{path}/{{run}}_trimmed.log".format(path = YeoLab)
-	shell:
-		"{Cutadapt} -a AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAGACCGATCTCGTATGCCGTCTTCTGCTTG -m 27 -o {output} {input[0]} > {log}"
-
-rule remove_PCR_duplicate_YeoLab:
-	input:
-		"{path}/{{run}}_trimmed.fq".format(path = YeoLab)
-	output:
-		"{path}/{{run}}_cleaned.fq".format(path = YeoLab)
-	shell:
-		"{script_path}/remove_dup {input} 9 {output}"
 
 
 rule download_info_GrannemanLab:
@@ -175,8 +155,52 @@ rule remove_PCR_duplicate_GrannemanLab:
 		"{script_path}/remove_PCR_dup_PE 25 {input} {output} > {log}"
 
 
+#iCLIP data
 
+rule download_UleLab_hnRNPC_iCLIP_data:
+	output:
+		"{path}/hnRNPC_HeLa_UleLab_rep1.fastq".format(path = UleLab)
+	shell:
+		"wget -O {UleLab}/ERR196175.fastq.gz ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR196/ERR196175/ERR196175.fastq.gz && "
+		"wget -O {UleLab}/ERR196174.fastq.gz ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR196/ERR196174/ERR196174.fastq.gz && "
+		"wget -O {UleLab}/ERR196187.fastq.gz ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR196/ERR196187/ERR196187.fastq.gz && "
+		"wget -O {UleLab}/ERR196179.fastq.gz ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR196/ERR196179/ERR196179.fastq.gz && "
+		"gunzip -c {UleLab}/ERR196175.fastq.gz {UleLab}/ERR196174.fastq.gz {UleLab}/ERR196187.fastq.gz {UleLab}/ERR196179.fastq.gz > {output}"
 
+# adapter is the reverse complement of P3Solexa
+rule remove_adapter_iCLIP:
+	input:
+		"{path}/{run}.fastq",
+		Cutadapt
+	output:
+		"{path,(data/UleLab|data/YeoLab/iCLIP)}/{run}_trimmed.fq"
+	log:
+		"{path}/{run}_trimmed.log"
+	shell:
+		"{Cutadapt} -a AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAGACCGATCTCGTATGCCGTCTTCTGCTTG -m 27 -o {output} {input[0]} > {log}"
+
+rule remove_PCR_duplicate_iCLIP:
+	input:
+		"{path}/{run}_trimmed.fq"
+	output:
+		"{path,(data/UleLab|data/YeoLab/iCLIP)}/{run}_cleaned.fq"
+	log:
+		"{path}/{run}_cleaned.log"
+	shell:
+		"{script_path}/remove_PCR_dup_SE {input} 9 {output} > {log}"
+
+rule remove_reads_mapped_to_rep_iCLIP:
+	input:
+		rep_ref,
+		"{path}/{run}_cleaned.fq",
+		Bowtie
+	output:
+		"{path,(data/UleLab|data/YeoLab/iCLIP)}/{run}_reprm.fq"
+	log: 
+		"{path}/{run}_reprm.log"
+	threads: 10
+	shell:
+		"{Bowtie} -p {threads} --un {output} {input[0]} {input[1]} > /dev/null 2> {log}"
 
 
 # eCLIP data

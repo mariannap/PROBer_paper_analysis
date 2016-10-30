@@ -46,12 +46,14 @@ mouse_filt = "{path}/mouse_filt".format(path = ref_mouse)
 human_ref = "{path}/human_ref".format(path = ref_human)
 rep_ref = "{path}/rep_ref".format(path = ref_human)
 
+human_genome = "{path}/Homo_sapiens.GRCh38.dna.primary_assembly.fa".format(path = ref_human)
+
 ### data
 data_path = "data"
 
-AssmannLab, McmanusLab, ChangLab, GilbertLab, YeoLab, GrannemanLab = expand("{path}/{lab}", path = data_path, 
-	lab = ["AssmannLab", "McmanusLab", "ChangLab", "GilbertLab", "YeoLab", "GrannemanLab"])
-makedirs([AssmannLab, McmanusLab, ChangLab, GilbertLab, YeoLab, GrannemanLab])
+AssmannLab, McmanusLab, ChangLab, GrannemanLab, GilbertLab, UleLab, YeoLab = expand("{path}/{lab}", path = data_path, 
+	lab = ["AssmannLab", "McmanusLab", "ChangLab", "GrannemanLab", "GilbertLab", "UleLab", "YeoLab"])
+makedirs([AssmannLab, McmanusLab, ChangLab, GrannemanLab, GilbertLab, UleLab, YeoLab])
 
 YeoLab_iCLIP, YeoLab_eCLIP = expand("{lab}/{type}", lab = YeoLab, type = ["iCLIP", "eCLIP"])
 makedirs([YeoLab_iCLIP, YeoLab_eCLIP])
@@ -105,10 +107,12 @@ include: "simulation/Snakefile"
 
 rule all:
 	input: # results
-		expand("{path}/SRR3147{number}_reprm_{mate}.fq", path = YeoLab_eCLIP, number = ["598", "599", "600"], mate = ["1", "2"]),
-		expand("{path}/{protein}_K562_YeoLab_{rep}_reprm_{mate}.fq", path = YeoLab_eCLIP, protein = ["PUM2", "TARDBP", "TRA2A"], rep = ["rep1", "input"], mate = ["1", "2"])
-		#expand("{path}/{exp}_StructureFold.scores", path = exp_path, exp = ["ChemModSeq", "structure_seq_sim1", "structure_seq_sim2"])
-		#expand("{path}/{run}_cleaned_{mate}.fq", path = GrannemanLab, run = ["SRR1041324", "SRR1041325", "SRR1041326", "SRR1041327", "SRR1041328", "SRR1041329"], mate = ["1", "2"])
+		expand("{path}/SRR153495{digit}_cleaned.fq", path = ChangLab, digit = ["3", "5", "7"])
+		# "results/site_motif_hit_weighted_rate_table_iCLIP.txt",
+		# expand("{path}/hnRNPC_HeLa_UleLab_rep1_{ending}.iCLIP.mhr", path = exp_path, ending = ["unique", "all"]),
+		# expand("{path}/RBFOX2_293T_YeoLab_iCLIP_{ending}.iCLIP.mhr", path = exp_path, ending = ["unique", "all"])
+		# expand("{path}/SRR3147{number}_reprm_{mate}.fq", path = YeoLab_eCLIP, number = ["598", "599", "600"], mate = ["1", "2"]),
+		# expand("{path}/{protein}_K562_YeoLab_{rep}_reprm_{mate}.fq", path = YeoLab_eCLIP, protein = ["PUM2", "TARDBP", "TRA2A"], rep = ["rep1", "input"], mate = ["1", "2"])
 	
 
 	#"{path}/pseudoU_PR.pdf".format(path = result_path)

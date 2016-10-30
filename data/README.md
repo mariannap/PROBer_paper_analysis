@@ -1,4 +1,4 @@
-#### Ding *et al.* Arabidopsis data
+#### Ding *et al.* arabidopsis single-end data
 
 Data locate at `AssmannLab`. Each run is explained in the table below.
 
@@ -7,7 +7,7 @@ Run | Meaning
 SRR933551 | Biological replicate I, mock-treated
 SRR933552 | Biological replicate I, modification-treated
 SRR933556 | Biological replicate II, modification-treated
-SRR933557 |  Biological replicate II, mock-treated
+SRR933557 | Biological replicate II, mock-treated
 
 Data were pre-processed according to Ding *et al.* as follows:
 
@@ -19,9 +19,7 @@ Data were pre-processed according to Ding *et al.* as follows:
     -u 3 -a GATCGGAAGAGCACACGTCTGAACTCCAGTCAC -m 21
     ```
 
-The pre-processed data contain 117,242,295 and 81,596,350 single-end reads in modification-treated and mock-treated experiments respectively. The read length variates between 21 nt and 37 nt.
-
-#### Talkish *et al.* yeast data
+#### Talkish *et al.* yeast single-end data
 
 Data locate at `McmanusLab`. Each run is explained in the table below.
 
@@ -48,9 +46,28 @@ Data were pre-processed according to Talkish *et al.* as follows:
 
 3. Untrimmed reads from previous step were aligned to the yeast transcript sequences using `Bowtie` (v1.1.2) and then mismatches at the 5' end were trimmed using in-house script.
 
-The pre-processed data contain 7,729,251 and 9,199,721 single-end reads in modification-treated and mock-treated experiments respectively. The read length variates between 23 nt and 50 nt.
+#### Hector *et al.* yeast paired-end data
 
-#### Spitale *et al.* mouse data
+Data locate at `GrannemanLab`. Each run is explained in the table below.
+
+Run | Meaning
+--- | -------
+SRR1041324 | Control_averages_1
+SRR1041325 | Control_averages_2
+SRR1041326 | Control_averages_3
+SRR1041327 | DMS_averages_1
+SRR1041328 | DMS_averages_2
+SRR1041329 | DMS_averages_3
+
+Data were pre-processed according to Hector *et al.* as follows:
+
+1. The 1st nucleotides at first mates were trimmed and unique molecule identifiers (UMIs) were integrated. Note that the reads stored in SRA missing the random barcode information. This information is added back according to `GrannemanLab_info.zip`.
+
+2. Adapters were trimmed using `cutadapt` only reads no shorter than 18 nt were kept. See `rule trim_adapter_GrannemanLab` for `cutadapt` options.
+
+3. PCR duplicates were removed according to the 7nt UMIs and sequence contents. Two paired-end reads are considered duplicate to each other if and only if their UMIs are identical, their sequences have the same length, and their sequences are matched (i.e. mismatch rate <= 0.1). To speed up the duplication removal process, we further request the 25nt snippets in their two mates are identical. See script `remove_PCR_dup_PE` for details.
+
+#### Spitale *et al.* mouse single-end data
 
 Data locate at `ChangLab`. Each run is explained in the table below.
 
@@ -62,19 +79,15 @@ SRR1534957 | v6.5 mouse ES cells polyA(+) icSHAPE in vivo NAI-N3 Biological Repl
 
 Data were pre-processed as follows:
 
-1. The first 100 million reads of each conditions (DMSO, *in vitro*, and *in vivo*) were extracted.
-
-2. 3' adapters were trimmed using `cutadapt` and only reads no shorter than 33 nt were kept:
+1. 3' adapters were trimmed using `cutadapt` and only reads no shorter than 33 nt were kept:
 
     ```
     -a AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAGACCGATCTCGTATGCCGTCTTCTGCTTG -m 33
     ```
 
-3. PCR duplicates were removed and then the unique molecule identifiers (UMI, first 13 nt of each read) were also trimmed. Only reads with the exact same sequences and UMIs were considered as duplicates.
+2. PCR duplicates were removed according to the 13 nt UMIs and sequence contents. Only reads with the exact same sequences and UMIs were considered as duplicates.
 
-The pre-preprocessed data contain 96,120,565 , 23,455,089 , and 78,180,398 single-end reads in DMSO, *in vitro* and *in vivo* conditions respectively. The read length variates between 20 nt and 87 nt. 
-
-#### Carlile *et al.* yeast Pseudo-seq data
+#### Carlile *et al.* yeast single-end Pseudo-seq data
 
 Data locate at `GilbertLab`. Each run is explained in the table below.
 
@@ -93,11 +106,9 @@ Data were pre-processed as follows:
    -a TGGAATTCTCGGGTGCCAAGG -m 18
    ```
 
-The pre-processed data contain 31,103,632 and 39,167,224 single-end reads in modification-treated and mock-treated experiments respectively. The read length variates between 18 nt and 41 nt. 
+#### Zarnack *et al.* human hnRNP C iCLIP single-end data
 
-#### Nostrand *et al.* human iCLIP data
-
-Data locate at `YeoLab`. Only one run (SRR3147675) of RBFOX2 iCLIP data was used. 
+Data locate at `UleLab`. Biological replicate 1 (ERR196175, ERR196174, ERR196187, and ERR196179) of hnRNP C iCLIP data was used.
 
 Data were pre-processed as follows:
 
@@ -107,7 +118,42 @@ Data were pre-processed as follows:
     -a AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAGACCGATCTCGTATGCCGTCTTCTGCTTG -m 27
     ```
 
-2. PCR duplicates were removed and then UMIs (first 9 nt of each reads) were trimmed. Only reads with the exact same sequences and UMIs were considered as duplicates.
+2. PCR duplicates were removed according to the 9nt UMIs and sequence contents. Only reads with the exact same sequences and UMIs were considered as duplicates.
+ 
+#### Nostrand *et al.* human RBFOX2 iCLIP single-end data
 
-The pre-processed data contain 18,724,388 single-end reads. The read length variates between 18 nt and 49 nt.
+Data locate at `YeoLab/iCLIP`. Only one run (SRR3147675) of the RBFOX2 iCLIP data was used. 
+
+Data were pre-processed as follows:
+
+1. 3' adapters were trimmed using `cutadapt` and only reads no shorter than 27 nt were kept:
+
+    ```
+    -a AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAGACCGATCTCGTATGCCGTCTTCTGCTTG -m 27
+    ```
+
+2. PCR duplicates were removed according to the 9nt UMIs and sequence contents. Only reads with the exact same sequences and UMIs were considered as duplicates.
+
+#### Nostrand *et al.* human eCLIP paired-end data
+
+Data locate at `YeoLab/eCLIP`. Each run is explained in the table below.
+
+Run | Meaning
+--- | -------
+SRR3147598 | RBFOX2 293T rep1
+SRR3147599 | RBFOX2 293T rep1
+SRR3147600 | RBFOX2 293T rep1 input
+ENCFF734UEC | ENCODE TARDBP K562 rep1 mate1  
+ENCFF147JYD | ENCODE TARDBP K562 rep1 mate2
+ENCFF558NTZ | ENCODE TARDBP K562 input mate1
+ENCFF333DTJ | ENCODE TARDBP K562 input mate2
+ENCFF956TOZ | ENCODE PUM2 K562 rep1 mate1
+ENCFF133DNM | ENCODE PUM2 K562 rep1 mate2
+ENCFF616FCF | ENCODE PUM2 K562 input mate1
+ENCFF495ZPY | ENCODE PUM2 K562 input mate2
+ENCFF917GQR | ENCODE TRA2A K562 rep1 mate1
+ENCFF116QDH | ENCODE TRA2A K562 rep1 mate2
+ENCFF057LEI | ENCODE TRA2A K562 input mate1
+ENCFF169EQC | ENCODE TRA2A K562 input mate2
+
 

@@ -4,4 +4,4 @@ rule compile_cpp:
 	output:
 		"{path}/{{program,\w+}}".format(path = script_path)
 	shell:
-		"g++ -O3 {input} -o {output}"
+		"g++ -std=c++11 -O3 {input} -o {output}"

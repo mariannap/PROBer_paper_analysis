@@ -53,7 +53,7 @@ public:
 		assert(len > 0);
 	}
 
-	int locateMotif(const string& chr, char ori, int pos) {
+	bool containMotif(const string& chr, char ori, int pos) {
 		if (this->chr != chr) seek(chr);
 		
 		int center, start, end;
@@ -68,7 +68,7 @@ public:
 			else context[end - i] = complement(c);
 		}
 		
-		return (regex_search(context, m, motif) ? int(m.position() - w) : w + w);
+		return regex_search(context, m, motif);
 	}
 
 private:
@@ -95,32 +95,33 @@ private:
 int w;
 
 int main(int argc, char* argv[]) {
-	if (argc != 6) {
-		printf("Usage: detectMotif reference.fa motif(regex) w input.site_info output.txt\n");
+	if (argc != 5) {
+		printf("Usage: countMotifRate reference.fa motif(regex) w bed_file\n");
 		exit(-1);
 	}
 
 	string line, chr;
-	int pos;
+	int start, end, pos;
 	char ori;
 
 	Genome *genome = new Genome(argv[1], argv[2], atoi(argv[3]));
 
 	ifstream fin(argv[4]);
-	ofstream fout(argv[5]);
 
-	int cnt = 0;
+	int nhit = 0, tot = 0;
 	while (getline(fin, line)) {
 		istringstream strin(line);
-		strin>> chr>> ori>> pos;
-		fout<< chr<< ' '<< ori<< ' '<< pos<< '\t'<< genome->locateMotif(chr, ori, pos)<< endl;
-		++cnt;
-		if (cnt % 1000000 == 0) printf("FIN %d\n", cnt);
+		strin>> chr>> ori>> start>> end;
+		pos = (start + end) / 2;
+		if (genome->containMotif(chr, ori, pos)) ++nhit;
+		++tot;
 	}
 	fin.close();
-	fout.close();
 
 	delete genome;
+
+	printf("\t%d\t%d\t%.2f%%\n", tot, nhit, nhit * 100.0 / tot);
+	// printf("nhit = %d, tot = %d, rate = %.2f%%\n", nhit, tot, nhit * 100.0 / tot);
 
 	return 0;
 }

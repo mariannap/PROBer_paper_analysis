@@ -1,0 +1,65 @@
+#!/usr/bin/env python 
+
+from sys import argv, exit
+from collections import namedtuple
+from operator import itemgetter
+
+if len(argv) != 4:
+	print("Usage: mergeCLIPPERpeaks GRCh38.txt input.bed output.bed")
+	exit(-1)
+
+Peak = namedtuple("Peak", ['chrn', 'strand', 'start', 'end', 'pval'])
+
+def loadGRCh38(input_file):
+	chrns = []
+	chr2cid = {}
+	cid = 0
+	with open(input_file) as fin:
+		for line in fin:
+			fields = line.strip().split()
+			chrns.append(fields[0])
+			chr2cid[fields[0]] = cid
+			cid += 1
+	return (chrns, chr2cid)
+
+def convertChrName(chrn, chr2cid):
+	newchr = ""
+	pos = chrn.find('v')
+	if pos >= 0:
+		pos2 = chrn.find('_')
+		assert pos2 >= 0 and pos2 < pos
+		newchr = chrn[pos2 + 1: pos] + "." + chrn[pos + 1]
+	elif chrn == "chrM":
+		newchr = "MT"
+	else:
+		newchr = chrn[3:]
+
+	assert newchr in chr2cid
+	return chr2cid[newchr]
+
+chrns, chr2cid = loadGRCh38(argv[1])
+
+peaks = []
+with open(argv[2]) as fin:
+	for line in fin:
+		fields = line.strip().split()
+		peaks.append(Peak(convertChrName(fields[0], chr2cid), fields[5], int(fields[1]), int(fields[2]), float(fields[4])))
+
+peaks.sort(key = itemgetter(0, 1, 2))
+
+n = len(peaks)
+s = 0
+for i in range(1, n):
+	if peaks[s].chrn == peaks[i].chrn and peaks[s].strand == peaks[i].strand and peaks[i].start < peaks[s].end:
+		if peaks[s].pval > peaks[i].pval:
+			peaks[s] = peaks[i]
+	else:
+		s += 1
+		peaks[s] = peaks[i]
+
+
+print("n = {}, s = {}.".format(n, s))
+
+with open(argv[3], "w") as fout:
+	for i in range(s):
+		fout.write("{}\t{}\t{}\t{}\t{}\n".format(chrns[peaks[i].chrn], peaks[i].strand, peaks[i].start, peaks[i].end, peaks[i].pval))

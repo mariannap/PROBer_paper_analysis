@@ -579,229 +579,274 @@ rule visualize_18S_for_pseudoU_experiment:
 
 # iCLIP
 
-
-rule bowtie_align_to_genome:
-	input:
-		human_ref,
-		"{path}/SRR3147675_cleaned.fq".format(path = YeoLab),
-		Bowtie, Samtools
-	output:
-		"{path}/RBFOX2_iCLIP.bam".format(path = exp_path)
-	log:
-		"{path}/RBFOX2_iCLIP.log".format(path = exp_path)
-	threads: 20
-	shell:
-		"{Bowtie} -a -m 100 --chunkmbs 1024 -p {threads} -S {input[0]} {input[1]} 2> {log} | {Samtools} view -S -b -o {output} -"
-
-rule generate_iCLIP_mapping_statistics_table:
-	input:
-		rules.bowtie_align_to_genome.output
-	output:
-		"{path}/iCLIP_mapping_statistics.txt".format(path = result_path)
-	shell:
-		"echo -e 'Unique\tMulti-mapping\tUnalignable\tFiltered' > {output} && "
-		"{script_path}/collectAlignStat {input} None >> {output}"
+def get_iCLIP_data_as_input(wildcards):
+	if wildcards.lab == "UleLab":
+		return UleLab + "/hnRNPC_HeLa_UleLab_rep1_reprm.fq"
+	else:
+		return YeoLab_iCLIP + "/SRR3147675_reprm.fq"
 
 rule run_PROBer_iCLIP:
 	input:
-		rules.bowtie_align_to_genome.output,
-		PROBer
+		human_ref,
+		get_iCLIP_data_as_input,
+		PROBer, Bowtie
 	params: 
-		"{path}/RBFOX2_iCLIP_res".format(path = exp_path)
+		sample_name = "{path}/{{protein}}_{{cell_line}}_{{lab}}_{{rep}}".format(path = exp_path)
 	output:
-		"{path}/RBFOX2_iCLIP_res.site_info".format(path = exp_path)
+		expand("{path}/{{protein,(hnRNPC|RBFOX2)}}_{{cell_line,(HeLa|293T)}}_{{lab,(UleLab|YeoLab)}}_{{rep,(rep1|iCLIP)}}.{suffix}", 
+			path = exp_path, suffix = ["site_info", "alignments.bam"])
 	threads: 20
 	shell:
-		"{PROBer} iCLIP -p {threads} {params} --alignments {input[0]}"
+		"{PROBer} iCLIP -p {threads} --bowtie --bowtie-path {bowtie_path} --index-name {input[0]} --keep-alignments {params.sample_name} --reads {input[1]}"
 
-rule run_iCLIP_baseline:
+rule run_PROBer_naive_iCLIP:
 	input:
-		rules.bowtie_align_to_genome.output,
+		"{path}/{{protein}}_{{cell_line}}_{{lab}}_{{rep}}.alignments.bam".format(path = exp_path),
 		PROBer
 	params: 
-		"{path}/RBFOX2_iCLIP_naive".format(path = exp_path)
+		sample_name="{path}/{{protein}}_{{cell_line}}_{{lab}}_{{rep}}_naive".format(path = exp_path)
 	output:
-		"{path}/RBFOX2_iCLIP_naive.site_info".format(path = exp_path)
-	threads: 20
+		"{path}/{{protein,(hnRNPC|RBFOX2)}}_{{cell_line,(HeLa|293T)}}_{{lab,(UleLab|YeoLab)}}_{{rep,(rep1|iCLIP)}}_naive.site_info".format(path = exp_path)
 	shell:
-		"{PROBer} iCLIP -p {threads} --naive {params} --alignments {input[0]}"
+		"{PROBer} iCLIP --naive {params.sample_name} --alignments {input[0]}"
 
-rule detect_motif:
-	input:
-		"{path}/detectMotif".format(path = script_path),
-		"{path}/Homo_sapiens.GRCh38.dna.primary_assembly.fa".format(path = ref_human),
-		rules.run_PROBer_iCLIP.output
+rule sample_multireads_iCLIP:
+	input: 
+		expand("{path}/{{protein}}_{{cell_line}}_{{lab}}_{{rep}}.{suffix}", path = exp_path, suffix = ["alignments.bam", "site_info"]),
+		PROBer_sampler
+	params:
+		sample_name="{path}/{{protein}}_{{cell_line}}_{{lab}}_{{rep}}".format(path = exp_path),
+		stat_name ="{path}/{{protein}}_{{cell_line}}_{{lab}}_{{rep}}.stat/{{protein}}_{{cell_line}}_{{lab}}_{{rep}}".format(path = exp_path)
 	output:
-		"{path}/RBFOX2_iCLIP.10.motifs".format(path = exp_path)
+		"{path}/{{protein,(hnRNPC|RBFOX2)}}_{{cell_line,(HeLa|293T)}}_{{lab,(UleLab|YeoLab)}}_{{rep,(rep1|iCLIP)}}.sampled.bam".format(path = exp_path)
 	shell:
-		"{input[0]} {input[1]} TGCATG 10 {input[2]} {output}"
-
-rule calculate_motif_rate:
-	input:
-		"{path}/calcMotifRate".format(path = script_path),
-		rules.detect_motif.output,
-		rules.run_PROBer_iCLIP.output,
-		rules.run_iCLIP_baseline.output
-	output:
-		"{path}/RBFOX2_iCLIP_table.txt".format(path = result_path)
-	shell:
-		"{input[0]} 10 10.0 {input[1]} {input[2]} {input[3]} {output}"
+		"{PROBer_sampler} {params.sample_name} {params.stat_name} {input[0]} --seed 0"
 
 
 # eCLIP
 
-def get_eCLIP_data_as_input(wildcards):
-	if wildcards.protein == "RBFOX2":
-		assert wildcards.cell_line == "293T"
-		if wildcards.rep == "input":
-			return expand("{path}/SRR3147600_reprm_{mate}.fq", path = YeoLab_eCLIP, mate = ["1", "2"])
-		else:
-			return expand("{path}/{run}_reprm_{mate}.fq", path = YeoLab_eCLIP, run = ["SRR3147598", "SRR3147599"], mate = ["1", "2"])
-	else:
-		return expand("{path}/{protein}_{cell_line}_YeoLab_{rep}_reprm_{mate}.fq", 
-			path = YeoLab_eCLIP, protein = wildcards.protein, cell_line = wildcards.cell_line, 
-			rep = wildcards.rep, mate = ["1", "2"])
+# def get_eCLIP_data_as_input(wildcards):
+# 	if wildcards.protein == "RBFOX2":
+# 		assert wildcards.cell_line == "293T"
+# 		if wildcards.rep == "input":
+# 			return expand("{path}/SRR3147600_reprm_{mate}.fq", path = YeoLab_eCLIP, mate = ["1", "2"])
+# 		else:
+# 			return expand("{path}/{run}_reprm_{mate}.fq", path = YeoLab_eCLIP, run = ["SRR3147598", "SRR3147599"], mate = ["1", "2"])
+# 	else:
+# 		return expand("{path}/{protein}_{cell_line}_YeoLab_{rep}_reprm_{mate}.fq", 
+# 			path = YeoLab_eCLIP, protein = wildcards.protein, cell_line = wildcards.cell_line, 
+# 			rep = wildcards.rep, mate = ["1", "2"])
 
-def get_eCLIP_mate1(wildcards):
-	if wildcards.protein == "RBFOX2":
-		assert wildcards.cell_line == "293T"
-		if wildcards.rep == "input":
-			return "{path}/SRR3147600_reprm_1.fq".format(path = YeoLab_eCLIP)
-		else:
-			return ",".join(["{path}/{run}_reprm_1.fq".format(path = YeoLab_eCLIP, run = run) for run in ["SRR3147598", "SRR3147599"]])
-	else:
-		return "{path}/{protein}_{cell_line}_YeoLab_{rep}_reprm_1.fq".format(path = YeoLab_eCLIP,
-			protein = wildcards.protein, cell_line = wildcards.cell_line, rep = wildcards.rep)
+# def get_eCLIP_mate1(wildcards):
+# 	if wildcards.protein == "RBFOX2":
+# 		assert wildcards.cell_line == "293T"
+# 		if wildcards.rep == "input":
+# 			return "{path}/SRR3147600_reprm_1.fq".format(path = YeoLab_eCLIP)
+# 		else:
+# 			return ",".join(["{path}/{run}_reprm_1.fq".format(path = YeoLab_eCLIP, run = run) for run in ["SRR3147598", "SRR3147599"]])
+# 	else:
+# 		return "{path}/{protein}_{cell_line}_YeoLab_{rep}_reprm_1.fq".format(path = YeoLab_eCLIP,
+# 			protein = wildcards.protein, cell_line = wildcards.cell_line, rep = wildcards.rep)
 
-def get_eCLIP_mate2(wildcards):
-	if wildcards.protein == "RBFOX2":
-		assert wildcards.cell_line == "293T"
-		if wildcards.rep == "input":
-			return "{path}/SRR3147600_reprm_2.fq".format(path = YeoLab_eCLIP)
-		else:
-			return ",".join(["{path}/{run}_reprm_2.fq".format(path = YeoLab_eCLIP, run = run) for run in ["SRR3147598", "SRR3147599"]])
-	else:
-		return "{path}/{protein}_{cell_line}_YeoLab_{rep}_reprm_2.fq".format(path = YeoLab_eCLIP,
-			protein = wildcards.protein, cell_line = wildcards.cell_line, rep = wildcards.rep)		
+# def get_eCLIP_mate2(wildcards):
+# 	if wildcards.protein == "RBFOX2":
+# 		assert wildcards.cell_line == "293T"
+# 		if wildcards.rep == "input":
+# 			return "{path}/SRR3147600_reprm_2.fq".format(path = YeoLab_eCLIP)
+# 		else:
+# 			return ",".join(["{path}/{run}_reprm_2.fq".format(path = YeoLab_eCLIP, run = run) for run in ["SRR3147598", "SRR3147599"]])
+# 	else:
+# 		return "{path}/{protein}_{cell_line}_YeoLab_{rep}_reprm_2.fq".format(path = YeoLab_eCLIP,
+# 			protein = wildcards.protein, cell_line = wildcards.cell_line, rep = wildcards.rep)		
 
-rule run_PROBer_eCLIP:
-	input:
-		human_ref,
-		get_eCLIP_data_as_input,
-		PROBer
-	params: 
-		sample_name = "{path}/{{protein}}_{{cell_line}}_YeoLab_{{rep}}".format(path = exp_path),
-		mate1 = get_eCLIP_mate1,
-		mate2 = get_eCLIP_mate2
-	output:
-		expand("{path}/{{protein,[A-Za-z0-9]+}}_{{cell_line,[A-Z0-9]+}}_YeoLab_{{rep,(rep1|input)}}.{suffix}", 
-			path = exp_path, suffix = ["site_info", "alignments.bam"])
-	threads: 20
-	shell:
-		"{PROBer} iCLIP --eCLIP --paired-end -p {threads} --bowtie2 --bowtie2-path {bowtie2_path} --index-name {input[0]} --keep-alignments {params.sample_name} --reads {params.mate1} {params.mate2}"
+# rule run_PROBer_eCLIP:
+# 	input:
+# 		human_ref,
+# 		get_eCLIP_data_as_input,
+# 		PROBer, Bowtie2
+# 	params: 
+# 		sample_name = "{path}/{{protein}}_{{cell_line}}_YeoLab_{{rep}}".format(path = exp_path),
+# 		mate1 = get_eCLIP_mate1,
+# 		mate2 = get_eCLIP_mate2
+# 	output:
+# 		expand("{path}/{{protein,[A-Za-z0-9]+}}_{{cell_line,[A-Z0-9]+}}_YeoLab_{{rep,(rep1|input)}}.{suffix}", 
+# 			path = exp_path, suffix = ["site_info", "alignments.bam"])
+# 	threads: 20
+# 	shell:
+# 		"{PROBer} iCLIP --eCLIP --paired-end -p {threads} --bowtie2 --bowtie2-path {bowtie2_path} --index-name {input[0]} --keep-alignments {params.sample_name} --reads {params.mate1} {params.mate2}"
 
-rule run_PROBer_naive_eCLIP:
-	input:
-		"{path}/{{protein}}_{{cell_line}}_YeoLab_{{rep}}.alignments.bam".format(path = exp_path),
-		PROBer
-	params: 
-		sample_name="{path}/{{protein}}_{{cell_line}}_YeoLab_{{rep}}_naive".format(path = exp_path)
-	output:
-		"{path}/{{protein,[A-Za-z0-9]+}}_{{cell_line,[A-Z0-9]+}}_YeoLab_{{rep,(rep1|input)}}_naive.site_info".format(path = exp_path)
-	shell:
-		"{PROBer} iCLIP --eCLIP --paired-end --naive {params.sample_name} --alignments {input[0]}"
+# rule run_PROBer_naive_eCLIP:
+# 	input:
+# 		"{path}/{{protein}}_{{cell_line}}_YeoLab_{{rep}}.alignments.bam".format(path = exp_path),
+# 		PROBer
+# 	params: 
+# 		sample_name="{path}/{{protein}}_{{cell_line}}_YeoLab_{{rep}}_naive".format(path = exp_path)
+# 	output:
+# 		"{path}/{{protein,[A-Za-z0-9]+}}_{{cell_line,[A-Z0-9]+}}_YeoLab_{{rep,(rep1|input)}}_naive.site_info".format(path = exp_path)
+# 	shell:
+# 		"{PROBer} iCLIP --eCLIP --paired-end --naive {params.sample_name} --alignments {input[0]}"
 
-rule sample_multireads:
-	input: 
-		expand("{path}/{{protein}}_{{cell_line}}_YeoLab_{{rep}}.{suffix}", path = exp_path, suffix = ["alignments.bam", "site_info"]),
-		PROBer_sampler
-	params:
-		sample_name="{path}/{{protein}}_{{cell_line}}_YeoLab_{{rep}}".format(path = exp_path),
-		stat_name ="{path}/{{protein}}_{{cell_line}}_YeoLab_{{rep}}.stat/{{protein}}_{{cell_line}}_YeoLab_{{rep}}".format(path = exp_path)
-	output:
-		"{path}/{{protein,[A-Za-z0-9]+}}_{{cell_line,[A-Z0-9]+}}_YeoLab_{{rep,(rep1|input)}}.sampled.bam".format(path = exp_path)
-	shell:
-		"{PROBer_sampler} {params.sample_name} {params.stat_name} {input[0]} --eCLIP --seed 0"
+# rule sample_multireads_eCLIP:
+# 	input: 
+# 		expand("{path}/{{protein}}_{{cell_line}}_YeoLab_{{rep}}.{suffix}", path = exp_path, suffix = ["alignments.bam", "site_info"]),
+# 		PROBer_sampler
+# 	params:
+# 		sample_name="{path}/{{protein}}_{{cell_line}}_YeoLab_{{rep}}".format(path = exp_path),
+# 		stat_name ="{path}/{{protein}}_{{cell_line}}_YeoLab_{{rep}}.stat/{{protein}}_{{cell_line}}_YeoLab_{{rep}}".format(path = exp_path)
+# 	output:
+# 		"{path}/{{protein,[A-Za-z0-9]+}}_{{cell_line,[A-Z0-9]+}}_YeoLab_{{rep,(rep1|input)}}.sampled.bam".format(path = exp_path)
+# 	shell:
+# 		"{PROBer_sampler} {params.sample_name} {params.stat_name} {input[0]} --eCLIP --seed 0"
 
-rule extract_unique:
+
+
+rule extract_unique_CLIP:
 	input:
 		"{path}/clipper_header.txt".format(path = exp_path), 
-		"{path}/{{protein}}_{{cell_line}}_YeoLab_{{rep}}.alignments.bam".format(path = exp_path)
-	output: "{path}/{{protein,[A-Za-z0-9]+}}_{{cell_line,[A-Z0-9]+}}_YeoLab_{{rep,(rep1|input)}}_unique.bam".format(path = exp_path)
+		"{path}/{{protein}}_{{cell_line}}_{{lab}}_{{rep}}.alignments.bam".format(path = exp_path)
+	output: "{path}/{{protein,[A-Za-z0-9]+}}_{{cell_line,[A-Za-z0-9]+}}_{{lab,(UleLab|YeoLab)}}_{{rep,(rep1|input|iCLIP)}}_unique.bam".format(path = exp_path)
 	shell:
 		"{script_path}/extract_CLIP_reads_from_bam {input[0]} {input[1]} {output}"
 
-rule extract_all:
+rule extract_all_CLIP:
 	input:
 		"{path}/clipper_header.txt".format(path = exp_path), 
-		"{path}/{{protein}}_{{cell_line}}_YeoLab_{{rep}}.sampled.bam".format(path = exp_path)
-	output: "{path}/{{protein,[A-Za-z0-9]+}}_{{cell_line,[A-Z0-9]+}}_YeoLab_{{rep,(rep1|input)}}_all.bam".format(path = exp_path)
+		"{path}/{{protein}}_{{cell_line}}_{{lab}}_{{rep}}.sampled.bam".format(path = exp_path)
+	output: "{path}/{{protein,[A-Za-z0-9]+}}_{{cell_line,[A-Za-z0-9]+}}_{{lab,(UleLab|YeoLab)}}_{{rep,(rep1|input|iCLIP)}}_all.bam".format(path = exp_path)
 	shell:
 		"{script_path}/extract_CLIP_reads_from_bam {input[0]} {input[1]} {output}"
 
-rule samtools_sort:
+rule samtools_sort_CLIP:
 	input: "{path}/{{name}}_{{ending}}.bam".format(path = exp_path), Samtools
 	output: "{path}/{{name,\w+}}_{{ending,(unique|all)}}.sorted.bam".format(path = exp_path)
 	threads: 10
 	shell:
 		"{Samtools} sort -@ {threads} -o {output} {input[0]}"
 
-rule samtools_index:
+rule samtools_index_CLIP:
 	input: "{path}/{{name}}.sorted.bam".format(path = exp_path), Samtools
 	output: "{path}/{{name,\w+}}.sorted.bam.bai".format(path = exp_path)
 	shell:
-		"{samtools} index {input[0]}"
+		"{Samtools} index {input[0]}"
 
-rule run_CLIPper:
+rule run_CLIPper_CLIP:
 	input: expand("{path}/{{name}}.sorted.bam{extra}", path = exp_path, extra = ["", ".bai"])
 	output: "{path}/{{name,\w+}}.sorted.peaks.bed".format(path = exp_path)
 	threads: 20
 	shell:
 		"clipper -b {input[0]} -s GRCh38 -o {output} --bonferroni --superlocal --threshold-method binomial --processors={threads} --save-pickle"
 
-import os
 
-rule normalize_peaks:
-	input:
-		expand("{path}/{{protein}}_{{cell_line}}_YeoLab_{{rep}}_{{ending}}.sorted.{suffix}", path = exp_path, suffix = ["peaks.bed", "bam", "bam.bai"]),
-		expand("{path}/{{protein}}_{{cell_line}}_YeoLab_input_{{ending}}.sorted.bam{extra}", path = exp_path, extra = ["", ".bai"]),
-		"{path}/GRCh38.txt".format(path = exp_path)
-	params: sample = "{path}/{{protein}}_{{cell_line}}_YeoLab_{{rep}}_{{ending}}".format(path = exp_path)
-	output: 
-		"{path}/{{protein,[A-Za-z0-9]+}}_{{cell_line,[A-Z0-9]+}}_YeoLab_{{rep,(rep1|rep2)}}_{{ending,(unique|all|naive)}}.norm.peaks.bed".format(path = exp_path)
-	run:
-		shell("rm -rf {params.sample} {params.sample}.manifest {params.sample}.manifest.mapped_read_num")	
-		with open(params.sample + ".manifest", "w") as fout:
-			fout.write("uID\tRBP\tCell_line\tCLIP_rep1\tINPUT\n")
-			fout.write("001\t{protein}\t{cell_line}\t{working_directory}/{exp}\t{working_directory}/{input}\n".format(protein = wildcards.protein, cell_line = wildcards.cell_line, working_directory = os.getcwd(), exp = input[1], input = input[3]))
-		shell("mkdir -p {params.sample}")
-		shell("perl {script_path}/Peak_input_normalization_wrapper.pl {params.sample}.manifest {params.sample}")
-		shell("{script_path}/fdrCompressedPeaks {input[5]} {params.sample}/001_01.basedon_001_01.peaks.l2inputnormnew.bed.compressed.bed {output}")
 
-protein2motif = {"RBFOX2" : "TGCATG", "TARDBP" : "GAATG", "TRA2A" : "GAAGAA", "PUM2" : "\"TGTA[ACGTN]ATA\""}
+rule merge_peaks_iCLIP:
+	input: 
+		"{path}/GRCh38.txt".format(path = exp_path),
+		"{path}/{{protein}}_{{cell_line}}_{{lab}}_{{rep}}_{{ending}}.sorted.peaks.bed".format(path = exp_path)
+	output:
+		"{path}/{{protein,(hnRNPC|RBFOX2)}}_{{cell_line,(HeLa|293T)}}_{{lab,(UleLab|YeoLab)}}_{{rep,(rep1|iCLIP)}}_{{ending,(unique|all)}}.merged.peaks.bed".format(path = exp_path)
+	shell:
+		"{script_path}/mergeCLIPPERpeaks {input} {output}"
+
+# import os
+
+# rule normalize_peaks_eCLIP:
+# 	input:
+# 		expand("{path}/{{protein}}_{{cell_line}}_YeoLab_rep1_{{ending}}.sorted.{suffix}", path = exp_path, suffix = ["peaks.bed", "bam", "bam.bai"]),
+# 		expand("{path}/{{protein}}_{{cell_line}}_YeoLab_input_{{ending}}.sorted.bam{extra}", path = exp_path, extra = ["", ".bai"]),
+# 		"{path}/GRCh38.txt".format(path = exp_path)
+# 	params: sample = "{path}/{{protein}}_{{cell_line}}_YeoLab_rep1_{{ending}}".format(path = exp_path)
+# 	output: 
+# 		"{path}/{{protein,[A-Za-z0-9]+}}_{{cell_line,[A-Z0-9]+}}_YeoLab_rep1_{{ending,(unique|all)}}.norm.peaks.bed".format(path = exp_path)
+# 	run:
+# 		shell("rm -rf {params.sample} {params.sample}.manifest {params.sample}.manifest.mapped_read_num")	
+# 		with open(params.sample + ".manifest", "w") as fout:
+# 			fout.write("uID\tRBP\tCell_line\tCLIP_rep1\tINPUT\n")
+# 			fout.write("001\t{protein}\t{cell_line}\t{working_directory}/{exp}\t{working_directory}/{input}\n".format(protein = wildcards.protein, cell_line = wildcards.cell_line, working_directory = os.getcwd(), exp = input[1], input = input[3]))
+# 		shell("mkdir -p {params.sample}")
+# 		shell("perl {script_path}/YeoLab_perl_scripts/Peak_input_normalization_wrapper.pl {params.sample}.manifest {params.sample}")
+# 		shell("{script_path}/fdrCompressedPeaks {input[5]} {params.sample}/001_01.basedon_001_01.peaks.l2inputnormnew.bed.compressed.bed {output}")
+
+
+
+
+protein2motif = {"RBFOX2" : "TGCATG", "TARDBP" : "GAATG", "TRA2A" : "GAAGAA", "PUM2" : "\"TGTA[ACGTN]ATA\"", "hnRNPC" : "TTTTT"}
 
 def get_motif(wildcards):
 	return protein2motif[wildcards.protein]
 
-rule count_rate_for_normalized_peaks:
-	input: human_genome, "{path}/{{protein}}_{{content}}_{{ending}}.norm.peaks.bed".format(path = exp_path)
-	params: motif=get_motif
-	output: "{path}/{{protein,[A-Za-z0-9]+}}_{{content}}_{{ending,(unique|all|naive)}}.mhr".format(path = exp_path)
+def get_input_bed_file_CLIP(wildcards):
+	return "{path}/{protein}_{content}_{ending}.{name}.peaks.bed".format(path = exp_path,
+			protein = wildcards.protein, content = wildcards.content, ending = wildcards.ending, 
+			name = "norm" if wildcards.type == "eCLIP" else "merged") 
+
+rule count_rate_for_peaks_CLIP:
+	input:
+		human_genome,
+		get_input_bed_file_CLIP,
+		script_path + "/countMotifRate"
+	params: motif = get_motif
+	output: 
+		"{path}/{{protein,[A-Za-z0-9]+}}_{{content}}_{{ending,(unique|all)}}.{{type,(iCLIP|eCLIP)}}.mhr".format(path = exp_path)
 	shell:
 		"{script_path}/countMotifRate {input[0]} {params.motif} 100 {input[1]} > {output}"
 
-rule extract_context_for_sites:
-	input: human_genome, "{path}/{{protein}}_{{content}}.site_info".format(path = exp_path)
-	params: motif=get_motif
-	output: "{path}/{{protein,[A-Za-z0-9]+}}_{{content}}.100.motif".format(path = exp_path)
+rule extract_context_for_sites_CLIP:
+	input:
+		human_genome,
+		"{path}/{{protein}}_{{content}}.site_info".format(path = exp_path),
+		script_path + "/detectMotif"
+	params: motif = get_motif
+	output:
+		"{path}/{{protein,[A-Za-z0-9]+}}_{{content}}.100.motif".format(path = exp_path)
 	shell:
 		"{script_path}/detectMotif {input[0]} {params.motif} 100 {input[1]} {output}"
 
-rule calculate_weighted_rate_for_sites:
+rule calculate_weighted_rate_for_sites_CLIP:
 	input: 
-		"{path}/{{protein}}_{{cell_line}}_YeoLab_{{rep}}.100.motif".format(path = exp_path),
-		"{path}/{{protein}}_{{cell_line}}_YeoLab_{{rep}}{{extra}}.site_info".format(path = exp_path)
+		"{path}/{{protein}}_{{cell_line}}_{{lab}}_{{rep}}.100.motif".format(path = exp_path),
+		"{path}/{{protein}}_{{cell_line}}_{{lab}}_{{rep}}{{extra}}.site_info".format(path = exp_path),
+		script_path + "/calcWeightedMotifRate"
 	output:
-		"{path}/{{protein,[A-Za-z0-9]+}}_{{cell_line,[A-Z0-9]+}}_YeoLab_{{rep,(rep1|rep2)}}{{extra,(|_naive)}}.{{w,\d+}}.mhwr".format(path = exp_path)
+		"{path}/{{protein,[A-Za-z0-9]+}}_{{cell_line,[A-Za-z0-9]+}}_{{lab,(UleLab|YeoLab)}}_{{rep,(rep1|iCLIP)}}{{extra,(|_naive)}}.{{w,\d+}}.mhwr".format(path = exp_path)
 	shell:
 		"{script_path}/calcWeightedMotifRate {wildcards.w} {input[0]} {input[1]} > {output}"
+
+
+
+# CLIP outputs
+
+# rule generate_iCLIP_mapping_statistics_table:
+# 	input:
+# 		rules.bowtie_align_to_genome.output
+# 	output:
+# 		"{path}/iCLIP_mapping_statistics.txt".format(path = result_path)
+# 	shell:
+# 		"echo -e 'Unique\tMulti-mapping\tUnalignable\tFiltered' > {output} && "
+# 		"{script_path}/collectAlignStat {input} None >> {output}"
+
+rule generate_peak_motif_hit_rate_table:
+	input:
+		expand("{path}/RBFOX2_293T_YeoLab_rep1_{ending}.mhr", path = exp_path, ending = ["unique", "all", "naive"]),
+		expand("{path}/{protein}_K562_YeoLab_rep1_{ending}.mhr", path = exp_path, protein = ["TARDBP", "TRA2A", "PUM2"], ending = ["unique", "all", "naive"])
+	output:
+		"{path}/peak_motif_hit_rate_table.txt".format(path = result_path)
+	shell:
+		"{script_path}/generate_peak_mhr_table {output} {input}"
+
+rule generate_site_motif_hit_weighted_rate_table_iCLIP:
+	input:
+		expand("{path}/RBFOX2_293T_YeoLab_iCLIP{extra}.{w}.mhwr", path = exp_path, extra = ["", "_naive"], w = ["10", "20", "30", "40", "50", "100"]),
+		expand("{path}/hnRNPC_HeLa_UleLab_rep1{extra}.{w}.mhwr", path = exp_path, extra = ["", "_naive"], w = ["10", "20", "30", "40", "50", "100"])
+	output:
+		"{path}/site_motif_hit_weighted_rate_table_iCLIP.txt".format(path = result_path)
+	shell:
+		"{script_path}/generate_site_mhwr_table iCLIP {output} 10,20,30,40,50,100 {input}"
+
+rule generate_site_motif_hit_weighted_rate_table_eCLIP:
+	input:
+		expand("{path}/RBFOX2_293T_YeoLab_rep1{extra}.{w}.mhwr", path = exp_path, extra = ["", "_naive"], w = ["10", "20", "30", "40", "50", "100"]),
+		expand("{path}/{protein}_K562_YeoLab_rep1{extra}.{w}.mhwr", path = exp_path, protein = ["TARDBP", "TRA2A", "PUM2"], extra = ["", "_naive"], w = ["10", "20", "30", "40", "50", "100"])
+	output:
+		"{path}/site_motif_hit_weighted_rate_table_eCLIP.txt".format(path = result_path)
+	shell:
+		"{script_path}/generate_site_mhwr_table eCLIP {output} 10,20,30,40,50,100 {input}"		

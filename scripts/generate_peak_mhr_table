@@ -1,0 +1,24 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+
+if len(argv) != 14:
+	print("Usage: generate_peak_mhr_table output.txt input.mhr * 12")
+	exit(-1)
+
+outputs = [""] * 5
+outputs[0] = "\tRBFOX2\t\tTARDBP\t\tTRA2A\t\tPUM2\n"
+outputs[1] = "\tsites\tUGCAUG\trate\tsites\tGAAUG\trate\tsites\tGAAGAA\trate\tsites\tUGUANAUA\trate\n"
+outputs[2] = "unique"
+outputs[3] = "PROBer"
+outputs[4] = "naive"
+
+for i, mhrF in enumerate(argv[2:]):
+	with open(mhrF) as fin:
+		outputs[2 + i % 3] += fin.readline().rstrip()
+
+for i in range(2, 5):
+	outputs[i] += "\n"
+
+with open(argv[1], "w") as fout:
+	fout.write("".join(outputs))
