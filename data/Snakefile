@@ -88,8 +88,10 @@ rule remove_PCR_duplicate_ChangLab:
 		"{path}/{{run}}_trimmed.fq".format(path = ChangLab)
 	output:
 		"{path}/{{run}}_cleaned.fq".format(path = ChangLab)
+	log:
+		"{path}/{{run}}_cleaned.log".format(path = ChangLab)
 	shell:
-		"{script_path}/remove_PCR_dup_SE {input} 13 {output}"
+		"{script_path}/remove_PCR_dup_SE {input} 13 {output} > {log}"
 
 
 rule remove_adapter_GilbertLab:

@@ -2,23 +2,53 @@
 
 from sys import argv, exit
 
-if len(argv) != 14:
-	print("Usage: generate_peak_mhr_table output.txt input.mhr * 12")
+if len(argv) < 4:
+	print("Usage: generate_peak_mhr_table data_type output.txt input.mhr(s)")
 	exit(-1)
 
-outputs = [""] * 5
-outputs[0] = "\tRBFOX2\t\tTARDBP\t\tTRA2A\t\tPUM2\n"
-outputs[1] = "\tsites\tUGCAUG\trate\tsites\tGAAUG\trate\tsites\tGAAGAA\trate\tsites\tUGUANAUA\trate\n"
-outputs[2] = "unique"
-outputs[3] = "PROBer"
-outputs[4] = "naive"
 
-for i, mhrF in enumerate(argv[2:]):
+
+proteins_eCLIP = ["RBFOX2", "TARDBP", "TRA2A", "PUM2"]
+proteins_iCLIP = ["RBFOX2", "hnRNPC"]
+
+protein2motif = {"RBFOX2" : "UGCAUG",
+				 "TARDBP" : "GAAUG",
+				 "TRA2A" : "GAAGAA",
+				 "PUM2" : "UGUANATA",
+				 "hnRNPC" : "UUUUU"}
+
+proteins = proteins_iCLIP if argv[1] == "iCLIP" else proteins_eCLIP
+
+assert len(argv) == 3 + 2 * len(proteins)
+
+outputs = {}
+for protein in proteins:
+	outputs[protein] = [""] * 5
+
+for mhrF in argv[3:]:
+	start = mhrF.rfind('/') + 1
+	end = mhrF.index('_', start)
+	protein = mhrF[start : end]
+	base = 0 if mhrF.find("unique") >= 0 else 2
 	with open(mhrF) as fin:
-		outputs[2 + i % 3] += fin.readline().rstrip()
+		np, nmhp, mtr = fin.readline().strip().split('\t')
+		outputs[protein][base + 0] = int(np)
+		outputs[protein][base + 1] = mtr[:-1] + "\\%"
 
-for i in range(2, 5):
-	outputs[i] += "\n"
+for protein in proteins:
+	outputs[protein][4] = "\\textbf{" + "{0:.0f}".format((outputs[protein][2] - outputs[protein][0]) * 100.0 / outputs[protein][0]) + "\\%}"
+	outputs[protein][0] = "{0:,}".format(outputs[protein][0])
+	outputs[protein][2] = "{0:,}".format(outputs[protein][2])
 
-with open(argv[1], "w") as fout:
-	fout.write("".join(outputs))
+
+with open(argv[2], "w") as fout:
+	fout.write("\\begin{tabular}{c|c|cc|cc|c}\n")
+	fout.write("\\hline\n")
+	fout.write("\\multirow{2}{*}{Protein} & \\multirow{2}{*}{Motif} & \\multicolumn{2}{|c|}{Unique} & \\multicolumn{2}{|c|}{PROBer} & \\multirow{2}{*}{Gain} \\\\\n")
+	fout.write("\\cline{3-6}\n")
+	fout.write(" & & Peaks & Motif Hit Rate & Peaks & Motif Hit Rate & \\\\\n")
+	fout.write("\\hline\n")
+	for protein in proteins:
+		fout.write((protein if protein != "hnRNPC" else "hnRNP C") + " & " + protein2motif[protein] + " & " + " & ".join(outputs[protein]) + " \\\\\n")
+		fout.write("\\hline\n")
+	fout.write("\\end{tabular}\n")
