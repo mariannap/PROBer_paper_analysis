@@ -56,7 +56,7 @@ for i in range(len(proteins)):
 			outputs[i][1][k] += "\\%"
 
 with open(argv[2], "w") as fout:
-	fout.write("\\begin{tabular}{*{" + str(nw + 1) + "}c}\n")
+	fout.write("\\begin{tabular}{l*{" + str(nw) + "}c}\n")
 	for i, protein in enumerate(proteins):
 		fout.write("\\hline\n")
 		fout.write(protein + " & " + " & ".join(ws) + " \\\\\n")

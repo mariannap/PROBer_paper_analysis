@@ -42,7 +42,7 @@ for protein in proteins:
 
 
 with open(argv[2], "w") as fout:
-	fout.write("\\begin{tabular}{c|c|cc|cc|c}\n")
+	fout.write("\\begin{tabular}{ll|cc|cc|c}\n")
 	fout.write("\\hline\n")
 	fout.write("\\multirow{2}{*}{Protein} & \\multirow{2}{*}{Motif} & \\multicolumn{2}{|c|}{Unique} & \\multicolumn{2}{|c|}{PROBer} & \\multirow{2}{*}{Gain} \\\\\n")
 	fout.write("\\cline{3-6}\n")
@@ -50,5 +50,5 @@ with open(argv[2], "w") as fout:
 	fout.write("\\hline\n")
 	for protein in proteins:
 		fout.write((protein if protein != "hnRNPC" else "hnRNP C") + " & " + protein2motif[protein] + " & " + " & ".join(outputs[protein]) + " \\\\\n")
-		fout.write("\\hline\n")
+	fout.write("\\hline\n")
 	fout.write("\\end{tabular}\n")

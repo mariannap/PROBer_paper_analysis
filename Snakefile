@@ -19,7 +19,7 @@ rsem_path = tool_path + "/RSEM-1.2.31"
 RSEM_prepare, RSEM_simulate, RSEM_calculate = expand("{path}/{cmd}", path = rsem_path, 
 	cmd = ["rsem-prepare-reference", "rsem-simulate-reads", "rsem-calculate-expression"])
 
-PROBer, PROBer_single, PROBer_sampler = expand("{path}/PROBer-0.2.0/build/src/{cmd}", path = tool_path, cmd = ["PROBer", "PROBer-single-batch-estimate", "PROBer-sample-iCLIP"])
+PROBer, PROBer_single, PROBer_sampler = expand("{path}/PROBer-0.3.0/build/src/{cmd}", path = tool_path, cmd = ["PROBer", "PROBer-single-batch-estimate", "PROBer-sample-iCLIP"])
 PROBer_full_model = "{path}/PROBer_full_model/build/src/PROBer".format(path = tool_path)
 
 Fold, scorer = expand("{path}/RNAstructure/exe/{cmd}", path = tool_path, cmd = ["Fold", "scorer"])
@@ -87,7 +87,7 @@ results.append("{path}/yeast_structure_prediction_table.txt".format(path = resul
 results.extend(expand("{path}/pseudoU_{type}.pdf", path = result_path, type = ["pr", "roc"]))
 results.append("{path}/pseudoU_18S.pdf".format(path = result_path))
 results.extend(expand("{path}/structure_seq_spikes_{corr}_boxplot.pdf", path = result_path, corr = ["pearson", "spearman"]))
-
+results.extend(expand("{path}/{type}_site_result_table.txt {path}/{type}_peak_result_table.txt".split(), path = result_path, type = ["iCLIP", "eCLIP"]))
 # results.extend(expand("{path}/{name}", path = result_path, name = ["digital_spike_in.txt", "scatters.pdf", "mapping_statistics_table.txt"]))#, "time_and_memory_table.txt"]))
 # results.extend(expand("{path}/{name}_seq_roc_{rRNA}.pdf", path = result_path, name = ["structure", "mod"], rRNA = ["18S", "25S"]))
 # results.extend(expand("{path}/icSHAPE_{condition}_roc_{rRNA}.pdf", path = result_path, condition = ["invitro", "invivo"], rRNA = ["18S", "12S_Mt"]))
@@ -106,10 +106,9 @@ include: "exp/Snakefile"
 include: "simulation/Snakefile"
 
 rule all:
-	input: # results
-		expand("{path}/SRR153495{digit}_cleaned.fq", path = ChangLab, digit = ["3", "5", "7"])
+	input: #results 
 		# "results/site_motif_hit_weighted_rate_table_iCLIP.txt",
-		# expand("{path}/hnRNPC_HeLa_UleLab_rep1_{ending}.iCLIP.mhr", path = exp_path, ending = ["unique", "all"]),
+		expand("{path}/{name}.{suffix}", path = exp_path, name = ["RBFOX2_293T_YeoLab_rep1", "PUM2_K562_YeoLab_rep1"], suffix = ["alignments.bam", "site_info"])
 		# expand("{path}/RBFOX2_293T_YeoLab_iCLIP_{ending}.iCLIP.mhr", path = exp_path, ending = ["unique", "all"])
 		# expand("{path}/SRR3147{number}_reprm_{mate}.fq", path = YeoLab_eCLIP, number = ["598", "599", "600"], mate = ["1", "2"]),
 		# expand("{path}/{protein}_K562_YeoLab_{rep}_reprm_{mate}.fq", path = YeoLab_eCLIP, protein = ["PUM2", "TARDBP", "TRA2A"], rep = ["rep1", "input"], mate = ["1", "2"])

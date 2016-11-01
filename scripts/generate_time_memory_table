@@ -1,56 +1,54 @@
-#!/usr/bin/env python
-
-from __future__ import division
-
-try:
-    xrange
-except NameError:
-    xrange = range
-
-####################################
+#!/usr/bin/env python3
 
 from sys import argv, exit
 
-
-
-if len(argv) != 3:
-    print("Usage: generate_time_memory_table input_name output_file")
-    exit(-1)
-
-header = ["Step", "Runtime", "Memory"]
-steps = ["Alignment and Parsing", "EM algorithm", "Generating BAM files"]
+if len(argv) != 4:
+	print("Usage: generate_time_memory_table input_name1 input_name2 output_file")
+	exit(-1)
 
 def parse_time(line):
-    return int(line.split("\t")[1][:-2])
+	return int(line.split("\t")[1][:-2])
 
 def parse_memory(line):
-    return line.split("\t")[1][:-1];
+	return line.split("\t")[1][:-1];
 
 def format_time(time):
-    seconds = time % 60
-    time //= 60
-    minutes = time % 60
-    hours = time // 60
+	seconds = time % 60
+	time //= 60
+	minutes = time % 60
+	hours = time // 60
 
-    return "{2}h {1}m {0}s".format(seconds, minutes, hours)
+	res = ""
+	if hours > 0:
+		res += str(hours) + "h "
+	if minutes > 0:
+		res += str(minutes) + "m "
+	if seconds > 0:
+		res += str(seconds) + "s"
+	res = res.strip()
 
-times = []
-with open("{}.time".format(argv[1])) as fin:
-    times.append(parse_time(fin.readline()))
-    times.append(parse_time(fin.readline()))
+	return res
 
-with open("{}.bam.time".format(argv[1])) as fin:
-    times.append(parse_time(fin.readline()))
-
-times[1] -= times[2]
-
-mems = ["", "", "-"]
-
-with open("{}.mem".format(argv[1])) as fin:
-    mems[0] = parse_memory(fin.readline())
-    mems[1] = parse_memory(fin.readline())
-
-with open(argv[2], "w") as fout:
-    fout.write("\t".join(header) + "\n")
-    for i in xrange(3):
-        fout.write(steps[i] + "\t" + format_time(times[i]) + "\t" + mems[i] + "\n")
+with open(argv[3], "w") as fout:
+	fout.write("\\begin{tabular}{c|c|cc|cc}\n")
+	fout.write("\\hline\n")
+	fout.write("\\multirow{2}{*}{Data} & \\multirow{2}{*}{Size} & \\multicolumn{2}{|c|}{Alignment} & \\multicolumn{2}{c}{Inference} \\\\\n")
+	fout.write("\\cline{3-6}\n")
+	fout.write(" & & Runtime & Memory & Runtime & Memory \\\\\n")
+	fout.write("\\hline\n")
+	fout.write("Ding \\textit{et al.} & 43.77GB & ")
+	with open(argv[1] + ".time") as fin, open(argv[1] + ".mem") as fin2:
+		fout.write(format_time(parse_time(fin.readline())) + " & ")
+		fout.write(parse_memory(fin2.readline()) + " & ")
+		with open(argv[1] + ".bam.time") as fbam:
+			fout.write(format_time(parse_time(fin.readline()) - parse_time(fbam.readline())) + " & ")
+		fout.write(parse_memory(fin2.readline()) + " \\\\\n")
+	fout.write("\\hline\n")
+	fout.write("RBFOX2 eCLIP & 8.77GB & ")
+	with open(argv[2] + ".time") as fin, open(argv[2] + ".mem") as fin2:
+		fout.write(format_time(parse_time(fin.readline())) + " & ")
+		fout.write(parse_memory(fin2.readline()) + " & ")
+		fout.write(format_time(parse_time(fin.readline())) + " & ")
+		fout.write(parse_memory(fin2.readline()) + " \\\\\n ")
+	fout.write("\\hline\n")
+	fout.write("\\end{tabular}\n")

@@ -46,11 +46,11 @@ rule build_rsem:
 		"cd {wildcards.name} && make"
 
 rule build_PROBer:
-	input: tool_path + "/PROBer-0.2.0.tar.gz"
+	input: tool_path + "/PROBer-0.3.0.tar.gz"
 	output: touch([PROBer, PROBer_single, PROBer_sampler])
 	shell:
 		"tar -C {tool_path} -xzf {input} && "
-		"mkdir -p {tool_path}/PROBer-0.2.0/build && cd {tool_path}/PROBer-0.2.0/build && cmake .. && make"
+		"mkdir -p {tool_path}/PROBer-0.3.0/build && cd {tool_path}/PROBer-0.3.0/build && cmake .. && make"
 
 rule build_PROBer_full_model:
 	input: tool_path + "/PROBer_full_model.tar.gz"
