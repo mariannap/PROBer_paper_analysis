@@ -2,7 +2,7 @@
 
 argv = commandArgs(TRUE)
 if (length(argv) != 8) {
-   cat("Usage: plotROC_SHAPES structure_file sasa_file DMSO_no-sel.counts NPIA_no-sel.counts NPIA_sel.counts PROBer.beta PROBer_sel.beta output_file\n")
+   cat("Usage: plotROC_SHAPES structure_file sasa_file DMSO_no-sel.counts NPIA_no-sel.counts NPIA_sel.counts PROBer.beta PROBer_sel.beta output_name\n")
    q(status = 1)
 }
 
@@ -12,6 +12,10 @@ library("RNAprobR")
 
 calcROC = function(id, estimates, idx, truth) {
 	roc.curve(estimates[[id]][idx], weights.class0 = truth[idx], curve = T)
+}
+
+calcPR = function(id, estimates, idx, truth) {
+	pr.curve(estimates[[id]][idx], weights.class0 = truth[idx], curve = T)
 }
 
 struc = scan(argv[1], what = 0)
@@ -46,18 +50,31 @@ prober_sel = as.numeric(scan(argv[7], what = "", skip = 1, nlines = 1)[3:(n - 4)
 
 estimates = list(prober_sel, npia_norm, npia_raw, prober, treatment_norm, treatment_raw, control_norm, control_raw)
 rocs = lapply(1:8, calcROC, estimates, idx, struc)
+prs = lapply(1:8, calcPR, estimates, idx, struc)
 
-pdf(argv[8])
 
+pdf(sprintf("%s_sel_roc.pdf", argv[8]))
 plot(rocs[[1]], lwd = 1, lty = 1, col = "red", auc.main = F, main = "NPIA selected dataset")
 plot(rocs[[2]], lwd = 1, lty = 1, col = "blue", add = T)
 plot(rocs[[3]], lwd = 1, lty = 2, col = "blue", add = T)
 legends = c(as.expression(bquote(paste("PROBer, AUC = ", .(sprintf("%.2f", rocs[[1]]$auc))))),
-			as.expression(bquote(paste("NPIA norm, AUC = ", .(sprintf("%.2f", rocs[[2]]$auc))))),
-			as.expression(bquote(paste("NPIA raw, AUC = ", .(sprintf("%.2f", rocs[[3]]$auc))))))
+			as.expression(bquote(paste("NPIA_sel norm, AUC = ", .(sprintf("%.2f", rocs[[2]]$auc))))),
+			as.expression(bquote(paste("NPIA_sel raw, AUC = ", .(sprintf("%.2f", rocs[[3]]$auc))))))
 legend("bottomright", legend = legends, lty = c(1, 1, 2), col = c("red", "blue", "blue"))
+dev.off()
+
+pdf(sprintf("%s_sel_pr.pdf", argv[8]))
+plot(prs[[1]], lwd = 1, lty = 1, col = "red", auc.main = F, main = "NPIA selected dataset")
+plot(prs[[2]], lwd = 1, lty = 1, col = "blue", add = T)
+plot(prs[[3]], lwd = 1, lty = 2, col = "blue", add = T)
+legends = c(as.expression(bquote(paste("PROBer, AUC = ", .(sprintf("%.2f", prs[[1]]$auc.integral))))),
+			as.expression(bquote(paste("NPIA_sel norm, AUC = ", .(sprintf("%.2f", prs[[2]]$auc.integral))))),
+			as.expression(bquote(paste("NPIA_sel raw, AUC = ", .(sprintf("%.2f", prs[[3]]$auc.integral))))))
+legend("bottomright", legend = legends, lty = c(1, 1, 2), col = c("red", "blue", "blue"))
+dev.off()
 
 
+pdf(sprintf("%s_no_sel_roc.pdf", argv[8]))
 plot(rocs[[4]], lwd = 1, lty = 1, col = "red", auc.main = F, main = "NPIA unselected dataset")
 plot(rocs[[5]], lwd = 1, lty = 1, col = "blue", add = T)
 plot(rocs[[6]], lwd = 1, lty = 2, col = "blue", add = T)
@@ -69,5 +86,18 @@ legends = c(as.expression(bquote(paste("PROBer, AUC = ", .(sprintf("%.2f", rocs[
 			as.expression(bquote(paste("DMSO norm, AUC = ", .(sprintf("%.2f", rocs[[7]]$auc))))),
 			as.expression(bquote(paste("DMSO raw, AUC = ", .(sprintf("%.2f", rocs[[8]]$auc))))))
 legend("bottomright", legend = legends, lty = c(1, 1, 2, 1, 2), col = c("red", "blue", "blue", "green", "green"))
+dev.off()
 
+pdf(sprintf("%s_no_sel_pr.pdf", argv[8]))
+plot(prs[[4]], lwd = 1, lty = 1, col = "red", auc.main = F, main = "NPIA unselected dataset")
+plot(prs[[5]], lwd = 1, lty = 1, col = "blue", add = T)
+plot(prs[[6]], lwd = 1, lty = 2, col = "blue", add = T)
+plot(prs[[7]], lwd = 1, lty = 1, col = "green", add = T)
+plot(prs[[8]], lwd = 1, lty = 2, col = "green", add = T)
+legends = c(as.expression(bquote(paste("PROBer, AUC = ", .(sprintf("%.2f", prs[[4]]$auc.integral))))),
+			as.expression(bquote(paste("NPIA norm, AUC = ", .(sprintf("%.2f", prs[[5]]$auc.integral))))),
+			as.expression(bquote(paste("NPIA raw, AUC = ", .(sprintf("%.2f", prs[[6]]$auc.integral))))),
+			as.expression(bquote(paste("DMSO norm, AUC = ", .(sprintf("%.2f", prs[[7]]$auc.integral))))),
+			as.expression(bquote(paste("DMSO raw, AUC = ", .(sprintf("%.2f", prs[[8]]$auc.integral))))))
+legend("bottomright", legend = legends, lty = c(1, 1, 2, 1, 2), col = c("red", "blue", "blue", "green", "green"))
 dev.off()
