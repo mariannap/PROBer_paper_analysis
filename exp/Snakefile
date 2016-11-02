@@ -544,7 +544,7 @@ rule calc_mod_seq_ROC_AUC:
 		"{script_path}/calcROC {gt_path} 49 {exp_path}/mod_seq {output}"
 
 ### icSHAPE data
-rule generate_icSHAPE_ROC_plots:
+rule calc_icSHAPE_ROC_AUC:
 	input:
 		expand("{path}/mouse_{name}.{suffix}", path = gt_path, name = ["18S", "12S_Mt"], suffix = ["structure", "isac"]),
 		expand("{path}/icSHAPE_{{condition}}_{method_suffix}", path = exp_path,
@@ -554,6 +554,13 @@ rule generate_icSHAPE_ROC_plots:
 	shell:
 		"{script_path}/calcROC {gt_path} 86 {exp_path}/icSHAPE_{wildcards.condition} {output}"
 
+rule generate_roc_auc_table:
+	input:
+		expand("{path}/{name}_roc_auc.txt", path = exp_path, name = ["structure_seq", "mod_seq", "icSHAPE_invitro", "icSHAPE_invivo"])
+	output:
+		"{path}/structure_probing_roc_auc_table.txt".format(path = result_path)
+	shell:
+		"{script_path}/generate_structure_probing_roc_auc_table {input} {output}"
 
 ## SHAPES data for priming bias
 
@@ -608,12 +615,13 @@ rule plot_bias_SHAPES:
 
 rule plot_ROC_SHAPES:
 	input:
-		expand("ground_truth/{name}", name = ["16S.structure", "ecoli_16S.sasa"]),
-		expand("exp/{sample}.counts", sample = ["DMSO_no-sel", "NPIA_no-sel", "NPIA_sel"]),
-		expand("exp/ecoli_16S_PROBer{extra}.beta", extra = ["", "_sel"])
-	output: "results/SHAPES_roc.pdf"
+		expand("{path}/ecoli_16S.{suffix}", path = gt_path, suffix = ["structure", "sasa"]),
+		expand("{path}/SHAPES_trimmed_{sample}.counts", path = exp_path, sample = ["minus", "plus", "NPIA_sel"]),
+		expand("{path}/SHAPES_trimmed{extra}_PROBer.beta", path = exp_path, extra = ["", "_NPIA_sel"])
+	output:
+		expand("{path}/SHAPES_{sel}_{type}.pdf", path = result_path, sel = ["sel", "no_sel"], type = ["pr", "roc"])
 	shell:
-		"scripts/plotROC_SHAPES {input} {output}"
+		"scripts/plot_PR_ROC_SHAPES {input} {result_path}/SHAPES"
 
 
 # Pseudo-seq experiments for Pseudouridine modification

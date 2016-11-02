@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+
+if len(argv) != 6:
+	print("Usage: generate_structure_probing_roc_auc_table structure_seq_roc_auc.txt mod_seq_roc_auc.txt icSHAPE_invitro_roc_auc.txt icSHAPE_invivo_roc_auc.txt output")
+	exit(-1)
+
+with open(argv[5], "w") as fout:
+	fout.write("\\begin{tabular}{c|c|cccc}\n")
+	fout.write("\\hline\n")
+	fout.write("Data & rRNA & PROBer & StructureFold & Mod-seeker & icSHAPE \\\\\n")
+	fout.write("\\hline\n")
+	with open(argv[1]) as fin:
+		fout.write("\multirow{2}{*}{Ding \\textit{et al.}} & 18S & ")
+		fout.write(" & ".join(fin.readline().strip().split()) + " \\\\\n")
+		fout.write("\\cline{2-6}\n")
+		fout.write(" & 25S & " + " & ".join(fin.readline().strip().split()) + " \\\\\n")
+		fout.write("\\hline\n")
+	with open(argv[2]) as fin:
+		fout.write("\multirow{2}{*}{Talkish \\textit{et al.}} & 18S & ")
+		fout.write(" & ".join(fin.readline().strip().split()) + " \\\\\n")
+		fout.write("\\cline{2-6}\n")
+		fout.write(" & 25S & " + " & ".join(fin.readline().strip().split()) + " \\\\\n")
+		fout.write("\\hline\n")
+	with open(argv[3]) as fin:
+		fout.write("\multirow{2}{*}{Spitale \\textit{et al.} (\\textit{in vitro})}  & 18S & ")
+		fout.write(" & ".join(fin.readline().strip().split()) + " \\\\\n")
+		fout.write("\\cline{2-6}\n")
+		fout.write(" & 12S\\_Mt & " + " & ".join(fin.readline().strip().split()) + " \\\\\n")
+		fout.write("\\hline\n")
+	with open(argv[4]) as fin:
+		fout.write("\multirow{2}{*}{Spitale \\textit{et al.} (\\textit{in vivo})} & 18S & ")
+		fout.write(" & ".join(fin.readline().strip().split()) + " \\\\\n")
+		fout.write("\\cline{2-6}\n")
+		fout.write(" & 12S\\_Mt & " + " & ".join(fin.readline().strip().split()) + " \\\\\n")
+		fout.write("\\hline\n")
+	fout.write("\\end{tabular}\n")
+
+
+

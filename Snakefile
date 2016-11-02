@@ -90,12 +90,8 @@ results.append("{path}/pseudoU_18S.pdf".format(path = result_path))
 results.extend(expand("{path}/structure_seq_spikes_{corr}_boxplot.pdf", path = result_path, corr = ["pearson", "spearman"]))
 results.extend(expand("{path}/{type}_site_result_table.txt {path}/{type}_peak_result_table.txt".split(), path = result_path, type = ["iCLIP", "eCLIP"]))
 results.extend(expand("{path}/time_and_memory_table.txt", path = result_path))
+results.extend(expand("{path}/SHAPES_{sel}_{type}.pdf", path = result_path, sel = ["sel", "no_sel"], type = ["pr", "roc"]))
 # results.extend(expand("{path}/{name}", path = result_path, name = ["digital_spike_in.txt", "scatters.pdf", "mapping_statistics_table.txt"]))#, ]))
-# results.extend(expand("{path}/{name}_seq_roc_{rRNA}.pdf", path = result_path, name = ["structure", "mod"], rRNA = ["18S", "25S"]))
-# results.extend(expand("{path}/icSHAPE_{condition}_roc_{rRNA}.pdf", path = result_path, condition = ["invitro", "invivo"], rRNA = ["18S", "12S_Mt"]))
-# results.extend(expand("{path}/{name}.txt", path = result_path, name = ["RBFOX2_iCLIP_table", "iCLIP_mapping_statistics"]))
-# #results.extend(expand("{path}/{name}.bedGraph", path = result_path, name = ["SRGAP2B", "SRGAP2D"]))
-# results.extend(expand("{path}/{name}.bedGraph", path = result_path, name = "NUP133"))
 
 ## Import Snakemake modules
 
