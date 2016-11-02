@@ -598,7 +598,7 @@ def get_bam_as_input_SHAPES(wildcards):
 
 rule trim_terminals_SHAPES:
 	input:
-		ecoli_rRNA,
+		ecoli_rRNA + ".fa",
 		get_bam_as_input_SHAPES
 	output: 
 		expand("{path}/SHAPES_trimmed_{{sample,(minus|plus|NPIA_sel)}}_all.bam", path = exp_path)

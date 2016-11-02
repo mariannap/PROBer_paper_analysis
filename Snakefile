@@ -106,14 +106,6 @@ include: "simulation/Snakefile"
 
 rule all:
 	input: #results
-		result_path + "/mapping_statistics_table.txt"
-		# expand("{path}/{sample}_trimmed_{mate}.fq", path = VintherLab, sample = ["DMSO_no-sel", "NPIA_no-sel", "NPIA_sel"], mate = ["1", "2"])
-		# expand("{path}/{name}.{suffix}", path = exp_path, name = ["RBFOX2_293T_YeoLab_rep1", "PUM2_K562_YeoLab_rep1"], suffix = ["alignments.bam", "site_info"])
-		# expand("{path}/RBFOX2_293T_YeoLab_iCLIP_{ending}.iCLIP.mhr", path = exp_path, ending = ["unique", "all"])
-		# expand("{path}/SRR3147{number}_reprm_{mate}.fq", path = YeoLab_eCLIP, number = ["598", "599", "600"], mate = ["1", "2"]),
-		# expand("{path}/{protein}_K562_YeoLab_{rep}_reprm_{mate}.fq", path = YeoLab_eCLIP, protein = ["PUM2", "TARDBP", "TRA2A"], rep = ["rep1", "input"], mate = ["1", "2"])
-	
+		expand("{path}/SHAPES_bias.pdf", path = result_path),
+		expand("{path}/SHAPES_{sel}_{type}.pdf", path = result_path, sel = ["sel", "no_sel"], type = ["pr", "roc"])
 
-	#"{path}/pseudoU_PR.pdf".format(path = result_path)
-	
-	 #results

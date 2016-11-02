@@ -3,8 +3,8 @@
 from sys import argv, exit
 
 if len(argv) != 6:
-    print("Usage: generate_mapping_statistics_table structure_seq_plus.txt structure_seq_minus.txt RBFOX2_eCLIP_plus.txt RBFOX2_eCLIP_minus.txt output_table.txt")
-    exit(-1)
+	print("Usage: generate_mapping_statistics_table structure_seq_plus.txt structure_seq_minus.txt RBFOX2_eCLIP_plus.txt RBFOX2_eCLIP_minus.txt output_table.txt")
+	exit(-1)
 
 def load_file(inpF):
 	with open(inpF) as fin:
@@ -12,14 +12,16 @@ def load_file(inpF):
 	return " & ".join(values[:3])
 
 with open(argv[5], "w") as fout:
-	fout.write("\\begin{tabular}{l|c|ccc}\n")
+	fout.write("\\begin{tabular}{c|c|cc|c}\n")
 	fout.write("\\hline\n")
-	fout.write("\\multirow{2}{*}{Ding \\textit{et al.}} & + & " + load_file(argv[1]) + " \\\\\n")
+	fout.write("\multicolumn{2}{c|}{Data} & Unique & Multi-mapping & Multi-mapping Rate \\\\\n")
+	fout.write("\\hline\n")
+	fout.write("\\multirow{2}{*}{Ding \\textit{et al.} Structure-seq} & + & " + load_file(argv[1]) + " \\\\\n")
 	fout.write("\\cline{2-5}\n")
-    fout.write(" & - & " + load_file(argv[2]) + " \\\\\n")
-    fout.write("\\hline\n")
-	fout.write("\\multirow{2}{*}{YeoLab \\textit{et al.} RBFOX2 eCLIP rep1} & + & " + load_file(argv[3]) + " \\\\\n")
+	fout.write(" & - & " + load_file(argv[2]) + " \\\\\n")
+	fout.write("\\hline\n")
+	fout.write("\\multirow{2}{*}{RBFOX2 eCLIP (rep1)} & + & " + load_file(argv[3]) + " \\\\\n")
 	fout.write("\\cline{2-5}\n")
-    fout.write(" & - & " + load_file(argv[4]) + " \\\\\n")
-    fout.write("\\hline\n")
-
+	fout.write(" & - & " + load_file(argv[4]) + " \\\\\n")
+	fout.write("\\hline\n")
+	fout.write("\\end{tabular}\n")
