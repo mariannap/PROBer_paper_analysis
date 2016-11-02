@@ -131,7 +131,7 @@ rule download_assembled_ecoli_16S_fa:
 
 rule build_PROBer_and_Bowtie2_indices_for_ecoli_16S_fa:
     input:
-        "{path}/ecoli_rRNA.fa".format(path = ref_ecoli)
+        "{path}/ecoli_rRNA.fa".format(path = ref_ecoli),
         PROBer, Bowtie2
     output:
         touch(ecoli_rRNA)

@@ -42,7 +42,7 @@ arabidopsis_filt_rsem = arabidopsis_filt + "_rsem"
 arabidopsis_spike = "{path}/arabidopsis_spike".format(path = ref_arabidopsis)
 yeast_filt = "{path}/yeast_filt".format(path = ref_yeast)
 yeast_rRNAs = "{path}/yeast_rRNAs".format(path = ref_yeast)
-ecoli_rRNA = "{path}/ecoli_rRNA".format(ref_ecoli)
+ecoli_rRNA = "{path}/ecoli_rRNA".format(path = ref_ecoli)
 mouse_filt = "{path}/mouse_filt".format(path = ref_mouse)
 human_ref = "{path}/human_ref".format(path = ref_human)
 rep_ref = "{path}/rep_ref".format(path = ref_human)
@@ -85,13 +85,14 @@ result_path = "results"
 results = expand("{path}/structure_seq_sim{digit}_{name}_{method}_boxplot.pdf", path = result_path, digit = ['1', '2'], name = ["vs_full", "vs_pipeline", "main"], method = ["pearson", "spearman"])
 results.extend(expand("{path}/{exp}_{type}_{rRNA}.pdf", path = result_path, exp = ["mod_seq", "ChemModSeq"], type = ["pr", "roc"], rRNA = ["18S", "25S"]))
 results.append("{path}/yeast_structure_prediction_table.txt".format(path = result_path))
+results.append("{path}/structure_probing_roc_auc_table.txt".format(path = result_path))
 results.extend(expand("{path}/pseudoU_{type}.pdf", path = result_path, type = ["pr", "roc"]))
 results.append("{path}/pseudoU_18S.pdf".format(path = result_path))
 results.extend(expand("{path}/structure_seq_spikes_{corr}_boxplot.pdf", path = result_path, corr = ["pearson", "spearman"]))
 results.extend(expand("{path}/{type}_site_result_table.txt {path}/{type}_peak_result_table.txt".split(), path = result_path, type = ["iCLIP", "eCLIP"]))
 results.extend(expand("{path}/time_and_memory_table.txt", path = result_path))
 results.extend(expand("{path}/SHAPES_{sel}_{type}.pdf", path = result_path, sel = ["sel", "no_sel"], type = ["pr", "roc"]))
-# results.extend(expand("{path}/{name}", path = result_path, name = ["digital_spike_in.txt", "scatters.pdf", "mapping_statistics_table.txt"]))#, ]))
+# results.extend(expand("{path}/{name}", path = result_path, name = ["digital_spike_in.txt", "scatters.pdf", ]))#, ]))
 
 ## Import Snakemake modules
 
@@ -104,8 +105,9 @@ include: "exp/Snakefile"
 include: "simulation/Snakefile"
 
 rule all:
-	input: #results 
-		expand("{path}/{name}_roc_auc.txt", path = exp_path, name = ["icSHAPE_invivo", "icSHAPE_invitro"])
+	input: #results
+		result_path + "/mapping_statistics_table.txt"
+		# expand("{path}/{sample}_trimmed_{mate}.fq", path = VintherLab, sample = ["DMSO_no-sel", "NPIA_no-sel", "NPIA_sel"], mate = ["1", "2"])
 		# expand("{path}/{name}.{suffix}", path = exp_path, name = ["RBFOX2_293T_YeoLab_rep1", "PUM2_K562_YeoLab_rep1"], suffix = ["alignments.bam", "site_info"])
 		# expand("{path}/RBFOX2_293T_YeoLab_iCLIP_{ending}.iCLIP.mhr", path = exp_path, ending = ["unique", "all"])
 		# expand("{path}/SRR3147{number}_reprm_{mate}.fq", path = YeoLab_eCLIP, number = ["598", "599", "600"], mate = ["1", "2"]),

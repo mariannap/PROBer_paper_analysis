@@ -26,7 +26,7 @@ def get_ref(wildcards):
 def get_data_as_input(wildcards):
 	if re.search("(sim|spike)", wildcards.sample):
 		return ["{path}/{sample}.fq".format(path = sim_path, sample = wildcards.sample)]
-	return sample_name_to_data[wildcards.sample]
+	return sample_name_to_data.get(wildcards.sample, "None")
 
 def get_data_as_param(wildcards):
 	return ",".join(get_data_as_input(wildcards))
@@ -161,7 +161,7 @@ rule run_PROBer_no_control:
 		PROBer
 	params: get_PROBer_params
 	output:
-		expand("{path}/{{experiment,(icSHAPE|SHAPES_trimmed)}}_{{condition,(invivo|invitro|NPIA_sel)}}_PROBer.{suffix}", path = exp_path, suffix = ["beta", "expr"])
+		expand("{path}/{{experiment,(icSHAPE|SHAPES_trimmed)}}_{{condition}}_PROBer.{suffix}", path = exp_path, suffix = ["beta", "expr"])
 	threads: 20
 	shell:
 		"{PROBer} estimate -p {threads} {params} {input[0]} {exp_path}/{wildcards.experiment}_{wildcards.condition}_PROBer --alignments {input[1]}"
@@ -273,18 +273,27 @@ rule sort_bam_by_name: # Sort Bowtie alignments by name to avoid slightly differ
 
 ## Collect mapping statistics
 
-rule extract_mapping_statistics:
+rule extract_structure_seq_mapping_statistics:
 	input:
 		"{path}/structure_seq_sorted_{{channel}}_all.bam".format(path = exp_path),
 		"{path}/rRNA_list.txt".format(path = gt_path)
 	output:
-		"{path}/structure_seq_sorted_{{channel}}.stats.txt".format(path = exp_path)
+		"{path}/structure_seq_sorted_{{channel,(minus|plus)}}.stats.txt".format(path = exp_path)
 	shell:
 		"{script_path}/collectAlignStat {input[0]} {input[1]} > {output}"
 
+rule extract_RBFOX2_eCLIP_mapping_statistics:
+	input:
+		"{path}/RBFOX2_293T_YeoLab_{{rep}}.alignments.bam".format(path = exp_path)
+	output:
+		"{path}/RBFOX2_eCLIP_{{rep,(rep1|input)}}.stats.txt".format(path = exp_path)
+	shell:
+		"{script_path}/collectAlignStat {input} None > {output}"
+
 rule generate_mapping_statistics_table:
 	input:
-		expand("{path}/structure_seq_sorted_{channel}.stats.txt", path = exp_path, channel = ["minus", "plus"])
+		expand("{path}/structure_seq_sorted_{channel}.stats.txt", path = exp_path, channel = ["plus", "minus"]),
+		expand("{path}/RBFOX2_eCLIP_{rep}.stats.txt", path = exp_path, rep = ["rep1", "input"])
 	output:
 		"{path}/mapping_statistics_table.txt".format(path = result_path)
 	shell:
@@ -572,7 +581,7 @@ rule align_reads_SHAPES:
 	output: 
 		expand("{path}/SHAPES_{{sample,(DMSO_no-sel|NPIA_no-sel|NPIA_sel)}}.bam", path = exp_path)
 	threads: 10
-	log: expand("{path}/{{sample}}.log", path = exp_paht)
+	log: expand("{path}/{{sample}}.log", path = exp_path)
 	shell:
 		"{Bowtie2} -p {threads} -N 1 -L 15 --norc -X 700 --no-mixed --no-discordant -x {input[0]} -1 {input[1]} -2 {input[2]} 2> {log} | {Samtools} view -b -o {output} -"
 
@@ -607,7 +616,7 @@ rule collect_data_for_RNAprobR_SHAPES:
 
 rule plot_bias_SHAPES:
 	input: 
-		expand("{path}/SHAPES_trimmed_{sample}.bias", sample = ["minus", "plus", "NPIA_sel"])
+		expand("{path}/SHAPES_trimmed_{sample}.bias", path = exp_path, sample = ["minus", "plus", "NPIA_sel"])
 	output:
 		expand("{path}/SHAPES_bias.pdf", path = result_path)
 	shell:
@@ -892,16 +901,6 @@ rule calculate_weighted_rate_for_sites_CLIP:
 
 
 # CLIP outputs
-
-# rule generate_iCLIP_mapping_statistics_table:
-# 	input:
-# 		rules.bowtie_align_to_genome.output
-# 	output:
-# 		"{path}/iCLIP_mapping_statistics.txt".format(path = result_path)
-# 	shell:
-# 		"echo -e 'Unique\tMulti-mapping\tUnalignable\tFiltered' > {output} && "
-# 		"{script_path}/collectAlignStat {input} None >> {output}"
-
 
 rule generate_iCLIP_site_result_table:
 	input:

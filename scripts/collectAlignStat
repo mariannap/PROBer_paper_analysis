@@ -4,7 +4,7 @@ from sys import argv, exit
 import pysam
 
 if len(argv) != 3:
-	print("Usage: collectAlignStat input.bam rRNA_list(can be None)\n  Only used for SE reads and Bowtie alignments.")
+	print("Usage: collectAlignStat input.bam rRNA_list(can be None)")
 	exit(-1)
 
 def build_rRNA_set(inpF, names):
@@ -28,13 +28,15 @@ def updateStat(cname, ctype, nalign, cisr):
 	elif ctype == 2:
 		N2 += 1
 	elif nalign == 1: #>= 0:
-		N11 += 1
 		if cisr:
 			N11r += 1
+		else:
+			N11 += 1
 	else:
-		N12 += 1
 		if cisr:
 			N12r += 1
+		else:
+			N12 += 1
 
 
 cname = ""
@@ -43,17 +45,26 @@ cisr = isr = False # if the current alignment line suggests a rRNA alignment
 nalign = 0
 
 N0 = N2 = 0
-N11 = N12 = N11r = N12r = 0
+N11 = N12 = 0
+N11r = N12r = 0 # Number of unique and multi-mapping reads that align to rRNAs
 
 sam_in = pysam.AlignmentFile(argv[1], "rb")
 rRNAs = build_rRNA_set(argv[2], sam_in.references)
 
 for aread in sam_in:
+	if aread.is_paired and aread.is_read2:
+		continue
+
 	if aread.is_unmapped:
-		ttype = 2 if aread.has_tag("XM") and aread.get_tag("XM") > 0 else 0
+		ttype = 0
+		if aread.has_tag("ZF") or (aread.has_tag("XM") and aread.get_tag("XM") > 0):
+			ttype = 2
 	else:
 		ttype = 1
-		isr = aread.tid in rRNAs
+		if aread.has_tag("ZF"):
+			ttype = 2
+		else:
+			isr = aread.tid in rRNAs
 
 	if cname != aread.qname:
 		updateStat(cname, ctype, nalign, cisr)
@@ -68,6 +79,7 @@ for aread in sam_in:
 
 updateStat(cname, ctype, nalign, cisr)
 
-print("{:,}\t{:,}\t{:,}\t{:,}".format(N11, N12, N0, N2))
+outstr = "{0:,}\t{1:,}\t{2:.0f}\%\t{3:,}\t{4:,}".format(N11, N12, float(N12) / float(N11 + N12) * 100.0, N0, N2)
 if argv[2] != "None":
-	print("{:,}\t{:,}\t{:,}\t{:,}".format(N11 - N11r, N12 - N12r, N0, N2))
+	outstr += "\t{0:,}\t{1:,}".format(N11r, N12r)
+print(outstr)
