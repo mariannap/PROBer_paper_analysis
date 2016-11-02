@@ -124,6 +124,21 @@ rule build_PROBer_and_Bowtie2_indices_for_yeast_rRNAs_fa:
         "{PROBer} prepare --bowtie2 --bowtie2-path {bowtie2_path} {input[0]} {output}"
 
 
+rule download_assembled_ecoli_16S_fa:
+    output: "{path}/ecoli_rRNA.fa".format(path = ref_ecoli)
+    shell:
+        "wget -O {output} http://people.binf.ku.dk/~jvinther/data/HRF-Seq/ecoli_rRNA.fa"
+
+rule build_PROBer_and_Bowtie2_indices_for_ecoli_16S_fa:
+    input:
+        "{path}/ecoli_rRNA.fa".format(path = ref_ecoli)
+        PROBer, Bowtie2
+    output:
+        touch(ecoli_rRNA)
+    shell:
+        "{PROBer} prepare --bowtie2 --bowtie2-path {bowtie2_path} {input[0]} {output}"
+
+
 rule download_mouse_genome:
     # input:
     #     FTP.remote("ftp.ensembl.org/pub/release-74/fasta/mus_musculus/dna/Mus_musculus.GRCm38.74.dna.primary_assembly.fa.gz")

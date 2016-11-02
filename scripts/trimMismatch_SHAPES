@@ -1,0 +1,104 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+import pysam
+
+if len(argv) != 4:
+	print("Usage: trimMismatch_SHAPES ecoli.fa input.bam output.bam")
+	exit(-1)
+
+# Load reference
+refseq = ""
+with open(argv[1]) as fin:
+	next(fin)
+	for line in fin:
+		refseq += line.strip()
+
+# Trim mismatches
+sam_in = pysam.AlignmentFile(argv[2], "rb")
+bam_out = pysam.AlignmentFile(argv[3], "wb", template = sam_in)
+
+num = cnt = 0
+
+for read1 in sam_in:
+	assert read1.is_paired and read1.is_read1
+	read2 = next(sam_in)
+	assert read2.is_paired and read2.is_read2
+
+	if not read1.is_unmapped:
+		assert not read1.is_reverse and read2.is_reverse
+
+		pos = read1.reference_start
+		qual = read1.query_qualities
+		sequence = read1.query_sequence
+
+		assert read1.cigartuples[0][0] == 0
+		nM = read1.cigartuples[0][1]
+		assert nM >= 1
+
+		n_trim = 0
+		if sequence[0] != refseq[pos]:
+			n_trim = 1
+		if nM >= 2 and sequence[1] != refseq[pos + 1]:
+			n_trim = 2
+		if nM >= 3 and sequence[2] != refseq[pos + 2]:
+			n_trim = 3
+
+		if n_trim > 0:
+			seq_skip = n_trim
+			mylist = read1.cigartuples
+			if nM > n_trim:
+				mylist[0] = (0, mylist[0][1] - n_trim)
+			else:
+				if mylist[1][0] != 1 or mylist[2][0] != 0:
+					print(read1)
+					exit(-1)
+				seq_skip += mylist[1][1]
+				mylist = mylist[2:]
+
+			new_tlen = abs(read1.template_length) - n_trim
+
+			read1.cigartuples = mylist
+			read1.query_sequence = sequence[seq_skip:]
+			read1.query_qualities = qual[seq_skip:]
+			read1.reference_start += n_trim
+			read1.template_length = new_tlen
+
+			read2.next_reference_start = read1.reference_start
+			read2.template_length = -new_tlen
+
+
+			if read1.reference_start > read2.reference_start:
+				n_trim = read1.reference_start - read2.reference_start
+				mylist = read2.cigartuples
+				assert mylist[0][0] == 0 and mylist[0][1] >= n_trim
+				seq_skip = n_trim
+				if mylist[0][1] > n_trim:
+					mylist[0] = (0, mylist[0][1] - n_trim)
+				else:
+					assert mylist[1][0] == 1 and mylist[2][0] == 0
+					seq_skip += mylist[1][1]
+					mylist = mylist[2:]				
+				sequence = read2.query_sequence
+				qual = read2.query_qualities
+
+				read2.cigartuples = mylist
+				read2.query_sequence = sequence[seq_skip:]
+				read2.query_qualities = qual[seq_skip:]				
+				read2.reference_start = read1.reference_start
+				read2.template_length = -new_tlen
+				read1.next_reference_start = read2.reference_start
+
+			num += 1
+
+	bam_out.write(read1)
+	bam_out.write(read2)
+
+	cnt += 1
+	if cnt % 1000000 == 0:
+		print("FIN {}, num = {}.".format(cnt, num))
+
+bam_out.close()
+sam_in.close()
+
+print("Trimmed = {}".format(num))

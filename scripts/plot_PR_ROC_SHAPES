@@ -1,0 +1,73 @@
+#!/usr/bin/env Rscript
+
+argv = commandArgs(TRUE)
+if (length(argv) != 8) {
+   cat("Usage: plotROC_SHAPES structure_file sasa_file DMSO_no-sel.counts NPIA_no-sel.counts NPIA_sel.counts PROBer.beta PROBer_sel.beta output_file\n")
+   q(status = 1)
+}
+
+library("PRROC")
+library("RNAprobR")
+
+
+calcROC = function(id, estimates, idx, truth) {
+	roc.curve(estimates[[id]][idx], weights.class0 = truth[idx], curve = T)
+}
+
+struc = scan(argv[1], what = 0)
+n = length(struc)
+
+data_sasa = read.table(argv[2])
+sasa = rep(-1.0, n)
+sasa[data_sasa[,1]] = data_sasa[,2]
+
+tp = struc == 1 & sasa > 3.0
+tn = struc == 0
+idx = which((tp | tn)[1:1350])
+
+control = readsamples(argv[3])
+treatment = readsamples(argv[4])
+npia = readsamples(argv[5])
+
+control_comp = comp(control)
+treatment_comp = comp(treatment)
+npia_comp = comp(npia)
+
+control_raw = GR2norm_df(control_comp)[2:n, 3]
+treatment_raw = GR2norm_df(treatment_comp)[2:n, 3]
+npia_raw = GR2norm_df(npia_comp)[2:n, 3]
+
+control_norm = GR2norm_df(swinsor(control_comp), norm_methods = "swinsor")[, 3]
+treatment_norm = GR2norm_df(swinsor(treatment_comp), norm_methods = "swinsor")[, 3]
+npia_norm = GR2norm_df(swinsor(npia_comp), norm_methods = "swinsor")[, 3]
+
+prober = as.numeric(scan(argv[6], what = "", skip = 1, nlines = 1)[3:(n - 4)])
+prober_sel = as.numeric(scan(argv[7], what = "", skip = 1, nlines = 1)[3:(n - 4)])
+
+estimates = list(prober_sel, npia_norm, npia_raw, prober, treatment_norm, treatment_raw, control_norm, control_raw)
+rocs = lapply(1:8, calcROC, estimates, idx, struc)
+
+pdf(argv[8])
+
+plot(rocs[[1]], lwd = 1, lty = 1, col = "red", auc.main = F, main = "NPIA selected dataset")
+plot(rocs[[2]], lwd = 1, lty = 1, col = "blue", add = T)
+plot(rocs[[3]], lwd = 1, lty = 2, col = "blue", add = T)
+legends = c(as.expression(bquote(paste("PROBer, AUC = ", .(sprintf("%.2f", rocs[[1]]$auc))))),
+			as.expression(bquote(paste("NPIA norm, AUC = ", .(sprintf("%.2f", rocs[[2]]$auc))))),
+			as.expression(bquote(paste("NPIA raw, AUC = ", .(sprintf("%.2f", rocs[[3]]$auc))))))
+legend("bottomright", legend = legends, lty = c(1, 1, 2), col = c("red", "blue", "blue"))
+
+
+plot(rocs[[4]], lwd = 1, lty = 1, col = "red", auc.main = F, main = "NPIA unselected dataset")
+plot(rocs[[5]], lwd = 1, lty = 1, col = "blue", add = T)
+plot(rocs[[6]], lwd = 1, lty = 2, col = "blue", add = T)
+plot(rocs[[7]], lwd = 1, lty = 1, col = "green", add = T)
+plot(rocs[[8]], lwd = 1, lty = 2, col = "green", add = T)
+legends = c(as.expression(bquote(paste("PROBer, AUC = ", .(sprintf("%.2f", rocs[[4]]$auc))))),
+			as.expression(bquote(paste("NPIA norm, AUC = ", .(sprintf("%.2f", rocs[[5]]$auc))))),
+			as.expression(bquote(paste("NPIA raw, AUC = ", .(sprintf("%.2f", rocs[[6]]$auc))))),
+			as.expression(bquote(paste("DMSO norm, AUC = ", .(sprintf("%.2f", rocs[[7]]$auc))))),
+			as.expression(bquote(paste("DMSO raw, AUC = ", .(sprintf("%.2f", rocs[[8]]$auc))))))
+legend("bottomright", legend = legends, lty = c(1, 1, 2, 1, 2), col = c("red", "blue", "blue", "green", "green"))
+
+dev.off()

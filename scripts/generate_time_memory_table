@@ -49,6 +49,6 @@ with open(argv[3], "w") as fout:
 		fout.write(format_time(parse_time(fin.readline())) + " & ")
 		fout.write(parse_memory(fin2.readline()) + " & ")
 		fout.write(format_time(parse_time(fin.readline())) + " & ")
-		fout.write(parse_memory(fin2.readline()) + " \\\\\n ")
+		fout.write(parse_memory(fin2.readline()) + " \\\\\n")
 	fout.write("\\hline\n")
 	fout.write("\\end{tabular}\n")

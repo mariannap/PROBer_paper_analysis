@@ -22,7 +22,7 @@ This snakemake workflow is tested and intended to run under Ubuntu Linux 64 bit 
 
 First, you need to install the latest version of [Snakemake](https://bitbucket.org/snakemake/snakemake/wiki/Home). 
 
-Second, please make sure that you have `Perl`, `Python` and `R`(>= 3.3.0) installed. For `Python`, we additionally require the following packages: `Cython`, `numpy`, `scipy`, `pysam`, `requests`, and `statsmodels`. For `R`, please install packages `reshape2` and `PRROC`.
+Second, please make sure that you have `Perl`, `Python` and `R`(>= 3.3.0) installed. For `Python`, we additionally require the following packages: `Cython`, `numpy`, `scipy`, `pysam`, `requests`, and `statsmodels`. For `R`, please install packages `reshape2`, `PRROC`, and `RNAprobR`.
 
 The snippet below shows how to install `Snakemake` and required packages under `virtualenv`.
 
@@ -42,6 +42,8 @@ pip3 install statsmodels
 R
 >install.packages("reshape2")
 >install.packages("PRROC")
+>source("https://bioconductor.org/biocLite.R")
+>biocLite("RNAprobR")
 >q()
 ```
 

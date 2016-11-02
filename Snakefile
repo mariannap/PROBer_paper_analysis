@@ -33,15 +33,16 @@ spike_ins = ["16S", "23S", "5S", "Group_I", "Group_II", "HCV_IRES", "HIV-1", "TP
 ### references
 ref_path = "references"
 
-ref_arabidopsis, ref_yeast, ref_mouse, ref_human = expand("{path}/{organism}", path = ref_path, 
-	organism = ["arabidopsis", "yeast", "mouse", "human"])
-makedirs([ref_arabidopsis, ref_yeast, ref_mouse, ref_human])
+ref_arabidopsis, ref_yeast, ref_ecoli, ref_mouse, ref_human = expand("{path}/{organism}", path = ref_path, 
+	organism = ["arabidopsis", "yeast", "ecoli", "mouse", "human"])
+makedirs([ref_arabidopsis, ref_yeast, ref_ecoli, ref_mouse, ref_human])
 
 arabidopsis_filt = "{path}/arabidopsis_filt".format(path = ref_arabidopsis)
 arabidopsis_filt_rsem = arabidopsis_filt + "_rsem"
 arabidopsis_spike = "{path}/arabidopsis_spike".format(path = ref_arabidopsis)
 yeast_filt = "{path}/yeast_filt".format(path = ref_yeast)
 yeast_rRNAs = "{path}/yeast_rRNAs".format(path = ref_yeast)
+ecoli_rRNA = "{path}/ecoli_rRNA".format(ref_ecoli)
 mouse_filt = "{path}/mouse_filt".format(path = ref_mouse)
 human_ref = "{path}/human_ref".format(path = ref_human)
 rep_ref = "{path}/rep_ref".format(path = ref_human)
@@ -51,9 +52,9 @@ human_genome = "{path}/Homo_sapiens.GRCh38.dna.primary_assembly.fa".format(path 
 ### data
 data_path = "data"
 
-AssmannLab, McmanusLab, ChangLab, GrannemanLab, GilbertLab, UleLab, YeoLab = expand("{path}/{lab}", path = data_path, 
-	lab = ["AssmannLab", "McmanusLab", "ChangLab", "GrannemanLab", "GilbertLab", "UleLab", "YeoLab"])
-makedirs([AssmannLab, McmanusLab, ChangLab, GrannemanLab, GilbertLab, UleLab, YeoLab])
+AssmannLab, McmanusLab, ChangLab, GrannemanLab, VintherLab, GilbertLab, UleLab, YeoLab = expand("{path}/{lab}", path = data_path, 
+	lab = ["AssmannLab", "McmanusLab", "ChangLab", "GrannemanLab", "VintherLab", "GilbertLab", "UleLab", "YeoLab"])
+makedirs([AssmannLab, McmanusLab, ChangLab, GrannemanLab, VintherLab, GilbertLab, UleLab, YeoLab])
 
 YeoLab_iCLIP, YeoLab_eCLIP = expand("{lab}/{type}", lab = YeoLab, type = ["iCLIP", "eCLIP"])
 makedirs([YeoLab_iCLIP, YeoLab_eCLIP])
@@ -88,7 +89,8 @@ results.extend(expand("{path}/pseudoU_{type}.pdf", path = result_path, type = ["
 results.append("{path}/pseudoU_18S.pdf".format(path = result_path))
 results.extend(expand("{path}/structure_seq_spikes_{corr}_boxplot.pdf", path = result_path, corr = ["pearson", "spearman"]))
 results.extend(expand("{path}/{type}_site_result_table.txt {path}/{type}_peak_result_table.txt".split(), path = result_path, type = ["iCLIP", "eCLIP"]))
-# results.extend(expand("{path}/{name}", path = result_path, name = ["digital_spike_in.txt", "scatters.pdf", "mapping_statistics_table.txt"]))#, "time_and_memory_table.txt"]))
+results.extend(expand("{path}/time_and_memory_table.txt", path = result_path))
+# results.extend(expand("{path}/{name}", path = result_path, name = ["digital_spike_in.txt", "scatters.pdf", "mapping_statistics_table.txt"]))#, ]))
 # results.extend(expand("{path}/{name}_seq_roc_{rRNA}.pdf", path = result_path, name = ["structure", "mod"], rRNA = ["18S", "25S"]))
 # results.extend(expand("{path}/icSHAPE_{condition}_roc_{rRNA}.pdf", path = result_path, condition = ["invitro", "invivo"], rRNA = ["18S", "12S_Mt"]))
 # results.extend(expand("{path}/{name}.txt", path = result_path, name = ["RBFOX2_iCLIP_table", "iCLIP_mapping_statistics"]))
@@ -107,8 +109,8 @@ include: "simulation/Snakefile"
 
 rule all:
 	input: #results 
-		# "results/site_motif_hit_weighted_rate_table_iCLIP.txt",
-		expand("{path}/{name}.{suffix}", path = exp_path, name = ["RBFOX2_293T_YeoLab_rep1", "PUM2_K562_YeoLab_rep1"], suffix = ["alignments.bam", "site_info"])
+		expand("{path}/{name}_roc_auc.txt", path = exp_path, name = ["icSHAPE_invivo", "icSHAPE_invitro"])
+		# expand("{path}/{name}.{suffix}", path = exp_path, name = ["RBFOX2_293T_YeoLab_rep1", "PUM2_K562_YeoLab_rep1"], suffix = ["alignments.bam", "site_info"])
 		# expand("{path}/RBFOX2_293T_YeoLab_iCLIP_{ending}.iCLIP.mhr", path = exp_path, ending = ["unique", "all"])
 		# expand("{path}/SRR3147{number}_reprm_{mate}.fq", path = YeoLab_eCLIP, number = ["598", "599", "600"], mate = ["1", "2"]),
 		# expand("{path}/{protein}_K562_YeoLab_{rep}_reprm_{mate}.fq", path = YeoLab_eCLIP, protein = ["PUM2", "TARDBP", "TRA2A"], rep = ["rep1", "input"], mate = ["1", "2"])

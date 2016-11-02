@@ -157,6 +157,24 @@ rule remove_PCR_duplicate_GrannemanLab:
 		"{script_path}/remove_PCR_dup_PE 25 {input} {output} > {log}"
 
 
+rule download_gz_file_VintherLab:
+	output:
+		expand("{path}/E.coli_{{sample}}_R{{mate,(1|2)}}.fastq.gz", path = VintherLab)
+	shell:
+		"wget -O {output} http://people.binf.ku.dk/~jvinther/data/SHAPES-Seq/E.coli_{wildcards.sample}_R{wildcards.mate}.fastq.gz"
+
+rule trim_adapter_VintherLab:
+	input: 
+		expand("{path}/E.coli_{{sample}}_R{mate}.fastq.gz", path = VintherLab, mate = ["1", "2"]),
+		Cutadapt
+	output:
+		expand("{path}/{{sample}}_trimmed_{mate}.fq", path = VintherLab, mate = ["1", "2"])
+	log: expand("{path}/{{sample}}_trimmed.log", path = VintherLab)
+	shell:
+		"{Cutadapt} -f fastq -q 17 -m 15 -a AGATCGGAAGAGCACACGTCT -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT"
+		" -o {output[0]} -p {output[1]} {input[0]} {input[1]} > {log}"
+
+
 #iCLIP data
 
 rule download_UleLab_hnRNPC_iCLIP_data:

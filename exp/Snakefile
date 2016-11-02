@@ -16,6 +16,8 @@ def get_ref(wildcards):
 		ref_name = mouse_filt
 	elif name.startswith("ChemModSeq"):
 		ref_name = yeast_rRNAs
+	elif name.startswith("SHAPES"):
+		ref_name = ecoli_rRNA
 	else:
 		assert False
 
@@ -128,6 +130,10 @@ def get_PROBer_params(wildcards):
 		params = "--primer-length 0 --size-selection-min 18 --size-selection-max 130 --read-length 41"
 	elif wildcards.experiment.startswith("ChemModSeq"):
 		params = "--paired-end --size-selection-min 18 --size-selection-max 700"
+	elif wildcards.experiment.startswith("SHAPES"):
+		params = "--paired-end --size-selection-min 10 --size-selection-max 700"
+	elif wildcards.experiment.startswith("icSHAPE"):
+		params = "--primer-length 0 --size-selection-min 20 --size-selection-max 120 --read-length 87"
 	else:
 		assert False
 
@@ -148,20 +154,19 @@ rule run_PROBer:
 	shell:
 		"{PROBer} estimate -p {threads} {params} {input[0]} {exp_path}/{wildcards.experiment}_PROBer --alignments {input[1]} {input[2]}"
 
-rule run_PROBer_icSHAPE:
+rule run_PROBer_no_control:
 	input:
-		mouse_filt,
-		expand("{path}/icSHAPE_{{condition}}_all.bam", path = exp_path),
+		get_ref,
+		expand("{path}/{{experiment}}_{{condition}}_all.bam", path = exp_path),
 		PROBer
-	params:
-		"{path}/icSHAPE_{{condition}}_PROBer".format(path = exp_path)
+	params: get_PROBer_params
 	output:
-		expand("{path}/icSHAPE_{{condition}}_PROBer.{suffix}", path = exp_path, suffix = ["beta", "expr"])
+		expand("{path}/{{experiment,(icSHAPE|SHAPES_trimmed)}}_{{condition,(invivo|invitro|NPIA_sel)}}_PROBer.{suffix}", path = exp_path, suffix = ["beta", "expr"])
 	threads: 20
 	shell:
-		"{PROBer} estimate -p {threads} --primer-length 0 --size-selection-min 20 --size-selection-max 120 --read-length 87 {input[0]} {params} --alignments {input[1]}"
+		"{PROBer} estimate -p {threads} {params} {input[0]} {exp_path}/{wildcards.experiment}_{wildcards.condition}_PROBer --alignments {input[1]}"
 
-ruleorder: run_PROBer_icSHAPE > run_PROBer
+ruleorder: run_PROBer_no_control > run_PROBer
 
 
 def get_score_input(wildcards):
@@ -538,18 +543,77 @@ rule calc_mod_seq_ROC_AUC:
 	shell:
 		"{script_path}/calcROC {gt_path} 49 {exp_path}/mod_seq {output}"
 
-# ### icSHAPE data
-# rule generate_icSHAPE_ROC_plots:
-# 	input:
-# 		expand("{path}/mouse_{name}.{suffix}", path = gt_path, name = ["18S", "12S_Mt"], suffix = ["structure", "isac"]),
-# 		expand("{path}/icSHAPE_{{condition}}_{method_suffix}", path = exp_path,
-# 			method_suffix = ["PROBer.beta", "StructureFold.scores", "Modseq.scores", "icSHAPE.scores"])
-# 	output:
-# 		expand("{path}/icSHAPE_{{condition,(invitro|invivo)}}_roc_{name}.pdf", path = result_path, name = ["18S", "12S_Mt"])
-# 	shell:
-# 		"{script_path}/plotROC {gt_path} 86 {exp_path}/icSHAPE_{wildcards.condition} {result_path}/icSHAPE_{wildcards.condition}_roc"
+### icSHAPE data
+rule generate_icSHAPE_ROC_plots:
+	input:
+		expand("{path}/mouse_{name}.{suffix}", path = gt_path, name = ["18S", "12S_Mt"], suffix = ["structure", "isac"]),
+		expand("{path}/icSHAPE_{{condition}}_{method_suffix}", path = exp_path,
+			method_suffix = ["PROBer.beta", "StructureFold.scores", "Modseeker.scores", "icSHAPE.scores"])
+	output:
+		"{path}/icSHAPE_{{condition,(invitro|invivo)}}_roc_auc.txt".format(path = exp_path)
+	shell:
+		"{script_path}/calcROC {gt_path} 86 {exp_path}/icSHAPE_{wildcards.condition} {output}"
 
 
+## SHAPES data for priming bias
+
+rule align_reads_SHAPES:
+	input:
+		ecoli_rRNA,
+		expand("{path}/{{sample}}_trimmed_{mate}.fq", path = VintherLab, mate = ["1", "2"]),
+		Bowtie2, Samtools
+	output: 
+		expand("{path}/SHAPES_{{sample,(DMSO_no-sel|NPIA_no-sel|NPIA_sel)}}.bam", path = exp_path)
+	threads: 10
+	log: expand("{path}/{{sample}}.log", path = exp_paht)
+	shell:
+		"{Bowtie2} -p {threads} -N 1 -L 15 --norc -X 700 --no-mixed --no-discordant -x {input[0]} -1 {input[1]} -2 {input[2]} 2> {log} | {Samtools} view -b -o {output} -"
+
+def get_bam_as_input_SHAPES(wildcards):
+	name = ""
+	if wildcards.sample == "minus":
+		name = "DMSO_no-sel"
+	elif wildcards.sample == "plus":
+		name = "NPIA_no-sel"
+	else:
+		name = wildcards.sample
+
+	return expand("{path}/SHAPES_{name}.bam", path = exp_path, name = name)
+
+rule trim_terminals_SHAPES:
+	input:
+		ecoli_rRNA,
+		get_bam_as_input_SHAPES
+	output: 
+		expand("{path}/SHAPES_trimmed_{{sample,(minus|plus|NPIA_sel)}}_all.bam", path = exp_path)
+	log: expand("{path}/SHAPES_trimmed_{{sample}}_all.log", path = exp_path)
+	shell:
+		"{script_path}/trimMismatch_SHAPES {input} {output} > {log}"		
+
+rule collect_data_for_RNAprobR_SHAPES:
+	input:
+		expand("{path}/SHAPES_trimmed_{{sample}}_all.bam", path = exp_path)
+	output:
+		expand("{path}/SHAPES_trimmed_{{sample,(minus|plus|NPIA_sel)}}.{suffix}", path = exp_path, suffix = ["counts", "bias"])
+	shell:
+		"{script_path}/collect_data_for_RNAprobR {input} exp/SHAPES_trimmed_{wildcards.sample}"
+
+rule plot_bias_SHAPES:
+	input: 
+		expand("{path}/SHAPES_trimmed_{sample}.bias", sample = ["minus", "plus", "NPIA_sel"])
+	output:
+		expand("{path}/SHAPES_bias.pdf", path = result_path)
+	shell:
+		"scripts/plotBias {input} {output}"
+
+rule plot_ROC_SHAPES:
+	input:
+		expand("ground_truth/{name}", name = ["16S.structure", "ecoli_16S.sasa"]),
+		expand("exp/{sample}.counts", sample = ["DMSO_no-sel", "NPIA_no-sel", "NPIA_sel"]),
+		expand("exp/ecoli_16S_PROBer{extra}.beta", extra = ["", "_sel"])
+	output: "results/SHAPES_roc.pdf"
+	shell:
+		"scripts/plotROC_SHAPES {input} {output}"
 
 
 # Pseudo-seq experiments for Pseudouridine modification
