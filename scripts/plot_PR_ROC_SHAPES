@@ -70,7 +70,7 @@ plot(prs[[3]], lwd = 1, lty = 2, col = "blue", add = T)
 legends = c(as.expression(bquote(paste("PROBer, AUC = ", .(sprintf("%.2f", prs[[1]]$auc.integral))))),
 			as.expression(bquote(paste("NPIA_sel norm, AUC = ", .(sprintf("%.2f", prs[[2]]$auc.integral))))),
 			as.expression(bquote(paste("NPIA_sel raw, AUC = ", .(sprintf("%.2f", prs[[3]]$auc.integral))))))
-legend("bottomright", legend = legends, lty = c(1, 1, 2), col = c("red", "blue", "blue"))
+legend("topright", legend = legends, lty = c(1, 1, 2), col = c("red", "blue", "blue"))
 dev.off()
 
 
@@ -99,5 +99,5 @@ legends = c(as.expression(bquote(paste("PROBer, AUC = ", .(sprintf("%.2f", prs[[
 			as.expression(bquote(paste("NPIA raw, AUC = ", .(sprintf("%.2f", prs[[6]]$auc.integral))))),
 			as.expression(bquote(paste("DMSO norm, AUC = ", .(sprintf("%.2f", prs[[7]]$auc.integral))))),
 			as.expression(bquote(paste("DMSO raw, AUC = ", .(sprintf("%.2f", prs[[8]]$auc.integral))))))
-legend("bottomright", legend = legends, lty = c(1, 1, 2, 1, 2), col = c("red", "blue", "blue", "green", "green"))
+legend("topright", legend = legends, lty = c(1, 1, 2, 1, 2), col = c("red", "blue", "blue", "green", "green"))
 dev.off()

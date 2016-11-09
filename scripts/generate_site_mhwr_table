@@ -62,7 +62,7 @@ with open(argv[2], "w") as fout:
 		fout.write(protein + " & " + " & ".join(ws) + " \\\\\n")
 		fout.write("\\hline\n")
 		fout.write("PROBer & " + " & ".join(outputs[i][0]) + "\\\\\n")
-		fout.write("baseline & " + " & ".join(outputs[i][1]) + "\\\\\n")
+		fout.write("Baseline & " + " & ".join(outputs[i][1]) + "\\\\\n")
 		fout.write("\\hline\n")
 	fout.write("\\end{tabular}\n")
 

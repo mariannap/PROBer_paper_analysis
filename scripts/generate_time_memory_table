@@ -32,7 +32,7 @@ def format_time(time):
 with open(argv[3], "w") as fout:
 	fout.write("\\begin{tabular}{c|c|cc|cc}\n")
 	fout.write("\\hline\n")
-	fout.write("\\multirow{2}{*}{Data} & \\multirow{2}{*}{Size} & \\multicolumn{2}{|c|}{Alignment} & \\multicolumn{2}{c}{Inference} \\\\\n")
+	fout.write("\\multirow{2}{*}{Data} & \\multirow{2}{*}{Size} & \\multicolumn{2}{c|}{Alignment} & \\multicolumn{2}{c}{Inference} \\\\\n")
 	fout.write("\\cline{3-6}\n")
 	fout.write(" & & Runtime & Memory & Runtime & Memory \\\\\n")
 	fout.write("\\hline\n")

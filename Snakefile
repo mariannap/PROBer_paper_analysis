@@ -90,9 +90,10 @@ results.extend(expand("{path}/pseudoU_{type}.pdf", path = result_path, type = ["
 results.append("{path}/pseudoU_18S.pdf".format(path = result_path))
 results.extend(expand("{path}/structure_seq_spikes_{corr}_boxplot.pdf", path = result_path, corr = ["pearson", "spearman"]))
 results.extend(expand("{path}/{type}_site_result_table.txt {path}/{type}_peak_result_table.txt".split(), path = result_path, type = ["iCLIP", "eCLIP"]))
-results.extend(expand("{path}/time_and_memory_table.txt", path = result_path))
+results.extend(expand("{path}/{name}_table.txt", path = result_path, name = ["mapping_statistics", "time_and_memory"]))
+results.append(expand("{path}/SHAPES_bias.pdf", path = result_path))
 results.extend(expand("{path}/SHAPES_{sel}_{type}.pdf", path = result_path, sel = ["sel", "no_sel"], type = ["pr", "roc"]))
-# results.extend(expand("{path}/{name}", path = result_path, name = ["digital_spike_in.txt", "scatters.pdf", ]))#, ]))
+results.append(result_path + "/scatters.pdf")
 
 ## Import Snakemake modules
 
@@ -105,7 +106,5 @@ include: "exp/Snakefile"
 include: "simulation/Snakefile"
 
 rule all:
-	input: #results
-		expand("{path}/SHAPES_bias.pdf", path = result_path),
-		expand("{path}/SHAPES_{sel}_{type}.pdf", path = result_path, sel = ["sel", "no_sel"], type = ["pr", "roc"])
+	input: results
 
