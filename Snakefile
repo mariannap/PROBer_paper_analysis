@@ -60,6 +60,7 @@ YeoLab_iCLIP, YeoLab_eCLIP = expand("{lab}/{type}", lab = YeoLab, type = ["iCLIP
 makedirs([YeoLab_iCLIP, YeoLab_eCLIP])
 
 
+
 sample_name_to_data = {}
 sample_name_to_data["structure_seq_minus"] = expand("{path}/{run}_trimmed.fq", path = AssmannLab, run = ["SRR933551", "SRR933557"])
 sample_name_to_data["structure_seq_plus"] = expand("{path}/{run}_trimmed.fq", path = AssmannLab, run = ["SRR933552", "SRR933556"])
