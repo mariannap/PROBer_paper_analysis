@@ -54,50 +54,50 @@ prs = lapply(1:8, calcPR, estimates, idx, struc)
 
 
 pdf(sprintf("%s_sel_roc.pdf", argv[8]))
-plot(rocs[[1]], lwd = 1, lty = 1, col = "red", auc.main = F, main = "NPIA selected dataset")
+plot(rocs[[1]], lwd = 1, lty = 1, col = "red", auc.main = F, main = "SHAPES")
 plot(rocs[[2]], lwd = 1, lty = 1, col = "blue", add = T)
 plot(rocs[[3]], lwd = 1, lty = 2, col = "blue", add = T)
 legends = c(as.expression(bquote(paste("PROBer, AUC = ", .(sprintf("%.2f", rocs[[1]]$auc))))),
-			as.expression(bquote(paste("NPIA_sel norm, AUC = ", .(sprintf("%.2f", rocs[[2]]$auc))))),
-			as.expression(bquote(paste("NPIA_sel raw, AUC = ", .(sprintf("%.2f", rocs[[3]]$auc))))))
+			as.expression(bquote(paste("SHAPES norm, AUC = ", .(sprintf("%.2f", rocs[[2]]$auc))))),
+			as.expression(bquote(paste("SHAPES raw, AUC = ", .(sprintf("%.2f", rocs[[3]]$auc))))))
 legend("bottomright", legend = legends, lty = c(1, 1, 2), col = c("red", "blue", "blue"))
 dev.off()
 
 pdf(sprintf("%s_sel_pr.pdf", argv[8]))
-plot(prs[[1]], lwd = 1, lty = 1, col = "red", auc.main = F, main = "NPIA selected dataset")
+plot(prs[[1]], lwd = 1, lty = 1, col = "red", auc.main = F, main = "SHAPES")
 plot(prs[[2]], lwd = 1, lty = 1, col = "blue", add = T)
 plot(prs[[3]], lwd = 1, lty = 2, col = "blue", add = T)
 legends = c(as.expression(bquote(paste("PROBer, AUC = ", .(sprintf("%.2f", prs[[1]]$auc.integral))))),
-			as.expression(bquote(paste("NPIA_sel norm, AUC = ", .(sprintf("%.2f", prs[[2]]$auc.integral))))),
-			as.expression(bquote(paste("NPIA_sel raw, AUC = ", .(sprintf("%.2f", prs[[3]]$auc.integral))))))
+			as.expression(bquote(paste("SHAPES norm, AUC = ", .(sprintf("%.2f", prs[[2]]$auc.integral))))),
+			as.expression(bquote(paste("SHAPES raw, AUC = ", .(sprintf("%.2f", prs[[3]]$auc.integral))))))
 legend("topright", legend = legends, lty = c(1, 1, 2), col = c("red", "blue", "blue"))
 dev.off()
 
 
 pdf(sprintf("%s_no_sel_roc.pdf", argv[8]))
-plot(rocs[[4]], lwd = 1, lty = 1, col = "red", auc.main = F, main = "NPIA unselected dataset")
+plot(rocs[[4]], lwd = 1, lty = 1, col = "red", auc.main = F, main = "SHAPE-Seq")
 plot(rocs[[5]], lwd = 1, lty = 1, col = "blue", add = T)
 plot(rocs[[6]], lwd = 1, lty = 2, col = "blue", add = T)
 plot(rocs[[7]], lwd = 1, lty = 1, col = "green", add = T)
 plot(rocs[[8]], lwd = 1, lty = 2, col = "green", add = T)
 legends = c(as.expression(bquote(paste("PROBer, AUC = ", .(sprintf("%.2f", rocs[[4]]$auc))))),
-			as.expression(bquote(paste("NPIA norm, AUC = ", .(sprintf("%.2f", rocs[[5]]$auc))))),
-			as.expression(bquote(paste("NPIA raw, AUC = ", .(sprintf("%.2f", rocs[[6]]$auc))))),
-			as.expression(bquote(paste("DMSO norm, AUC = ", .(sprintf("%.2f", rocs[[7]]$auc))))),
-			as.expression(bquote(paste("DMSO raw, AUC = ", .(sprintf("%.2f", rocs[[8]]$auc))))))
+			as.expression(bquote(paste("Treatment norm, AUC = ", .(sprintf("%.2f", rocs[[5]]$auc))))),
+			as.expression(bquote(paste("Treatment raw, AUC = ", .(sprintf("%.2f", rocs[[6]]$auc))))),
+			as.expression(bquote(paste("Control norm, AUC = ", .(sprintf("%.2f", rocs[[7]]$auc))))),
+			as.expression(bquote(paste("Control raw, AUC = ", .(sprintf("%.2f", rocs[[8]]$auc))))))
 legend("bottomright", legend = legends, lty = c(1, 1, 2, 1, 2), col = c("red", "blue", "blue", "green", "green"))
 dev.off()
 
 pdf(sprintf("%s_no_sel_pr.pdf", argv[8]))
-plot(prs[[4]], lwd = 1, lty = 1, col = "red", auc.main = F, main = "NPIA unselected dataset")
+plot(prs[[4]], lwd = 1, lty = 1, col = "red", auc.main = F, main = "SHAPE-Seq")
 plot(prs[[5]], lwd = 1, lty = 1, col = "blue", add = T)
 plot(prs[[6]], lwd = 1, lty = 2, col = "blue", add = T)
 plot(prs[[7]], lwd = 1, lty = 1, col = "green", add = T)
 plot(prs[[8]], lwd = 1, lty = 2, col = "green", add = T)
 legends = c(as.expression(bquote(paste("PROBer, AUC = ", .(sprintf("%.2f", prs[[4]]$auc.integral))))),
-			as.expression(bquote(paste("NPIA norm, AUC = ", .(sprintf("%.2f", prs[[5]]$auc.integral))))),
-			as.expression(bquote(paste("NPIA raw, AUC = ", .(sprintf("%.2f", prs[[6]]$auc.integral))))),
-			as.expression(bquote(paste("DMSO norm, AUC = ", .(sprintf("%.2f", prs[[7]]$auc.integral))))),
-			as.expression(bquote(paste("DMSO raw, AUC = ", .(sprintf("%.2f", prs[[8]]$auc.integral))))))
+			as.expression(bquote(paste("Treatment norm, AUC = ", .(sprintf("%.2f", prs[[5]]$auc.integral))))),
+			as.expression(bquote(paste("Treatment raw, AUC = ", .(sprintf("%.2f", prs[[6]]$auc.integral))))),
+			as.expression(bquote(paste("Control norm, AUC = ", .(sprintf("%.2f", prs[[7]]$auc.integral))))),
+			as.expression(bquote(paste("Control raw, AUC = ", .(sprintf("%.2f", prs[[8]]$auc.integral))))))
 legend("topright", legend = legends, lty = c(1, 1, 2, 1, 2), col = c("red", "blue", "blue", "green", "green"))
 dev.off()

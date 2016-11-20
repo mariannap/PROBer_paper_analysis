@@ -4,7 +4,7 @@ from sys import argv, exit
 import numpy
 
 if len(argv) != 6:
-	print("Usage: score2shape input.[beta/score/icSHAPE] output.shape tid(1-based)|rRNA_name exclude_bp gt_pos.txt")
+	print("Usage: score2shape input.[beta/scores/icSHAPE] output.shape tid(1-based)|rRNA_name exclude_bp gt_pos.txt")
 	exit(-1)
 
 # Implementation of the normalization procedure in Sloma and Mathews paper

@@ -17,7 +17,8 @@ plotBias = function(id, biases, names) {
 }
 
 biases = lapply(argv[1:3], loadBias)
-names = c("DMSO", "NPIA unselected", "NPIA selected")
+# names = c("DMSO", "NPIA unselected", "NPIA selected")
+names = c("Control", "Treatment", "SHAPES")
 pdf(argv[4])
 par(mfrow = c(3, 1))
 null_vec = lapply(1:3, plotBias, biases, names)
