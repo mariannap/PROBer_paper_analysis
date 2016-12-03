@@ -22,9 +22,9 @@ This snakemake workflow is tested and intended to run under Ubuntu Linux 64 bit 
 
 First, you need to install the latest version of [Snakemake](https://bitbucket.org/snakemake/snakemake/wiki/Home). 
 
-Second, please make sure that you have `Perl`, `Python` and `R`(>= 3.3.0) installed. For `Python`, we additionally require the following packages: `Cython`, `numpy`, `scipy`, `pysam`, `requests`, and `statsmodels`. For `R`, please install packages `reshape2`, `PRROC`, and `RNAprobR`.
+Second, please make sure that you have `Perl`, `Python` (both `Python2` and `Python3`) and `R`(>= 3.3.0) installed. For `Python3`, we additionally require the following packages: `Cython`, `numpy`, `scipy`, `pysam`, `requests`, and `statsmodels`. For `Python2`, please install packages `pymol`, `Cython`, `pysam`, `pandas`, and `CLIPper`. For `R`, please install packages `reshape2`, `PRROC`, `RNAprobR`, and `BUMHMM`. For `Perl`, please install packages `libstatistics-basic-perl` and `libstatistics-distributions-perl`.
 
-The snippet below shows how to install `Snakemake` and required packages under `virtualenv`.
+The snippet below shows how to install `Snakemake` and required packages using `virtualenv`.
 
 ```
 pip3 install virtualenv
@@ -45,6 +45,23 @@ R
 >source("https://bioconductor.org/biocLite.R")
 >biocLite("RNAprobR")
 >q()
+
+// Install pymol
+apt-get install pymol
+
+// Install CLIPper
+pip2 install Cython
+pip2 install pysam
+pip2 install pandas
+
+git clone git://github.com/YeoLab/clipper.git
+cd clipper
+python2 setup.py install
+
+// Install eCLIP input-normalization required perl libraries
+apt-get install libstatistics-basic-perl
+apt-get install libstatistics-distributions-perl
+
 ```
 
 ### <a name="reproduce" />Reproduce analyses
