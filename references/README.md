@@ -12,8 +12,19 @@
 
 2. `YLR154C-G`, which is part of `RDN5-2`, is also removed.
 
+3. For ChemModSeq data, only 18S and 25S rRNAs are used as the reference. 
+
 #### Mouse reference
 
 1. There is no 18S rRNA in the mouse annotation. We added the mouse 18S rRNA sequence from [RNA structure database](http://www.rna.icmb.utexas.edu/DAT/3B/Standard/index.php?xysub=1&organism=Mus%20musculus&seq_size=&rna_type=&orf=&rna_class=&from_gene=&structure=ALL&cell_loc=&ord=&xyac_info=m&xybegin=0&xyrange=50&xyco=yes&query_type=results) to the reference. 
 
 2. The mouse annotation contains 353 variants of 5S rRNA. We only kept one variant(`n-R5S100`), which is contained in both Ensembl and RefSeq annotations.
+
+#### Human genome reference
+
+Human genome (GRCh38) was downloaded from Ensembl.
+
+#### Escherichia coli reference
+
+The 16S rRNA sequence was downloaded from [here](http://people.binf.ku.dk/~jvinther/data/HRF-Seq/ecoli_rRNA.fa).
+

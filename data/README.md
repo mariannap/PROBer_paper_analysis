@@ -87,6 +87,29 @@ Data were pre-processed as follows:
 
 2. PCR duplicates were removed according to the 13 nt UMIs and sequence contents. Only reads with the exact same sequences and UMIs were considered as duplicates.
 
+#### Poulsen *et al.* E. coli paired-end data
+
+Data locate at `VintherLab`. Each run is explained in the table below.
+
+Run | Meaning
+--- | -------
+E.coli_DMSO_no-sel_R1 | Mate 1, SHAPE-Seq control
+E.coli_DMSO_no-sel_R2 | Mate 2, SHAPE-Seq control
+E.coli_NPIA_no-sel_R1 | Mate 1, SHAPE-Seq treatment
+E.coli_NPIA_no-sel_R2 | Mate 2, SHAPE-Seq treatment
+E.coli_NPIA_sel_R1 | Mate1, SHAPES
+E.coli_NPIA_sel_R2 | Mate2, SHAPES
+
+The above data were downloaded from [here](http://people.binf.ku.dk/~jvinther/data/SHAPES-Seq/). These data were pre-processed as follows:
+
+1. 3' adapters were trimmed using `cutadapt` and only reads no shorter than 15 nt were kept:
+
+    ```
+    -q 17 -m 15 -a AGATCGGAAGAGCACACGTCT -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
+    ```
+
+2. 5'-end untemplated nucleotides were trimmed.
+
 #### Carlile *et al.* yeast single-end Pseudo-seq data
 
 Data locate at `GilbertLab`. Each run is explained in the table below.

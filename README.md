@@ -22,7 +22,7 @@ This snakemake workflow is tested and intended to run under Ubuntu Linux 64 bit 
 
 First, you need to install the latest version of [Snakemake](https://bitbucket.org/snakemake/snakemake/wiki/Home). 
 
-Second, please make sure that you have `Perl`, `Python` (both `Python2` and `Python3`) and `R`(>= 3.3.0) installed. For `Python3`, we additionally require the following packages: `Cython`, `numpy`, `scipy`, `pysam`, `requests`, and `statsmodels`. For `Python2`, please install packages `pymol`, `Cython`, `pysam`, `pandas`, and `CLIPper`. For `R`, please install packages `reshape2`, `PRROC`, `RNAprobR`, and `BUMHMM`. For `Perl`, please install packages `libstatistics-basic-perl` and `libstatistics-distributions-perl`.
+Second, please make sure that you have `Perl`, `Python` (both `Python2` and `Python3`) and `R`(>= 3.3.1) installed. For `Python3`, we additionally require the following packages: `Cython`, `numpy`, `scipy`, `pysam`, `requests`, and `statsmodels`. For `Python2`, please install packages `pymol`, `Cython`, `pysam`, `pandas`, and `CLIPper`. For `R`, please install packages `reshape2`, `PRROC`, `RNAprobR`, `devtools`, and `BUMHMM`. For `Perl`, please install packages `libstatistics-basic-perl` and `libstatistics-distributions-perl`.
 
 The snippet below shows how to install `Snakemake` and required packages using `virtualenv`.
 
@@ -44,6 +44,9 @@ R
 >install.packages("PRROC")
 >source("https://bioconductor.org/biocLite.R")
 >biocLite("RNAprobR")
+>install.packages("devtools")
+>library(devtools)
+>install_github("alinaselega/BUMHMM", ref = "bf137ea")
 >q()
 
 // Install pymol
@@ -103,24 +106,39 @@ Mappings between figure names in our draft and file names under `results` are sh
 
 Figure Name | File Name
 ----------- | ---------
-Figure 2A | structure_seq_sim1_main_boxplot.pdf
-Figure 2B | pseudoU_PR.pdf
-Figure S2A | structure_seq_sim1_vs_full_boxplot.pdf
-Figure S2B | structure_seq_sim1_vs_pipeline_boxplot.pdf
-Figure S3A | structure_seq_sim2_vs_full_boxplot.pdf
-Figure S3B | structure_seq_sim2_vs_pipeline_boxplot.pdf
-Figure S3C | structure_seq_sim2_main_boxplot.pdf
+Figure 2A | structure_seq_sim1_main_pearson_boxplot.pdf
+Figure 2B | ChemModSeq_pr_18S.pdf
+Figure 2C | yeast_structure_prediction_table.txt
+Figure 3A | pseudoU_pr.pdf
+Figure 3B | eCLIP_peak_result_table.txt
+Figure S2A | structure_seq_sim1_main_spearman_boxplot.pdf
+Figure S2B | structure_seq_sim1_vs_full_pearson_boxplot.pdf
+Figure S2C | structure_seq_sim1_vs_full_spearman_boxplot.pdf
+Figure S2D | structure_seq_sim1_vs_pipeline_pearson_boxplot.pdf
+Figure S2E | structure_seq_sim1_vs_pipeline_spearman_boxplot.pdf
+Figure S3A | structure_seq_sim2_vs_full_pearson_boxplot.pdf
+Figure S3B | structure_seq_sim2_vs_full_spearman_boxplot.pdf
+Figure S3C | structure_seq_sim2_vs_pipeline_pearson_boxplot.pdf
+Figure S3D | structure_seq_sim2_vs_pipeline_spearman_boxplot.pdf
+Figure S3E | structure_seq_sim2_main_pearson_boxplot.pdf
+Figure S3F | structure_seq_sim2_main_spearman_boxplot.pdf
 Figure S4 | scatters.pdf
-Figure S5A | structure_seq_roc_18S.pdf
-Figure S5B | structure_seq_roc_25S.pdf
-Figure S5C | mod_seq_roc_18S.pdf
-Figure S5D| mod_seq_roc_25S.pdf
-Figure S5E | icSHAPE_invitro_roc_18S.pdf
-Figure S5F | icSHAPE_invitro_roc_12S_Mt.pdf
-Figure S5G | icSHAPE_invivo_roc_18S.pdf
-Figure S5H | icSHAPE_invivo_roc_12S_Mt.pdf
-Figure S6 | pseudoU_18S.pdf
-Figure S7 | pseudoU_ROC.pdf
+Figure S5A | structure_seq_spikes_pearson_boxplot.pdf
+Figure S5B | structure_seq_spikes_spearman_boxplot.pdf
+Figure S6A | ChemModSeq_roc_18S.pdf
+Figure S6B | ChemModSeq_pr_25S.pdf
+Figure S6C | ChemModSeq_roc_25S.pdf
+Figure S6D | mod_seq_pr_18S.pdf
+Figure S6E | mod_seq_roc_18S.pdf
+Figure S6F | mod_seq_pr_25S.pdf
+Figure S6G | mod_seq_roc_25S.pdf
+Figure S7 | pseudoU_18S.pdf
+Figure S8 | pseudoU_roc.pdf
+Figure S9 | SHAPES_bias.pdf
+Figure S10A | SHAPES_sel_roc.pdf
+Figure S10B | SHAPES_sel_pr.pdf
+Figure S10C | SHAPES_no_sel_roc.pdf
+Figure S10D | SHAPES_no_sel_pr.pdf
 
 ##### <a name="tables" />Tables
 
@@ -129,25 +147,19 @@ Mappings between table names in our draft and file names under `results` are sho
 Table Name | File Name
 ---------- | ---------
 Table S1 | mapping_statistics_table.txt
-Table S2 | iCLIP_mapping_statistics.txt
-Table S3 | digital_spike_in.txt
-
-##### <a name="bedgraph" />BedGraph files
-
-`NUP133.bedGraph` shows the RBFOX2 iCLIP hits on gene `NUP133`. To visualize it, following the instructions below:
-
-1. Go to https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38
-2. Click "add custom tracks"
-3. Click "Choose file" at "Paste URLs or data:         Or upload:", and upload one bedGraph file
-4. Click "Submit"
-5. Click "go" at the right side of "view in Genome Browser"
+Table S2 | time_and_memory_table.txt
+Table S3 | structure_probing_roc_auc_table.txt
+Table S4 | comparing_with_BUMHMM_table.txt
+Table S5 | eCLIP_site_result_table.txt
+Table S6 | iCLIP_peak_result_table.txt
+Table S7 | iCLIP_site_result_table.txt
 
 ### <a name="details" />Experiment details
 
 We have experiment details explained in subfolders: 
 
-* Go to [tools](tools) for information about tools this workflow used
+* Go to [tools](tools) for information about tools included as part of the workflow
 * Go to [references](references) for reference building details
-* Go to [ground_truth](ground_truth) if you want to know how to download ground truth rRNA structures and pseudouridine sites
+* Go to [ground_truth](ground_truth) if you want to know how to download ground truth rRNA structures and pseudouridine sites, and how to calculate solvent accessible areas.
 * Go to [data](data) to learn more about how data were downloaded and pre-processed
-* Go to [exp](exp) to learn more about how PROBer options were set for different data sets
+* Go to [exp](exp) to learn more about how PROBer's protocol-specific options were set for different data sets

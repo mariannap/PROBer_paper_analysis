@@ -1,4 +1,4 @@
-The tools used and their versions are summarized below:
+The tools included and their versions are summarized below:
 
 Tool | Version
 ---- | -------

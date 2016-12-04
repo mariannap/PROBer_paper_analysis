@@ -10,19 +10,31 @@ The option values used for each data set are described below:
     --primer-length 6 --size-selection-min 21 --size-selection-max 526 --read-length 37
     ```
 
-2. Talkish *et al.* yeast data
+3. Hector *et al.* yeast data
+
+    ```
+    --paired-end --size-selection-min 18 --size-selection-max 700
+    ```
+
+4. Talkish *et al.* yeast data
 
     ```
     --primer-length 0 --size-selection-min 23 --size-selection-max 220 --read-length 50
     ```
 
-3. Spitale *et al.* mouse data
+5. Spitale *et al.* mouse data
 
     ```
     --primer-length 0 --size-selection-min 20 --size-selection-max 120 --read-length 87
     ```
 
-4. Carlile *et al.* yeast Pseudo-seq data
+6. Poulsen *et al.* E. coli data
+
+    ```
+    --paired-end --size-selection-min 10 --size-selection-max 700
+    ```
+
+7. Carlile *et al.* yeast Pseudo-seq data
 
     ```
     --primer-length 0 --size-selection-min 18 --size-selection-max 130 --read-length 41
