@@ -24,7 +24,7 @@ with open(argv[6], "w") as fout:
 	fout.write("\\hline\n")
 	fout.write("& \\multicolumn{2}{c|}{18S} & \\multicolumn{2}{c}{25S} \\\\\n")
 	fout.write("\\hline \\hline\n")
-	fout.write("& ROC-AUC & PR-AUC & ROC-AUC & PR-AUC \\\\\n")
+	fout.write("& PR-AUC & ROC-AUC & PR-AUC & ROC-AUC \\\\\n")
 	fout.write("\\hline\n")
 
 	with open(argv[1]) as fin:

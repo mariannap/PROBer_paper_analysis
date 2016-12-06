@@ -1,0 +1,72 @@
+#!/usr/bin/env Rscript
+
+argv = commandArgs(TRUE)
+if (length(argv) != 4) {
+   cat("Usage: calc_PR_ROC_BUMHMM ground_truth_dir exclude_bp experiment_prefix output.txt\n")
+   q(status = 1)
+}
+
+library(PRROC)
+
+collectTruth = function(name, ground_truth_dir, exclude_bp) {
+	truth = scan(sprintf("%s/yeast_%s.structure", ground_truth_dir, name), what = 0)
+	isAC = scan(sprintf("%s/yeast_%s.isac", ground_truth_dir, name), what = 0)
+	
+	# load sasa
+	data = read.table(sprintf("%s/yeast_%s.sasa", ground_truth_dir, name))
+	sasa = rep(-1.0, length(truth))
+	sasa[data[,1]] = data[,3]
+
+	# true positives and negatives
+	tp = isAC & truth == 1 & sasa > 2.0
+	tn = isAC & truth == 0
+	idx = tp | tn
+
+	# select positions used for plotting
+	pos = which(idx[1:(length(truth) - exclude_bp)])
+
+	return(list(truth = truth, pos = pos))
+}
+
+collectPROBer = function(pos, file_name) {
+	prober = scan(file_name, what = "", skip = pos, nlines = 1)
+	as.numeric(prober[3:length(prober)])
+}
+
+collectBUMHMM = function(pos, file_name) {
+	res = scan(file_name, what = 0.0, skip = pos - 1, nlines = 1)
+	res[is.na(res)] = 0
+	res
+}
+
+calculateROC = function(id, estList, truthList) {
+	pos = truthList[[id]]$pos
+	truth = truthList[[id]]$truth
+	roc.curve(estList[[id]][pos], weights.class0 = truth[pos], curve = T)
+}
+
+calculatePR = function(id, estList, truthList) {
+	pos = truthList[[id]]$pos
+	truth = truthList[[id]]$truth
+	pr.curve(estList[[id]][pos], weights.class0 = truth[pos], curve = T)
+}
+
+rRNAs = c("18S", "25S")
+rowList = c(1, 2)
+truthList = lapply(rRNAs, collectTruth, argv[1], as.numeric(argv[2]))
+
+PROBerList = lapply(rowList, collectPROBer, sprintf("%s_PROBer.beta", argv[3]))
+BUMHMMList = lapply(rowList, collectBUMHMM, sprintf("%s_BUMHMM.scores", argv[3]))
+
+PROBerRocs = lapply(1:2, calculateROC, PROBerList, truthList)
+BUMHMMRocs = lapply(1:2, calculateROC, BUMHMMList, truthList)
+
+PROBerPrs = lapply(1:2, calculatePR, PROBerList, truthList)
+BUMHMMPrs = lapply(1:2, calculatePR, BUMHMMList, truthList)
+
+con = file(argv[4], open = "wt")
+cat(sprintf("%.2f", PROBerPrs[[1]]$auc.integral), sprintf("%.2f", PROBerRocs[[1]]$auc), sprintf("%.2f", PROBerPrs[[2]]$auc.integral), sprintf("%.2f", PROBerRocs[[2]]$auc), sep = " ", file = con)
+cat("\n", file = con)
+cat(sprintf("%.2f", BUMHMMPrs[[1]]$auc.integral), sprintf("%.2f", BUMHMMRocs[[1]]$auc), sprintf("%.2f", BUMHMMPrs[[2]]$auc.integral), sprintf("%.2f", BUMHMMRocs[[2]]$auc), sep = " ", file = con)
+cat("\n", file = con)
+close(con)
