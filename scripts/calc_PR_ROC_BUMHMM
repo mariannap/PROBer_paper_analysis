@@ -42,21 +42,20 @@ collectBUMHMM = function(pos, file_name) {
 calculateROC = function(id, estList, truthList) {
 	pos = truthList[[id]]$pos
 	truth = truthList[[id]]$truth
-	roc.curve(estList[[id]][pos], weights.class0 = truth[pos], curve = T)
+	roc.curve(estList[[id]][pos], weights.class0 = truth[pos], curve = F)
 }
 
 calculatePR = function(id, estList, truthList) {
 	pos = truthList[[id]]$pos
 	truth = truthList[[id]]$truth
-	pr.curve(estList[[id]][pos], weights.class0 = truth[pos], curve = T)
+	pr.curve(estList[[id]][pos], weights.class0 = truth[pos], curve = F)
 }
 
 rRNAs = c("18S", "25S")
-rowList = c(1, 2)
 truthList = lapply(rRNAs, collectTruth, argv[1], as.numeric(argv[2]))
 
-PROBerList = lapply(rowList, collectPROBer, sprintf("%s_PROBer.beta", argv[3]))
-BUMHMMList = lapply(rowList, collectBUMHMM, sprintf("%s_BUMHMM.scores", argv[3]))
+PROBerList = lapply(1:2, collectPROBer, sprintf("%s_PROBer.beta", argv[3]))
+BUMHMMList = lapply(1:2, collectBUMHMM, sprintf("%s_BUMHMM.scores", argv[3]))
 
 PROBerRocs = lapply(1:2, calculateROC, PROBerList, truthList)
 BUMHMMRocs = lapply(1:2, calculateROC, BUMHMMList, truthList)
