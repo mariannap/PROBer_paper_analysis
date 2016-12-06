@@ -1,0 +1,42 @@
+#!/usr/bin/env Rscript
+
+argv = commandArgs(TRUE)
+if (length(argv) != 2) {
+   cat("Usage: calc_BUMHMM input_prefix output.txt\n")
+   q(status = 1)
+}
+
+library(BUMHMM)
+
+calcBUMHMM = function(rRNA, exp_prefix) {
+	nrep = 3
+	covFile = read.table(sprintf("%s_%s_cov.txt", exp_prefix, rRNA))
+	docFile = read.table(sprintf("%s_%s_doc.txt", exp_prefix, rRNA))
+	if (rRNA == "25S") {
+		nrep = 2
+		covFile = covFile[, c(2, 3, 5, 6)]
+		docFile = docFile[, c(2, 3, 5, 6)]
+	}
+	dorFile = docFile / covFile
+	dorFile[is.na(dorFile)] = 0
+	nuclSelection = selectNuclPos(covFile, docFile, nrep, nrep, 1)
+	res_stab = stabiliseVariance(covFile, dorFile, nuclSelection$analysedC, nuclSelection$analysedCT, nrep, nrep)
+	LDR_C = res_stab$LDR_C
+	LDR_CT = res_stab$LDR_CT
+	nuclPosition = list()
+	nuclPosition[[1]] = 1:dim(covFile)[1]
+	allNucleotides = Reduce(union, nuclSelection$computePosteriors)
+	stretches = computeStretches(sort(allNucleotides))
+	posteriors = computeProbs(LDR_C, LDR_CT, nrep, nrep, '+', nuclPosition, nuclSelection$analysedC, nuclSelection$analysedCT, stretches)
+	BUMHMM = posteriors[,2]
+
+	return(BUMHMM)
+}
+
+con = file(argv[2], open = "wt")
+cat(calcBUMHMM("18S", argv[1]), file = con, sep = " ")
+cat("\n", file = con)
+cat(calcBUMHMM("25S", argv[1]), file = con, sep = " ")
+cat("\n", file = con)
+close(con)
+

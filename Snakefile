@@ -95,6 +95,7 @@ results.extend(expand("{path}/{name}_table.txt", path = result_path, name = ["ma
 results.append(expand("{path}/SHAPES_bias.pdf", path = result_path))
 results.extend(expand("{path}/SHAPES_{sel}_{type}.pdf", path = result_path, sel = ["sel", "no_sel"], type = ["pr", "roc"]))
 results.append(result_path + "/scatters.pdf")
+results.append(result_path + "/comparing_with_BUMHMM_table.txt")
 
 ## Import Snakemake modules
 
@@ -108,4 +109,3 @@ include: "simulation/Snakefile"
 
 rule all:
 	input: results
-

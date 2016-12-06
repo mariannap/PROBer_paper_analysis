@@ -1,0 +1,49 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+
+if len(argv) != 7:
+	print("Usage: generate_comparing_with_BUMHMM_table ChemModSeq_BUMHMM_pr_roc_auc.txt ChemModSeq_18S_PROBer.eval ChemModSeq_25S_PROBer.eval ChemModSeq_18S_BUMHMM.eval ChemModSeq_25S_BUMHMM.eval comparing_with_BUMHMM_table.txt")
+	exit(-1)
+
+def extract_info(inpF):
+	sensitivity = ppv = ""
+	with open(inpF) as fin:
+		for i in range(3):
+			next(fin)
+		line = next(fin)
+		sensitivity = line[line.index('=') + 1 : ].strip()[:-1] + "\\%"
+		line = next(fin)
+		ppv = line[line.index('=') + 1 : ].strip()[:-1] + "\\%"
+
+	return [sensitivity, ppv]
+		
+
+with open(argv[6], "w") as fout:
+	fout.write("\\begin{tabular}{l|cc|cc}\n")
+	fout.write("\\hline\n")
+	fout.write("& \\multicolumn{2}{c|}{18S} & \\multicolumn{2}{c}{25S} \\\\\n")
+	fout.write("\\hline \\hline\n")
+	fout.write("& ROC-AUC & PR-AUC & ROC-AUC & PR-AUC \\\\\n")
+	fout.write("\\hline\n")
+
+	with open(argv[1]) as fin:
+		values = fin.readline().strip().split()
+		fout.write("PROBer & " + " & ".join(["\\textbf{{{0}}}".format(value) for value in values]) + " \\\\\n")
+		values = fin.readline().strip().split()
+		fout.write("BUM-HMM & " + " & ".join(values) + " \\\\\n")
+
+	fout.write("\\hline \\hline\n")
+	fout.write("& Sensitivity & PPV & Sensitivity & PPV \\\\\n")
+	fout.write("\\hline\n")
+
+	values = extract_info(argv[2])
+	values.extend(extract_info(argv[3]))
+	fout.write("PROBer & " + " & ".join(["\\textbf{{{0}}}".format(value) for value in values]) + " \\\\\n")
+
+	values = extract_info(argv[4])
+	values.extend(extract_info(argv[5]))
+	fout.write("BUM-HMM & " + " & ".join(values) + " \\\\\n")
+
+	fout.write("\\hline\n")
+	fout.write("\\end{tabular}\n")

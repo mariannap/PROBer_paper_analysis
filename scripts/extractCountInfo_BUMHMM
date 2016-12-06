@@ -1,0 +1,62 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+import pysam
+
+if len(argv) != 4:
+	print("Usage: extractCountInfo_BUMHMM control.bam treatment.bam output_name")
+	exit(-1)
+
+runid2repid = {"SRR1041324" : 0, "SRR1041325" : 1, "SRR1041326" : 2, "SRR1041327" : 3, "SRR1041328" : 4, "SRR1041329" : 5}
+
+def parse_paired_end_data(sam_in):
+	global covs, docs
+
+	cnt = 0
+	for aread1 in sam_in:
+		aread2 = next(sam_in)
+		assert aread1.is_read1 and aread2.is_read2 and aread1.query_name == aread2.query_name
+		if not aread1.is_unmapped:
+			assert aread1.reference_id == 0 or aread1.reference_id == 1
+			qname = aread1.query_name
+			sample_id = runid2repid[qname[qname.index(':') + 1 : qname.index('.')]]
+			if aread1.reference_start > 0:
+				docs[aread1.reference_id][aread1.reference_start - 1][sample_id] += 1
+			for i in range(aread1.reference_start, aread2.reference_end):
+				covs[aread1.reference_id][i][sample_id] += 1
+
+		cnt += 1
+		if cnt % 1000000 == 0:
+			print("FIN {}.".format(cnt))
+
+
+sam_in = pysam.AlignmentFile(argv[1], "rb")
+M = sam_in.nreferences
+
+assert M == 2
+covs = [None] * 2
+docs = [None] * 2
+
+for i in range(M):
+	seqlen = sam_in.lengths[i]
+	covs[i] = [None] * seqlen
+	docs[i] = [None] * seqlen
+	for j in range(seqlen):
+		covs[i][j] = [0] * 6
+		docs[i][j] = [0] * 6
+parse_paired_end_data(sam_in)
+sam_in.close()
+
+sam_in = pysam.AlignmentFile(argv[2], "rb")
+parse_paired_end_data(sam_in)
+sam_in.close()
+
+def output(output_name, rRNA, tid):
+	with open(output_name + "_" + rRNA + "_cov.txt", "w") as fcov, open(output_name + "_" + rRNA + "_doc.txt", "w") as fdoc:
+		seqlen = len(covs[tid])
+		for i in range(seqlen):
+			fcov.write("\t".join([str(x) for x in covs[tid][i]]) + "\n")
+			fdoc.write("\t".join([str(x) for x in docs[tid][i]]) + "\n")
+
+output(argv[3], "18S", 0)
+output(argv[3], "25S", 1)

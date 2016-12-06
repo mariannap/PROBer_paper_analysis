@@ -39,6 +39,7 @@ def loadRawReactivity(inpF, tid, posv):
 				fin.readline()
 			start = 2 if suf == "beta" else 0
 			values = fin.readline().strip().split()[start:]
+			posv = [pos for pos in posv if values[pos] != "NA"]
 			data = [float(values[x]) for x in posv]
 	else:
 		with open(inpF) as fin:

@@ -458,7 +458,7 @@ rule generate_ChemModSeq_PR_ROC_sasa:
 
 ## Structure prediction using RNAstructure for yeast data sets
 
-method2suf_SP = {"PROBer" : "beta", "StructureFold" : "scores", "Modseeker" : "scores", "icSHAPE" : "icSHAPE"}
+method2suf_SP = {"PROBer" : "beta", "StructureFold" : "scores", "Modseeker" : "scores", "icSHAPE" : "icSHAPE", "BUMHMM" : "scores"}
 
 def get_input_SP(wildcards):
 	return "{path}/{experiment}_{method}.{suffix}".format(path = exp_path, 
@@ -486,7 +486,7 @@ rule extractReactivity:
 		"{path}/yeast_{{rRNA}}.valid".format(path = gt_path)
 	params: get_params_SP
 	output: 
-		"{path}/{{experiment}}_{{rRNA,(18S|25S)}}_{{method,(PROBer|StructureFold|Modseeker|icSHAPE)}}.shape".format(path = exp_path)
+		"{path}/{{experiment}}_{{rRNA,(18S|25S)}}_{{method,(PROBer|StructureFold|Modseeker|icSHAPE|BUMHMM)}}.shape".format(path = exp_path)
 	shell:
 		"{script_path}/score2shape {input[0]} {output} {params} {input[1]}"
 
@@ -496,7 +496,7 @@ rule runRNAstructure:
 		"{path}/{{experiment}}_{{rRNA}}_{{method}}.shape".format(path = exp_path),
 		Fold
 	output: 
-		"{path}/{{experiment}}_{{rRNA,(18S|25S)}}_{{method,(PROBer|StructureFold|Modseeker|icSHAPE)}}.ct".format(path = exp_path)
+		"{path}/{{experiment}}_{{rRNA,(18S|25S)}}_{{method,(PROBer|StructureFold|Modseeker|icSHAPE|BUMHMM)}}.ct".format(path = exp_path)
 	shell:
 		"export DATAPATH={RNAstructure_data_path} && {Fold} {input[0]} {output} -sh {input[1]}"
 
@@ -514,7 +514,7 @@ rule evaluate_structure:
 		"{path}/{{experiment}}_{{rRNA}}_{{method}}.ct".format(path = exp_path),
 		"{path}/yeast_{{rRNA}}.ct".format(path = gt_path)
 	output:
-		"{path}/{{experiment}}_{{rRNA,(18S|25S)}}_{{method,(PROBer|StructureFold|Modseeker|icSHAPE|baseline)}}.eval".format(path = exp_path)
+		"{path}/{{experiment}}_{{rRNA,(18S|25S)}}_{{method,(PROBer|StructureFold|Modseeker|icSHAPE|BUMHMM|baseline)}}.eval".format(path = exp_path)
 	shell:
 		"{scorer} {input} {output}"
 
@@ -620,7 +620,7 @@ rule plot_bias_SHAPES:
 	output:
 		expand("{path}/SHAPES_bias.pdf", path = result_path)
 	shell:
-		"scripts/plotBias {input} {output}"
+		"{script_path}/plotBias {input} {output}"
 
 rule plot_ROC_SHAPES:
 	input:
@@ -630,8 +630,45 @@ rule plot_ROC_SHAPES:
 	output:
 		expand("{path}/SHAPES_{sel}_{type}.pdf", path = result_path, sel = ["sel", "no_sel"], type = ["pr", "roc"])
 	shell:
-		"scripts/plot_PR_ROC_SHAPES {input} {result_path}/SHAPES"
+		"{script_path}/plot_PR_ROC_SHAPES {input} {result_path}/SHAPES"
 
+
+## Comparing with BUM-HMM
+
+rule generate_doc_cov_for_BUMHMM:
+	input:
+		expand("{path}/ChemModSeq_{channel}_best.bam", path = exp_path, channel = ["minus", "plus"])
+	output:
+		expand("{path}/ChemModSeq_BUMHMM_{rRNA}_{type}.txt", path = exp_path, rRNA = ["18S", "25S"], type = ["cov", "doc"])
+	shell:
+		"{script_path}/extractCountInfo_BUMHMM {input} {exp_path}/ChemModSeq_BUMHMM"
+
+rule calc_BUMHMM_scores:
+	input:
+		rules.generate_doc_cov_for_BUMHMM.output
+	output:
+		"{path}/ChemModSeq_BUMHMM.scores".format(path = exp_path)
+	shell:
+		"{script_path}/calcBUMHMM {exp_path}/ChemModSeq_BUMHMM {output}"
+
+rule calc_PR_ROC_BUMHMM:
+	input:
+		expand("{path}/yeast_{rRNA}.{suffix}", path = gt_path, rRNA = ["18S", "25S"], suffix = ["structure", "isac", "sasa"]),
+		expand("{path}/ChemModSeq_{method_suffix}", path = exp_path, method_suffix = ["PROBer.beta", "BUMHMM.scores"])
+	output:
+		"{path}/ChemModSeq_BUMHMM_pr_roc_auc.txt".format(path = exp_path)
+	shell:
+		"{script_path}/calc_PR_ROC_BUMHMM {gt_path} 48 {exp_path}/ChemModSeq {output}"
+
+rule generate_comparing_with_BUMHMM_table:
+	input:
+		expand("{path}/ChemModSeq_BUMHMM_pr_roc_auc.txt", path = exp_path),
+		expand("{path}/ChemModSeq_{rRNA}_PROBer.eval", path = exp_path, rRNA = ["18S", "25S"]),
+		expand("{path}/ChemModSeq_{rRNA}_BUMHMM.eval", path = exp_path, rRNA = ["18S", "25S"])
+	output:
+		"{path}/comparing_with_BUMHMM_table.txt".format(path = result_path)
+	shell:
+		"{script_path}/generate_comparing_with_BUMHMM_table {input} {output}"
 
 # Pseudo-seq experiments for Pseudouridine modification
 
