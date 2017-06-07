@@ -1,0 +1,55 @@
+#!/usr/bin/env python3 
+
+from sys import argv, exit
+from collections import namedtuple
+from operator import itemgetter
+
+if len(argv) != 4:
+	print("Usage: python convertNormalizedPeaks.py GRCh38.txt input.bed output.bed")
+	exit(-1)
+
+Peak = namedtuple("Peak", ['chrn', 'strand', 'start', 'end', 'pval'])
+
+def loadGRCh38(input_file):
+	chrns = []
+	chr2cid = {}
+	cid = 0
+	with open(input_file) as fin:
+		for line in fin:
+			fields = line.strip().split()
+			chrns.append(fields[0])
+			chr2cid[fields[0]] = cid
+			cid += 1
+	return (chrns, chr2cid)
+
+def convertChrName(chrn, chr2cid):
+	newchr = ""
+	pos = chrn.find('v')
+	if pos >= 0:
+		pos2 = chrn.find('_')
+		assert pos2 >= 0 and pos2 < pos
+		newchr = chrn[pos2 + 1: pos] + "." + chrn[pos + 1]
+	elif chrn == "chrM":
+		newchr = "MT"
+	else:
+		newchr = chrn[3:]
+
+	assert newchr in chr2cid
+	return chr2cid[newchr]
+
+chrns, chr2cid = loadGRCh38(argv[1])
+
+peaks = []
+with open(argv[2]) as fin:
+	for line in fin:
+		fields = line.strip().split()
+		peaks.append(Peak(convertChrName(fields[0], chr2cid), fields[5], int(fields[1]), int(fields[2]), 10**(-float(fields[3]))))
+
+n = len(peaks)
+peaks.sort(key = itemgetter(0, 1, 2))
+
+with open(argv[3], "w") as fout:
+	for i in range(n):
+		fout.write("{}\t{}\t{}\t{}\t{}\n".format(chrns[peaks[i].chrn], peaks[i].strand, peaks[i].start, peaks[i].end, peaks[i].pval))
+
+print("n = ", str(n))
